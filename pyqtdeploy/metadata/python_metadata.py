@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ _supported_branches = (
     (3, 5, 7),
     (3, 4, 10),
     (3, 3, 7),
-    (2, 7, 16))
+    (2, 7, 17))
 
 
 # All supported versions.
@@ -3298,8 +3298,10 @@ _metadata = {
                         're', 'socket', '?ssl', 'time', 'types', 'urllib',
                         'urlparse', 'warnings'))),
 
-    'urlparse':
-        PythonModule(version=2, deps=('collections', 're')),
+    'urlparse': (
+        PythonModule(max_version=(2, 7, 16), deps=('collections', 're')),
+        PythonModule(min_version=(2, 7, 17), max_version=2,
+                deps=('collections', 're', 'unicodedata'))),
 
     'user':
         PythonModule(version=2, deps=('os', 'warnings')),
