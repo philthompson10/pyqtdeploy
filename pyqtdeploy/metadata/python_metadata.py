@@ -30,7 +30,7 @@ __all__ = ['ExtensionModule', 'get_python_metadata', 'get_targeted_value',
 
 # The latest supported version in each minor branch.
 _supported_branches = (
-    (3, 7, 3),
+    (3, 7, 4),
     (3, 6, 10),
     (3, 5, 9),
     (3, 4, 10),
@@ -2234,8 +2234,13 @@ _metadata = {
                         'http.client', 'os', 'pickle', 'queue', 're', 'socket',
                         'smtplib', 'stat', 'struct', 'threading', 'time',
                         'urllib.parse')),
-        PythonModule(min_version=(3, 5, 1),
+        PythonModule(min_version=(3, 5, 1), max_version=(3, 7, 3),
                 deps=('logging', 'base64', 'codecs', 'email.message',
+                        'email.utils', 'errno', 'http.client', 'os', 'pickle',
+                        'queue', 're', 'socket', 'smtplib', 'stat', 'struct',
+                        'threading', 'time', 'urllib.parse')),
+        PythonModule(min_version=(3, 7, 4),
+                deps=('logging', 'base64', 'codecs', 'copy', 'email.message',
                         'email.utils', 'errno', 'http.client', 'os', 'pickle',
                         'queue', 're', 'socket', 'smtplib', 'stat', 'struct',
                         'threading', 'time', 'urllib.parse'))),
