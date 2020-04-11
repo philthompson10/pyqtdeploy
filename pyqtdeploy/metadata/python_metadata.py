@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,12 +30,12 @@ __all__ = ['ExtensionModule', 'get_python_metadata', 'get_targeted_value',
 
 # The latest supported version in each minor branch.
 _supported_branches = (
-    (3, 7, 2),
-    (3, 6, 8),
-    (3, 5, 7),
+    (3, 7, 7),
+    (3, 6, 10),
+    (3, 5, 9),
     (3, 4, 10),
     (3, 3, 7),
-    (2, 7, 16))
+    (2, 7, 17))
 
 
 # All supported versions.
@@ -721,7 +721,7 @@ _metadata = {
                 modules=('distutils.archive_util', 'distutils.bcppcompiler',
                         'distutils.ccompiler', 'distutils.cmd',
                         'distutils.command', 'distutils.core',
-                        'distutils.cygwincompiler', 'distutils.debug',
+                        'distutils.cygwinccompiler', 'distutils.debug',
                         'distutils.dep_util', 'distutils.dir_util',
                         'distutils.dist', 'distutils.errors',
                         'distutils.extension', 'distutils.fancy_getopt',
@@ -1005,7 +1005,7 @@ _metadata = {
                         'distutils.dist', 'distutils.errors',
                         'distutils.extension', 'os')),
 
-    'distutils.cygwincompiler': (
+    'distutils.cygwinccompiler': (
         PythonModule(version=2,
                 deps=('copy', 'distutils.ccompiler', 'distutils.errors',
                         'distutils.file_util', 'distutils.log',
@@ -2234,8 +2234,13 @@ _metadata = {
                         'http.client', 'os', 'pickle', 'queue', 're', 'socket',
                         'smtplib', 'stat', 'struct', 'threading', 'time',
                         'urllib.parse')),
-        PythonModule(min_version=(3, 5, 1),
+        PythonModule(min_version=(3, 5, 1), max_version=(3, 7, 3),
                 deps=('logging', 'base64', 'codecs', 'email.message',
+                        'email.utils', 'errno', 'http.client', 'os', 'pickle',
+                        'queue', 're', 'socket', 'smtplib', 'stat', 'struct',
+                        'threading', 'time', 'urllib.parse')),
+        PythonModule(min_version=(3, 7, 4),
+                deps=('logging', 'base64', 'codecs', 'copy', 'email.message',
                         'email.utils', 'errno', 'http.client', 'os', 'pickle',
                         'queue', 're', 'socket', 'smtplib', 'stat', 'struct',
                         'threading', 'time', 'urllib.parse'))),
@@ -2328,15 +2333,20 @@ _metadata = {
 
     'msilib': (
         PythonModule(max_version=(2, 7, 11), target='win',
-                deps=('_msi', 'os', 're', 'string', 'tempfile')),
+                deps=('_msi', 'os', 're', 'string', 'tempfile'),
+                modules=()),
         PythonModule(min_version=(2, 7, 12), max_version=2, target='win',
-                deps=('_msi', 'glob', 'os', 're', 'string', 'tempfile')),
+                deps=('_msi', 'glob', 'os', 're', 'string', 'tempfile'),
+                modules=()),
         PythonModule(min_version=3, max_version=(3, 5, 1), target='win',
-                deps=('_msi', 'os', 're', 'string', 'tempfile')),
+                deps=('_msi', 'os', 're', 'string', 'tempfile'),
+                modules=()),
         PythonModule(min_version=(3, 5, 2), max_version=(3, 5), target='win',
-                deps=('_msi', 'glob', 'os', 're', 'string', 'tempfile')),
+                deps=('_msi', 'glob', 'os', 're', 'string', 'tempfile'),
+                modules=()),
         PythonModule(min_version=(3, 6), target='win',
-                deps=('_msi', 'fnmatch', 'os', 're', 'string', 'tempfile'))),
+                deps=('_msi', 'fnmatch', 'os', 're', 'string', 'tempfile'),
+                modules=())),
 
     'msvcrt': (
         ExtensionModule(max_version=(3, 4), target='win',
@@ -2509,10 +2519,14 @@ _metadata = {
                 deps=('abc', 'collections', 'copyreg', 'errno', 'io', 'nt',
                         'ntpath', 'posix', 'posixpath', 'stat', 'subprocess',
                         'warnings')),
-        PythonModule(min_version=(3, 7),
+        PythonModule(min_version=(3, 7), max_version=(3, 7, 6),
                 deps=('abc', 'collections', 'copyreg', 'io', 'nt', 'ntpath',
                         'posix', 'posixpath', 'stat', 'subprocess',
-                        'warnings'))),
+                        'warnings')),
+        PythonModule(min_version=(3, 7, 7),
+                deps=('abc', 'collections', '_collections_abc', 'copyreg',
+                        'io', 'nt', 'ntpath', 'posix', 'posixpath', 'stat',
+                        'subprocess', 'warnings'))),
 
     'ossaudiodev':
         ExtensionModule(source='ossaudiodev.c'),
@@ -2735,7 +2749,7 @@ _metadata = {
                         'tempfile', 'textwrap', 'threading', 'time',
                         'tokenize', 'traceback', 'tty', 'urllib.parse',
                         'warnings')),
-        PythonModule(min_version=(3, 5),
+        PythonModule(min_version=(3, 5), max_version=(3, 7, 6),
                 deps=('collections', 'email.message', 'http.server',
                         'importlib._bootstrap',
                         'importlib._bootstrap_external', 'importlib.machinery',
@@ -2743,6 +2757,15 @@ _metadata = {
                         'platform', 're', 'reprlib', 'select', 'subprocess',
                         'tempfile', 'textwrap', 'threading', 'time',
                         'tokenize', 'traceback', 'tty', 'urllib.parse',
+                        'warnings')),
+        PythonModule(min_version=(3, 7, 7),
+                deps=('collections', 'email.message', 'http.server',
+                        'importlib._bootstrap',
+                        'importlib._bootstrap_external', 'importlib.machinery',
+                        'importlib.util', 'inspect', 'io', 'os', 'pkgutil',
+                        'platform', 're', 'reprlib', 'select', 'subprocess',
+                        'sysconfig', 'tempfile', 'textwrap', 'threading',
+                        'time', 'tokenize', 'traceback', 'tty', 'urllib.parse',
                         'warnings'))),
 
     'Queue':
@@ -2959,16 +2982,6 @@ _metadata = {
     'sqlite3':
         PythonModule(deps='sqlite3.dbapi2', modules=('sqlite3.dbapi2')),
 
-    'sqlite3.dbapi2': (
-        PythonModule(version=2,
-                deps=('sqlite3', 'collections', 'datetime', '_sqlite3',
-                        'time')),
-        PythonModule(min_version=3, max_version=(3, 4, 1),
-                deps=('sqlite3', 'datetime', '_sqlite3', 'time')),
-        PythonModule(min_version=(3, 4, 2),
-                deps=('sqlite3', 'collections.abc', 'datetime', '_sqlite3',
-                        'time'))),
-
     'ssl': (
         PythonModule(max_version=(2, 7, 8),
                 deps=('base64', 'errno', 'socket', '_ssl', 'textwrap',
@@ -3138,9 +3151,12 @@ _metadata = {
         PythonModule(min_version=(3, 4), max_version=(3, 6),
                 deps=('_collections', 'itertools', '_thread', 'time',
                         'traceback', '_weakrefset')),
-        PythonModule(min_version=(3, 7),
+        PythonModule(min_version=(3, 7), max_version=(3, 7, 2),
                 deps=('_collections', 'itertools', 'os', '_thread', 'time',
-                        'traceback', '_weakrefset'))),
+                        'traceback', '_weakrefset')),
+        PythonModule(min_version=(3, 7, 3),
+                deps=('_collections', 'itertools', 'os', '_thread', 'time',
+                        'traceback', 'warnings', '_weakrefset'))),
 
     'time': (
         ExtensionModule(max_version=(3, 4), source='timemodule.c',
@@ -3172,9 +3188,13 @@ _metadata = {
                 deps=('argparse', 'dis', 'gc', 'inspect', 'linecache', 'os',
                         'pickle', 're', 'threading', 'time', 'token',
                         'tokenize')),
-        PythonModule(min_version=(3, 7),
+        PythonModule(min_version=(3, 7), max_version=(3, 7, 6),
                 deps=('dis', 'gc', 'inspect', 'linecache', 'os', 'pickle',
-                        're', 'threading', 'time', 'token', 'tokenize'))),
+                        're', 'threading', 'time', 'token', 'tokenize')),
+        PythonModule(min_version=(3, 7, 7),
+                deps=('dis', 'gc', 'inspect', 'linecache', 'os', 'pickle',
+                        're', 'sysconfig', 'threading', 'time', 'token',
+                        'tokenize'))),
 
     'traceback': (
         PythonModule(version=2, deps=('linecache', 'types')),
@@ -3242,8 +3262,14 @@ _metadata = {
                 deps=('urllib', 'collections', 're')),
         PythonModule(min_version=(3, 5, 7), max_version=(3, 5),
                 deps=('urllib', 'collections', 're', 'unicodedata')),
-        PythonModule(min_version=(3, 6),
-                deps=('urllib', 'collections', 're'))),
+        PythonModule(min_version=(3, 6), max_version=(3, 6, 8),
+                deps=('urllib', 'collections', 're')),
+        PythonModule(min_version=(3, 6, 9), max_version=(3, 6),
+                deps=('urllib', 'collections', 're', 'unicodedata')),
+        PythonModule(min_version=(3, 7), max_version=(3, 7, 2),
+                deps=('urllib', 'collections', 're')),
+        PythonModule(min_version=(3, 7, 3),
+                deps=('urllib', 'collections', 're', 'unicodedata'))),
 
     'urllib.request': (
         PythonModule(min_version=3, max_version=(3, 5, 1),
@@ -3298,8 +3324,10 @@ _metadata = {
                         're', 'socket', '?ssl', 'time', 'types', 'urllib',
                         'urlparse', 'warnings'))),
 
-    'urlparse':
-        PythonModule(version=2, deps=('collections', 're')),
+    'urlparse': (
+        PythonModule(max_version=(2, 7, 16), deps=('collections', 're')),
+        PythonModule(min_version=(2, 7, 17), max_version=2,
+                deps=('collections', 're', 'unicodedata'))),
 
     'user':
         PythonModule(version=2, deps=('os', 'warnings')),
@@ -3537,14 +3565,30 @@ _metadata = {
                         'xml.parsers.expat'))),
 
     'xmlrpc.server': (
-        PythonModule(min_version=3, max_version=(3, 6),
+        PythonModule(min_version=3, max_version=(3, 5, 7),
                 deps=('xmlrpc', 'fcntl', 'http.server', 'inspect', 'os',
                         'pydoc', 're', 'socketserver', 'traceback',
                         'xmlrpc.client')),
-        PythonModule(min_version=(3, 7),
+        PythonModule(min_version=(3, 5, 8), max_version=(3, 5),
+                deps=('xmlrpc', 'fcntl', 'html', 'http.server', 'inspect',
+                        'os', 'pydoc', 're', 'socketserver', 'traceback',
+                        'xmlrpc.client')),
+        PythonModule(min_version=(3, 6), max_version=(3, 6, 9),
+                deps=('xmlrpc', 'fcntl', 'http.server', 'inspect', 'os',
+                        'pydoc', 're', 'socketserver', 'traceback',
+                        'xmlrpc.client')),
+        PythonModule(min_version=(3, 6, 10), max_version=(3, 6),
+                deps=('xmlrpc', 'fcntl', 'html', 'http.server', 'inspect',
+                        'os', 'pydoc', 're', 'socketserver', 'traceback',
+                        'xmlrpc.client')),
+        PythonModule(min_version=(3, 7), max_version=(3, 7, 4),
                 deps=('xmlrpc', 'fcntl', 'functools', 'http.server', 'inspect',
                         'os', 'pydoc', 're', 'socketserver', 'traceback',
-                        'xmlrpc.client'))),
+                        'xmlrpc.client')),
+        PythonModule(min_version=(3, 7, 5),
+                deps=('xmlrpc', 'fcntl', 'functools', 'html', 'http.server',
+                        'inspect', 'os', 'pydoc', 're', 'socketserver',
+                        'traceback', 'xmlrpc.client'))),
 
     'xmlrpclib':
         PythonModule(version=2,
@@ -3593,12 +3637,14 @@ _metadata = {
 
     # These are internal modules.
 
-    # For Python v3.7 and later on Windows this module cannot be linked
+    # For Python v3.7.0 to v3.7.2 on Windows this module cannot be linked
     # separately because of the PyVarObject_HEAD_INIT() bug.  In these cases it
     # is included in the static Python library build by pyqtdeploy-sysroot.
-    '_abc':
-        ExtensionModule(min_version=(3, 7), internal=True,
-                source='!win#_abc.c'),
+    '_abc': (
+        ExtensionModule(min_version=(3, 7), max_version=(3, 7, 2),
+                internal=True, source='!win#_abc.c'),
+        ExtensionModule(min_version=(3, 7, 3), internal=True,
+                source='_abc.c')),
 
     '_abcoll':
         PythonModule(version=2, internal=True, deps='abc'),
@@ -4093,13 +4139,21 @@ _metadata = {
                         'asyncio.tasks', 'asyncio.windows_utils', 'errno',
                         'math', '_overlapped', 'socket', 'struct', 'weakref',
                         '_winapi')),
-        PythonModule(min_version=(3, 7), internal=True, target='win',
+        PythonModule(min_version=(3, 7), max_version=(3, 7, 2), internal=True,
+                target='win',
                 deps=('asyncio', 'asyncio.events', 'asyncio.base_subprocess',
                         'asyncio.futures', 'asyncio.log',
                         'asyncio.proactor_events', 'asyncio.selector_events',
                         'asyncio.tasks', 'asyncio.windows_utils', 'errno',
                         'math', 'msvcrt', '_overlapped', 'socket', 'struct',
-                        'weakref', '_winapi'))),
+                        'weakref', '_winapi')),
+        PythonModule(min_version=(3, 7, 3), internal=True, target='win',
+                deps=('asyncio', 'asyncio.events', 'asyncio.base_subprocess',
+                        'asyncio.futures', 'asyncio.log',
+                        'asyncio.proactor_events', 'asyncio.selector_events',
+                        'asyncio.tasks', 'asyncio.windows_utils', 'errno',
+                        'math', 'msvcrt', '_overlapped', 'socket', 'struct',
+                        'time', 'weakref', '_winapi'))),
 
     'asyncio.windows_utils': (
         PythonModule(min_version=(3, 4), max_version=(3, 4, 2),
@@ -4333,11 +4387,15 @@ _metadata = {
                         '_distutils_findvs', 'distutils.log', 'distutils.util',
                         'glob', 'itertools', 'os', 'shutil', 'stat',
                         'subprocess', 'threading', 'winreg')),
-        PythonModule(min_version=(3, 7, 2),
+        PythonModule(min_version=(3, 7, 2), max_version=(3, 7, 6),
                 deps=('distutils.ccompiler', 'distutils.errors',
                         'distutils.log', 'distutils.util', 'glob', 'itertools',
                         'json', 'os', 'shutil', 'stat', 'subprocess',
-                        'winreg'))),
+                        'winreg')),
+        PythonModule(min_version=(3, 7, 7),
+                deps=('distutils.ccompiler', 'distutils.errors',
+                        'distutils.log', 'distutils.util', 'itertools', 'json',
+                        'os', 'shutil', 'stat', 'subprocess', 'winreg'))),
 
     'distutils.versionpredicate':
         PythonModule(
@@ -4933,6 +4991,16 @@ _metadata = {
                         'SQLITE_OMIT_LOAD_EXTENSION'),
                 includepath='_sqlite', xlib='sqlite3', pyd='_sqlite3.pyd',
                 dlls='sqlite3.dll'),
+
+    'sqlite3.dbapi2': (
+        PythonModule(version=2, internal=True,
+                deps=('sqlite3', 'collections', 'datetime', '_sqlite3',
+                        'time')),
+        PythonModule(min_version=3, max_version=(3, 4, 1), internal=True,
+                deps=('sqlite3', 'datetime', '_sqlite3', 'time')),
+        PythonModule(min_version=(3, 4, 2), internal=True,
+                deps=('sqlite3', 'collections.abc', 'datetime', '_sqlite3',
+                        'time'))),
 
     '_sre':
         CoreExtensionModule(internal=True),

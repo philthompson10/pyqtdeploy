@@ -196,6 +196,9 @@ pyconfig = (
     # Define to 1 if you have the <crypt.h> header file.
     Config('HAVE_CRYPT_H', linux=1),
 
+    # Define if you have the crypt_r() function.
+    Config('HAVE_CRYPT_R', linux=1),
+
     # Define to 1 if you have the `ctermid' function.
     Config('HAVE_CTERMID', default=1, android=None),
 
@@ -1505,6 +1508,10 @@ pyconfig = (
 
     # Define if WINDOW in curses.h offers a field _flags.
     Config('WINDOW_HAS_FLAGS', linux=1),
+
+    # Define if you want to build the _decimal module using a coroutine-local
+    # rather than a thread-local context.
+    Config('WITH_DECIMAL_CONTEXTVAR')
 
     # Define if you want documentation strings in extension modules
     Config('WITH_DOC_STRINGS'),

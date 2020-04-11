@@ -6,8 +6,8 @@ These are various notes, instructions and reminders for the pyqtdeploy
 developer.
 
 
-Updating pyqtdeploy When New New Versions of Python are Released
-================================================================
+Updating pyqtdeploy When New Versions of Python are Released
+============================================================
 
 Run the ``diff-py-version.py`` script for the new version of Python::
 
