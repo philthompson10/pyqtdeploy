@@ -1,5 +1,8 @@
-v2.4.1 ??? ??? 2019
-  - Added support for Python v3.7.3.
+v2.5.0 ??? ??? 2020
+  - Added support for Python v3.7.3, v3.7.4, v3.7.5, v3.7.6 and v3.7.7.
+  - Added support for Python v3.6.9 and v3.6.10.
+  - Added support for Python v3.5.8 and v3.5.9.
+  - Added support for Python v2.7.17.
 
 v2.4 22nd March 2019
   - Added android-64 as a target architecture.
