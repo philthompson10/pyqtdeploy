@@ -32,7 +32,7 @@ __all__ = ['ExtensionModule', 'get_python_metadata', 'get_targeted_value',
 _supported_branches = (
     (3, 7, 3),
     (3, 6, 8),
-    (3, 5, 7),
+    (3, 5, 8),
     (3, 4, 10),
     (3, 3, 7),
     (2, 7, 17))
@@ -3539,7 +3539,15 @@ _metadata = {
                         'xml.parsers.expat'))),
 
     'xmlrpc.server': (
-        PythonModule(min_version=3, max_version=(3, 6),
+        PythonModule(min_version=3, max_version=(3, 5, 7),
+                deps=('xmlrpc', 'fcntl', 'http.server', 'inspect', 'os',
+                        'pydoc', 're', 'socketserver', 'traceback',
+                        'xmlrpc.client')),
+        PythonModule(min_version=(3, 5, 8), max_version=(3, 5),
+                deps=('xmlrpc', 'fcntl', 'html', 'http.server', 'inspect',
+                        'os', 'pydoc', 're', 'socketserver', 'traceback',
+                        'xmlrpc.client')),
+        PythonModule(version=(3, 6),
                 deps=('xmlrpc', 'fcntl', 'http.server', 'inspect', 'os',
                         'pydoc', 're', 'socketserver', 'traceback',
                         'xmlrpc.client')),
