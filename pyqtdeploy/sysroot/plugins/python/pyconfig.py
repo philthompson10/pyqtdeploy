@@ -1509,6 +1509,10 @@ pyconfig = (
     # Define if WINDOW in curses.h offers a field _flags.
     Config('WINDOW_HAS_FLAGS', linux=1),
 
+    # Define if you want to build the _decimal module using a coroutine-local
+    # rather than a thread-local context.
+    Config('WITH_DECIMAL_CONTEXTVAR')
+
     # Define if you want documentation strings in extension modules
     Config('WITH_DOC_STRINGS'),
 
