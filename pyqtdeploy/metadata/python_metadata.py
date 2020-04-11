@@ -30,7 +30,7 @@ __all__ = ['ExtensionModule', 'get_python_metadata', 'get_targeted_value',
 
 # The latest supported version in each minor branch.
 _supported_branches = (
-    (3, 7, 6),
+    (3, 7, 7),
     (3, 6, 10),
     (3, 5, 9),
     (3, 4, 10),
@@ -2519,10 +2519,14 @@ _metadata = {
                 deps=('abc', 'collections', 'copyreg', 'errno', 'io', 'nt',
                         'ntpath', 'posix', 'posixpath', 'stat', 'subprocess',
                         'warnings')),
-        PythonModule(min_version=(3, 7),
+        PythonModule(min_version=(3, 7), max_version=(3, 7, 6),
                 deps=('abc', 'collections', 'copyreg', 'io', 'nt', 'ntpath',
                         'posix', 'posixpath', 'stat', 'subprocess',
-                        'warnings'))),
+                        'warnings')),
+        PythonModule(min_version=(3, 7, 7),
+                deps=('abc', 'collections', '_collections_abc', 'copyreg',
+                        'io', 'nt', 'ntpath', 'posix', 'posixpath', 'stat',
+                        'subprocess', 'warnings'))),
 
     'ossaudiodev':
         ExtensionModule(source='ossaudiodev.c'),
@@ -2745,7 +2749,7 @@ _metadata = {
                         'tempfile', 'textwrap', 'threading', 'time',
                         'tokenize', 'traceback', 'tty', 'urllib.parse',
                         'warnings')),
-        PythonModule(min_version=(3, 5),
+        PythonModule(min_version=(3, 5), max_version=(3, 7, 6),
                 deps=('collections', 'email.message', 'http.server',
                         'importlib._bootstrap',
                         'importlib._bootstrap_external', 'importlib.machinery',
@@ -2753,6 +2757,15 @@ _metadata = {
                         'platform', 're', 'reprlib', 'select', 'subprocess',
                         'tempfile', 'textwrap', 'threading', 'time',
                         'tokenize', 'traceback', 'tty', 'urllib.parse',
+                        'warnings')),
+        PythonModule(min_version=(3, 7, 7),
+                deps=('collections', 'email.message', 'http.server',
+                        'importlib._bootstrap',
+                        'importlib._bootstrap_external', 'importlib.machinery',
+                        'importlib.util', 'inspect', 'io', 'os', 'pkgutil',
+                        'platform', 're', 'reprlib', 'select', 'subprocess',
+                        'sysconfig', 'tempfile', 'textwrap', 'threading',
+                        'time', 'tokenize', 'traceback', 'tty', 'urllib.parse',
                         'warnings'))),
 
     'Queue':
@@ -3175,9 +3188,13 @@ _metadata = {
                 deps=('argparse', 'dis', 'gc', 'inspect', 'linecache', 'os',
                         'pickle', 're', 'threading', 'time', 'token',
                         'tokenize')),
-        PythonModule(min_version=(3, 7),
+        PythonModule(min_version=(3, 7), max_version=(3, 7, 6),
                 deps=('dis', 'gc', 'inspect', 'linecache', 'os', 'pickle',
-                        're', 'threading', 'time', 'token', 'tokenize'))),
+                        're', 'threading', 'time', 'token', 'tokenize')),
+        PythonModule(min_version=(3, 7, 7),
+                deps=('dis', 'gc', 'inspect', 'linecache', 'os', 'pickle',
+                        're', 'sysconfig', 'threading', 'time', 'token',
+                        'tokenize'))),
 
     'traceback': (
         PythonModule(version=2, deps=('linecache', 'types')),
@@ -4370,11 +4387,15 @@ _metadata = {
                         '_distutils_findvs', 'distutils.log', 'distutils.util',
                         'glob', 'itertools', 'os', 'shutil', 'stat',
                         'subprocess', 'threading', 'winreg')),
-        PythonModule(min_version=(3, 7, 2),
+        PythonModule(min_version=(3, 7, 2), max_version=(3, 7, 6),
                 deps=('distutils.ccompiler', 'distutils.errors',
                         'distutils.log', 'distutils.util', 'glob', 'itertools',
                         'json', 'os', 'shutil', 'stat', 'subprocess',
-                        'winreg'))),
+                        'winreg')),
+        PythonModule(min_version=(3, 7, 7),
+                deps=('distutils.ccompiler', 'distutils.errors',
+                        'distutils.log', 'distutils.util', 'itertools', 'json',
+                        'os', 'shutil', 'stat', 'subprocess', 'winreg'))),
 
     'distutils.versionpredicate':
         PythonModule(
