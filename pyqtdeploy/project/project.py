@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,13 +25,15 @@
 
 
 import os
-from xml.etree.ElementTree import Element, ElementTree, SubElement
 
 from PyQt5.QtCore import QDir, QFileInfo, QObject, pyqtSignal
 
 from ..metadata import get_python_metadata, supported_python_versions
 from ..platforms import Platform
 from ..user_exception import UserException
+
+from .project_parts import (ExternalLibrary, ExtensionModule, QrcDirectory,
+        QrcFile, QrcPackage)
 
 
 class Project(QObject):
@@ -284,7 +286,29 @@ class Project(QObject):
         UserException if there was an error.
         """
 
+        # Get the loader for the project.
         fi = QFileInfo(file_name)
+
+        if fi.suffix() == 'pdy':
+            from .legacy import load_xml as loader
+        else:
+            loader = cls._load_toml
+
+        # Create the project and load it.
+        project = cls()
+        project._name = fi
+        loader(project, QDir.toNativeSeparators(fi.canonicalFilePath()))
+
+        # If the default locations are being used then use the current defaults
+        # instead of those (possibly out of date) in the project file.
+        if project.using_default_locations:
+            project.set_default_locations()
+
+        return project
+
+    @classmethod
+    def _load_toml(cls, project, name):
+        """ Load a TOML format project file. """
 
         tree = ElementTree()
 
@@ -315,10 +339,6 @@ class Project(QObject):
         if version > cls.version:
             raise UserException(
                     "The project's format is version {0} but only version {1} is supported.".format(version, cls.version))
-
-        # Create the project and populate it.
-        project = cls()
-        project._name = fi
 
         # This was added in version 7.
         project.using_default_locations = cls._get_bool(root,
@@ -441,13 +461,6 @@ class Project(QObject):
             project.other_extension_modules.append(
                     ExtensionModule(name, qt, config, sources, defines,
                             includepath, libs))
-
-        # If the default locations are being used then use the current defaults
-        # instead of those (possibly out of date) in the project file.
-        if project.using_default_locations:
-            project.set_default_locations()
-
-        return project
 
     def save(self):
         """ Save the project.  Raise a UserException if there was an error. """
@@ -690,91 +703,6 @@ class Project(QObject):
         value = value.replace('win32', 'win')
 
         return value
-
-
-class QrcPackage():
-    """ The encapsulation of a memory-filesystem package. """
-
-    def __init__(self):
-        """ Initialise the package. """
-
-        self.name = None
-        self.contents = []
-        self.exclusions = ['*.pyc', '*.pyd', '*.pyo', '*.pyx', '*.pxi',
-                '__pycache__', '*-info', 'EGG_INFO', '*.so']
-
-    def copy(self):
-        """ Return a copy of the package. """
-
-        copy = type(self)()
-
-        copy.name = self.name
-        copy.contents = [content.copy() for content in self.contents]
-        copy.exclusions = list(self.exclusions)
-
-        return copy
-
-
-class QrcFile():
-    """ The encapsulation of a memory-filesystem file. """
-
-    def __init__(self, name, included=True):
-        """ Initialise the file. """
-
-        self.name = name
-        self.included = included
-
-    def copy(self):
-        """ Return a copy of the file. """
-
-        return type(self)(self.name, self.included)
-
-
-class QrcDirectory(QrcFile):
-    """ The encapsulation of a memory-filesystem directory. """
-
-    def __init__(self, name, included=True):
-        """ Initialise the directory. """
-
-        super().__init__(name, included)
-
-        self.contents = []
-
-    def copy(self):
-        """ Return a copy of the directory. """
-
-        copy = super().copy()
-
-        copy.contents = [content.copy() for content in self.contents]
-
-        return copy
-
-
-class ExternalLibrary():
-    """ The encapsulation of an external library. """
-
-    def __init__(self, name, defines, includepath, libs):
-        """ Initialise the external library. """
-
-        self.name = name
-        self.defines = defines
-        self.includepath = includepath
-        self.libs = libs
-
-
-class ExtensionModule():
-    """ The encapsulation of an extension module. """
-
-    def __init__(self, name, qt, config, sources, defines, includepath, libs):
-        """ Initialise the extension module. """
-
-        self.name = name
-        self.qt = qt
-        self.config = config
-        self.sources = sources
-        self.defines = defines
-        self.includepath = includepath
-        self.libs = libs
 
 
 class _DepState:
