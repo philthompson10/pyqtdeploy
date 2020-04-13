@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -1379,9 +1379,6 @@ pyconfig = (
     # Define to printf format modifier for Py_ssize_t
     Config('PY_FORMAT_SIZE_T', default='"z"'),
 
-    # Define as the integral type used for Unicode representation.
-    Config('PY_UNICODE_TYPE', py_major=2, default='unsigned short'),
-
     # Default cipher suites list for ssl module. 1: Python's preferred
     # selection, 2: leave OpenSSL defaults untouched, 0: custom string
     Config('PY_SSL_DEFAULT_CIPHERS', default=1),
@@ -1395,12 +1392,6 @@ pyconfig = (
     # Define hash algorithm for str, bytes and memoryview. SipHash24: 1,
     # FNV: 2, externally defined: 0
     Config('Py_HASH_ALGORITHM'),
-
-    # Define as the size of the unicode type.
-    Config('Py_UNICODE_SIZE', py_major=2, default=2),
-
-    # Define if you want to have a Unicode type.
-    Config('Py_USING_UNICODE', py_major=2, default=1),
 
     # Define if setpgrp() must be called as setpgrp(0, 0).
     Config('SETPGRP_HAVE_ARG'),

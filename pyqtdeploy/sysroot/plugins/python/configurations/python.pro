@@ -1,4 +1,4 @@
-# Copyright (c) 2018, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -87,12 +87,8 @@ win32 {
     QMAKE_CFLAGS_RELEASE = -O3
     QMAKE_CFLAGS += -fwrapv
 
-    greaterThan(PY_MAJOR_VERSION, 2) {
-        greaterThan(PY_MINOR_VERSION, 5) {
-            QMAKE_CFLAGS += -std=c99
-        }
-    } else {
-        QMAKE_CFLAGS += -fno-strict-aliasing
+    greaterThan(PY_MINOR_VERSION, 5) {
+        QMAKE_CFLAGS += -std=c99
     }
 }
 
@@ -154,30 +150,16 @@ OBJECT_SOURCES = \
     Objects/typeobject.c \
     Objects/unicodeobject.c \
     Objects/unicodectype.c \
-    Objects/weakrefobject.c
-
-greaterThan(PY_MAJOR_VERSION, 2) {
-    OBJECT_SOURCES += \
-        Objects/accu.c \
-        Objects/bytesobject.c \
-        Objects/namespaceobject.c
-
-    greaterThan(PY_MINOR_VERSION, 4) {
-        OBJECT_SOURCES += \
-            Objects/odictobject.c
-    }
+    Objects/weakrefobject.c \
+    Objects/accu.c \
+    Objects/bytesobject.c \
+    Objects/namespaceobject.c \
+    Objects/odictobject.c
 
     greaterThan(PY_MINOR_VERSION, 6) {
         OBJECT_SOURCES += \
             Objects/call.c
     }
-} else {
-    OBJECT_SOURCES += \
-        Objects/bufferobject.c \
-        Objects/cobject.c \
-        Objects/intobject.c \
-        Objects/stringobject.c
-}
 
 PYTHON_SOURCES = \
     Python/_warnings.c \
@@ -217,26 +199,15 @@ PYTHON_SOURCES = \
     Python/getopt.c \
     Python/pystrcmp.c \
     Python/pystrtod.c \
-    Python/formatter_unicode.c
-
-greaterThan(PY_MAJOR_VERSION, 2) {
-    PYTHON_SOURCES += \
-        Python/pyctype.c \
-        Python/pytime.c \
-        Python/dtoa.c \
-        Python/fileutils.c
-
-    greaterThan(PY_MINOR_VERSION, 3) {
-        PYTHON_SOURCES += \
-            Python/pyhash.c
-    }
-
-    greaterThan(PY_MINOR_VERSION, 4) {
-        PYTHON_SOURCES += \
-            Python/dynamic_annotations.c \
-            Python/pylifecycle.c \
-            Python/pystrhex.c
-    }
+    Python/formatter_unicode.c \
+    Python/pyctype.c \
+    Python/pytime.c \
+    Python/dtoa.c \
+    Python/fileutils.c \
+    Python/pyhash.c \
+    Python/dynamic_annotations.c \
+    Python/pylifecycle.c \
+    Python/pystrhex.c
 
     greaterThan(PY_MINOR_VERSION, 6) {
         PYTHON_SOURCES += \
@@ -250,13 +221,6 @@ greaterThan(PY_MAJOR_VERSION, 2) {
         PYTHON_SOURCES += \
             Python/random.c
     }
-} else {
-    PYTHON_SOURCES += \
-        Python/formatter_string.c \
-        Python/pyctype.c \
-        Python/random.c \
-        Python/dtoa.c
-}
 
 equals(PY_DYNAMIC_LOADING, "enabled") {
     DEFINES += SOABI=\\\"cpython-$${PY_MAJOR_VERSION}$${PY_MINOR_VERSION}\\\"
@@ -271,59 +235,47 @@ equals(PY_DYNAMIC_LOADING, "enabled") {
 MODULE_SOURCES = \
     Modules/config.c \
     Modules/main.c \
-    Modules/gcmodule.c
-
-greaterThan(PY_MAJOR_VERSION, 2) {
-    MOD_SOURCES = \
-        Modules/posixmodule.c \
-        Modules/errnomodule.c \
-        Modules/_sre.c \
-        Modules/_codecsmodule.c \
-        Modules/_weakref.c \
-        Modules/_functoolsmodule.c \
-        Modules/_collectionsmodule.c \
-        Modules/itertoolsmodule.c \
-        Modules/atexitmodule.c \
-        Modules/signalmodule.c \
-        Modules/_threadmodule.c \
-        Modules/_localemodule.c \
-        Modules/_io/_iomodule.c \
-        Modules/_io/iobase.c \
-        Modules/_io/fileio.c \
-        Modules/_io/bytesio.c \
-        Modules/_io/bufferedio.c \
-        Modules/_io/textio.c \
-        Modules/_io/stringio.c \
-        Modules/faulthandler.c \
-        Modules/symtablemodule.c \
-
-    greaterThan(PY_MINOR_VERSION, 3) {
-        MOD_SOURCES += \
-            Modules/_operator.c \
-            Modules/_stat.c \
-            Modules/_tracemalloc.c \
-            Modules/hashtable.c
-
-        greaterThan(PY_MINOR_VERSION, 6) {
-        } else {
-            win32 {
-                # Work around the PyVarObject_HEAD_INIT() problem in Python
-                # v3.4 to v3.6 by always compiling this module.
-                MOD_SOURCES += Modules/_struct.c
-            }
-        }
-    }
-
-    greaterThan(PY_MINOR_VERSION, 4) {
-        MOD_SOURCES += \
-            Modules/mmapmodule.c \
-            Modules/timemodule.c
-    }
+    Modules/gcmodule.c \
+    Modules/posixmodule.c \
+    Modules/errnomodule.c \
+    Modules/_sre.c \
+    Modules/_codecsmodule.c \
+    Modules/_weakref.c \
+    Modules/_functoolsmodule.c \
+    Modules/_collectionsmodule.c \
+    Modules/itertoolsmodule.c \
+    Modules/atexitmodule.c \
+    Modules/signalmodule.c \
+    Modules/_threadmodule.c \
+    Modules/_localemodule.c \
+    Modules/_io/_iomodule.c \
+    Modules/_io/iobase.c \
+    Modules/_io/fileio.c \
+    Modules/_io/bytesio.c \
+    Modules/_io/bufferedio.c \
+    Modules/_io/textio.c \
+    Modules/_io/stringio.c \
+    Modules/faulthandler.c \
+    Modules/symtablemodule.c \
+    Modules/_operator.c \
+    Modules/_stat.c \
+    Modules/_tracemalloc.c \
+    Modules/hashtable.c
+    Modules/mmapmodule.c \
+    Modules/timemodule.c
 
     greaterThan(PY_MINOR_VERSION, 5) {
         MOD_SOURCES += \
             Modules/_io/winconsoleio.c \
             Modules/zipimport.c
+    }
+
+    lessThan(PY_MINOR_VERSION, 7) {
+        win32 {
+            # Work around the PyVarObject_HEAD_INIT() problem in Python v3.5
+            # and v3.6 by always compiling this module.
+            MOD_SOURCES += Modules/_struct.c
+        }
     }
 
     isEqual(PY_MINOR_VERSION, 7) {
@@ -335,34 +287,15 @@ greaterThan(PY_MAJOR_VERSION, 2) {
             }
         }
     }
-} else {
-    MOD_SOURCES = \
-        Modules/threadmodule.c \
-        Modules/signalmodule.c \
-        Modules/posixmodule.c \
-        Modules/errnomodule.c \
-        Modules/_sre.c \
-        Modules/_codecsmodule.c \
-        Modules/symtablemodule.c \
-        Modules/_weakref.c
-}
 
 win32 {
     MOD_SOURCES += \
-        PC/getpathp.c
+        PC/getpathp.c \
+        PC/msvcrtmodule.c \
+        PC/winreg.c
 
-    greaterThan(PY_MAJOR_VERSION, 2) {
-        MOD_SOURCES += \
-            PC/winreg.c
-
-        greaterThan(PY_MINOR_VERSION, 4) {
-            MOD_SOURCES += \
-                PC/msvcrtmodule.c
-
-            PYTHON_SOURCES += \
-                PC/invalid_parameter_handler.c
-        }
-    }
+    PYTHON_SOURCES += \
+        PC/invalid_parameter_handler.c
 } else {
     MOD_SOURCES += \
         Modules/getpath.c \

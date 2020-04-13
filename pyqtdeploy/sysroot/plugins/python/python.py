@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -101,7 +101,7 @@ class PythonComponent(ComponentBase):
 
             version_nr = sysroot.extract_version_nr(self.version)
 
-        if version_nr < 0x020700 or (version_nr >= 0x030000 and version_nr < 0x030300):
+        if version_nr < 0x030500:
             sysroot.error(
                     "Python v{0} is not supported".format(
                             sysroot.format_version_nr(version_nr)))
@@ -136,19 +136,8 @@ class PythonComponent(ComponentBase):
         archive = sysroot.find_file(self.source)
         sysroot.unpack_archive(archive)
 
-        # ensurepip was added in Python v2.7.9 and v3.4.0.
-        ensure_pip = False
-        if sysroot.target_py_version_nr < 0x030000:
-            if sysroot.target_py_version_nr >= 0x020709:
-                ensure_pip = True
-        elif sysroot.target_py_version_nr >= 0x030400:
-            ensure_pip = True
-
-        configure = ['./configure', '--prefix', sysroot.host_dir]
-        if ensure_pip:
-            configure.append('--with-ensurepip=no')
-
-        sysroot.run(*configure)
+        sysroot.run('./configure', '--prefix', sysroot.host_dir,
+                '--with-ensurepip=no')
 
         # For reasons not fully understood, the presence of this environment
         # variable breaks the build (probably only on macOS).
@@ -177,14 +166,11 @@ class PythonComponent(ComponentBase):
         else:
             install_path = sysroot.get_python_install_path()
 
-        # Copy the DLL for Python v3.5 and later.  For earlier versions it will
-        # be in a directory already on PATH so a local copy isn't needed.
+        # Copy the DLL.
         major, minor = self._major_minor(sysroot)
-
-        if (major, minor) >= (3, 5):
-            dll = 'python' + str(major) + str(minor) + '.dll'
-            shutil.copyfile(os.path.join(install_path, dll),
-                    os.path.join(sysroot.host_bin_dir, dll))
+        dll = 'python' + str(major) + str(minor) + '.dll'
+        shutil.copyfile(os.path.join(install_path, dll),
+                os.path.join(sysroot.host_bin_dir, dll))
 
         return install_path + 'python.exe'
 
@@ -272,11 +258,10 @@ build_time_vars = {
         sysroot.copy_file(install_path + 'libs\\' + lib_name,
                 os.path.join(sysroot.target_lib_dir, lib_name))
 
-        if (major, minor) >= (3, 4):
-            lib_name = 'python{0}.lib'.format(major)
+        lib_name = 'python{0}.lib'.format(major)
 
-            sysroot.copy_file(install_path + 'libs\\' + lib_name,
-                    os.path.join(sysroot.target_lib_dir, lib_name))
+        sysroot.copy_file(install_path + 'libs\\' + lib_name,
+                os.path.join(sysroot.target_lib_dir, lib_name))
 
         # The DLLs and extension modules.
         sysroot.copy_dir(install_path + 'DLLs',
@@ -285,22 +270,11 @@ build_time_vars = {
                 ignore=('*.ico', 'tcl*.dll', 'tk*.dll', '_tkinter.pyd'))
 
         py_dll = 'python{0}{1}.dll'.format(major, minor)
+        py_dll_dir = install_path
+        vc_dll = 'vcruntime140.dll'
 
-        if (major, minor) >= (3, 5):
-            py_dll_dir = install_path
-
-            vc_dll = 'vcruntime140.dll'
-            sysroot.copy_file(py_dll_dir + vc_dll,
-                    os.path.join(sysroot.target_lib_dir, vc_dll))
-        else:
-            # Check for an installation for all users on 32 bit Windows.
-            py_dll_dir = 'C:\\Windows\\System32\\'
-            if not os.path.isfile(py_dll_dir + py_dll):
-                # Check for an installation for all users on 64 bit Windows.
-                py_dll_dir = 'C:\\Windows\\SysWOW64\\'
-                if not os.path.isfile(py_dll_dir + py_dll):
-                    # Assume it is an installation for the current user.
-                    py_dll_dir = install_path
+        sysroot.copy_file(py_dll_dir + vc_dll,
+                os.path.join(sysroot.target_lib_dir, vc_dll))
 
         sysroot.copy_file(py_dll_dir + py_dll,
                 os.path.join(sysroot.target_lib_dir, py_dll))
