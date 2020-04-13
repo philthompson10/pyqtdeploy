@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,13 +25,6 @@
 
 
 import os
-import sys
-
-# Check the version of Python as early as possible.
-if sys.hexversion < 0x03050000:
-    sys.stderr.write("pyqtdeploy requires Python v3.5 or later\n")
-    sys.exit(1)
-
 
 from setuptools import find_packages, setup
 
@@ -44,28 +37,20 @@ try:
     version_file.close()
 except FileNotFoundError:
     # Provide a minimal version file.
-    version = '0.0.dev0'
+    version = '0.1.0.dev0'
     version_file = open(version_file_name, 'w')
     version_file.write(
             'PYQTDEPLOY_RELEASE = \'%s\'\nPYQTDEPLOY_HEXVERSION = 0\n' %
                     version)
     version_file.close()
 
-# Get the long description for PyPI.
-with open('README') as readme:
-    long_description = readme.read()
-
 # Do the setup.
 setup(
         name='pyqtdeploy',
         version=version,
-        description='PyQt Application Deployment Tool',
-        long_description=long_description,
-        author='Riverbank Computing Limited',
-        author_email='info@riverbankcomputing.com',
-        url='https://www.riverbankcomputing.com/software/pyqtdeploy/',
         license='BSD',
-        platforms=['X11', 'OS/X', 'Windows'],
+        python_requires='>=3.5.0',
+        install_requires=['toml'],
         packages=find_packages(),
         package_data={
             'pyqtdeploy.builder': ['lib/*.*', 'lib/*/*.*'],
