@@ -25,6 +25,7 @@
 
 
 import os
+import toml
 
 from PyQt5.QtCore import QDir, QFileInfo, QObject, pyqtSignal
 
@@ -41,10 +42,10 @@ class Project(QObject):
 
     # The minimum supported project version.  At the moment a project will be
     # automatically updated to the current version when saved.
-    min_version = 4
+    min_version = 0
 
     # The current project version.
-    version = 7
+    version = 0
 
     # Emitted when the modification state of the project changes.
     modified_changed = pyqtSignal(bool)
@@ -288,16 +289,20 @@ class Project(QObject):
 
         # Get the loader for the project.
         fi = QFileInfo(file_name)
+        file_path = QDir.toNativeSeparators(fi.canonicalFilePath())
 
-        if fi.suffix() == 'pdy':
+        if file_path.endswith('.pdy'):
             from .legacy import load_xml as loader
+
+            # Save the file using the current format.
+            fi.setFile(file_path.replace('.pdy', '.pdt'))
         else:
             loader = cls._load_toml
 
         # Create the project and load it.
         project = cls()
         project._name = fi
-        loader(project, QDir.toNativeSeparators(fi.canonicalFilePath()))
+        loader(project, file_path)
 
         # If the default locations are being used then use the current defaults
         # instead of those (possibly out of date) in the project file.
@@ -306,8 +311,24 @@ class Project(QObject):
 
         return project
 
+    def save(self):
+        """ Save the project.  Raise a UserException if there was an error. """
+
+        self._save_project(self.name)
+
+    def save_as(self, file_name):
+        """ Save the project to the given file and make the file the
+        destination of subsequent saves.  Raise a UserException if there was an
+        error.
+        """
+
+        self._save_project(file_name)
+
+        # Only do this after the project has been successfully saved.
+        self.name = file_name
+
     @classmethod
-    def _load_toml(cls, project, name):
+    def _load_toml(cls, project, file_path):
         """ Load a TOML format project file. """
 
         tree = ElementTree()
@@ -462,22 +483,6 @@ class Project(QObject):
                     ExtensionModule(name, qt, config, sources, defines,
                             includepath, libs))
 
-    def save(self):
-        """ Save the project.  Raise a UserException if there was an error. """
-
-        self._save_project(self.name)
-
-    def save_as(self, file_name):
-        """ Save the project to the given file and make the file the
-        destination of subsequent saves.  Raise a UserException if there was an
-        error.
-        """
-
-        self._save_project(file_name)
-
-        # Only do this after the project has been successfully saved.
-        self.name = file_name
-
     @classmethod
     def _load_package(cls, package_element):
         """ Return a populated QrcPackage instance. """
@@ -525,112 +530,91 @@ class Project(QObject):
 
         return contents
 
-    @classmethod
-    def _get_bool(cls, element, name, context, default=None):
-        """ Get a boolean attribute from an element. """
-
-        value = element.get(name)
-        try:
-            value = int(value)
-        except:
-            value = default
-
-        cls._assert(value is not None,
-                "Missing or invalid boolean value of '{0}.{1}'.".format(
-                        context, name))
-
-        return bool(value)
-
-    @classmethod
-    def _get_int(cls, element, name, context, default=None):
-        """ Get an integer attribute from an element. """
-
-        value = element.get(name)
-        try:
-            value = int(value)
-        except:
-            value = default
-
-        cls._assert(value is not None,
-                "Missing or invalid integer value of '{0}.{1}'.".format(
-                        context, name))
-
-        return value
-
     def _save_project(self, file_name):
         """ Save the project to the given file.  Raise a UserException if there
         was an error.
         """
 
-        root = Element('Project', attrib={
-            'version': str(self.version),
-            'usingdefaultlocations': str(int(self.using_default_locations))})
+        # TODO: review the project file structure and naming.
 
-        attrib = {
-            'platformpython': ' '.join(self.python_use_platform),
-            'major': str(self.python_target_version[0]),
-            'minor': str(self.python_target_version[1]),
-            'patch': str(self.python_target_version[2])}
+        root = {
+            'version': self.version,
+            'pyqt_modules': self.pyqt_modules,
+            'standard_library': self.standard_library,
+            'using_default_locations': self.using_default_locations
+        }
+
+        python = {
+            'platform_python': self.python_use_platform,
+            'major': self.python_target_version[0],
+            'minor': self.python_target_version[1],
+            'patch': self.python_target_version[2]
+        }
 
         if not self.using_default_locations:
-            attrib['hostinterpreter'] = self.python_host_interpreter
-            attrib['sourcedir'] = self.python_source_dir
-            attrib['targetincludedir'] = self.python_target_include_dir
-            attrib['targetlibrary'] = self.python_target_library
-            attrib['targetstdlibdir'] = self.python_target_stdlib_dir
+            python['hostinterpreter'] = self.python_host_interpreter
+            python['sourcedir'] = self.python_source_dir
+            python['targetincludedir'] = self.python_target_include_dir
+            python['targetlibrary'] = self.python_target_library
+            python['targetstdlibdir'] = self.python_target_stdlib_dir
 
-        SubElement(root, 'Python', attrib=attrib)
+        root['Python'] = python
 
-        application = SubElement(root, 'Application', attrib={
-            'entrypoint': self.application_entry_point,
-            'ispyqt5': str(int(self.application_is_pyqt5)),
-            'isconsole': str(int(self.application_is_console)),
-            'isbundle': str(int(self.application_is_bundle)),
+        application = {
+            'entry_point': self.application_entry_point,
+            'is_pyqt5': self.application_is_pyqt5,
+            'is_console': self.application_is_console,
+            'is_bundle': self.application_is_bundle,
             'name': self.application_name,
+            'qmake_configuration': self.qmake_configuration,
             'script': self.application_script,
-            'syspath': self.sys_path})
-
-        if self.qmake_configuration != '':
-            SubElement(application, 'QMakeConfiguration').text = self.qmake_configuration
+            'syspath': self.sys_path
+        }
 
         if self.application_package.name is not None:
             self._save_package(application, self.application_package)
 
-        for pyqt_module in self.pyqt_modules:
-            SubElement(root, 'PyQtModule', attrib={
-                'name': pyqt_module})
+        root['Application'] = application
 
-        for stdlib_module in self.standard_library:
-            SubElement(root, 'StdlibModule', attrib={
-                'name': stdlib_module})
+        externals = []
 
         for target, external_libs in self.external_libraries.items():
             for external_lib in external_libs:
-                SubElement(root, 'ExternalLib', attrib={
+                external = {
                     'target': target,
                     'name': external_lib.name,
                     'defines': external_lib.defines,
                     'includepath': external_lib.includepath,
-                    'libs': external_lib.libs})
+                    'libs': external_lib.libs
+                }
+
+                externals.append(external)
+
+        root['ExternalLibs'] = externals
 
         for package in self.other_packages:
             self._save_package(root, package)
 
+        extensions = []
+
         for extension_module in self.other_extension_modules:
-            SubElement(root, 'ExtensionModule', attrib={
+            extension = {
                 'name': extension_module.name,
                 'qt': extension_module.qt,
                 'config': extension_module.config,
                 'sources': extension_module.sources,
                 'defines': extension_module.defines,
                 'includepath': extension_module.includepath,
-                'libs': extension_module.libs})
+                'libs': extension_module.libs
+            }
 
-        tree = ElementTree(root)
+            extensions.append(extension)
+
+        root['ExtensionModules'] = extensions
 
         try:
-            tree.write(QDir.toNativeSeparators(file_name), encoding='utf-8',
-                    xml_declaration=True)
+            with open(file_name, 'w') as f:
+                toml.dump(root, f)
         except Exception as e:
             raise UserException(
                     "There was an error writing the project file.", str(e))
@@ -639,31 +623,38 @@ class Project(QObject):
 
     @classmethod
     def _save_package(cls, container, package):
-        """ Save a package in a container element. """
+        """ Save a package in a container dict. """
 
-        package_element = SubElement(container, 'Package', attrib={
-            'name': package.name})
+        package_element = {
+            'name': package.name,
+            'exclude': package.exclusions
+        }
 
         cls._save_mfs_contents(package_element, package.contents)
 
-        for exclude in package.exclusions:
-            SubElement(package_element, 'Exclude', attrib={
-                'name': exclude})
+        container['Package'] = package_element
 
     @classmethod
     def _save_mfs_contents(cls, container, contents):
         """ Save the contents of a memory-filesystem container. """
 
+        subcontainers = []
+
         for content in contents:
             isdir = isinstance(content, QrcDirectory)
 
-            subcontainer = SubElement(container, 'PackageContent', attrib={
+            subcontainer = {
                 'name': content.name,
-                'included': str(int(content.included)),
-                'isdirectory': str(int(isdir))})
+                'included': content.included,
+                'is_directory': isdir
+            }
 
             if isdir:
                 cls._save_mfs_contents(subcontainer, content.contents)
+
+            subcontainers.append(subcontainer)
+
+        container['PackageContent'] = subcontainers
 
     @staticmethod
     def _assert(ok, detail):
