@@ -41,7 +41,7 @@ _MIN_VERSION = 4
 _LAST_VERSION = 7
 
 
-def load_xml(project, name):
+def load_xml(project, file_path):
     """ Load a legacy XML project and raise a UserException if there was an
     error.
     """
@@ -49,7 +49,7 @@ def load_xml(project, name):
     tree = ElementTree()
 
     try:
-        root = tree.parse(name)
+        root = tree.parse(file_path)
     except Exception as e:
         raise UserException(
                 "There was an error reading the project file.", str(e))
