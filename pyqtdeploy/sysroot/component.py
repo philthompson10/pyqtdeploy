@@ -27,22 +27,6 @@
 from abc import ABC, abstractmethod
 
 
-class ComponentBase(ABC):
-    """ The base class for the implementation of a component plugin. """
-
-    # A sequence of ComponentOption instances describing the options that can
-    # be specified for the component in the specification file.  These are made
-    # available as attributes of the plugin instance.
-    options = []
-
-    @abstractmethod
-    def build(self, sysroot):
-        """ Build the component. """
-
-    def configure(self, sysroot):
-        """ Complete the configuration of the component. """
-
-
 class ComponentOption:
     """ Encapsulate an option for the component in the specification file. """
 
@@ -73,3 +57,22 @@ class ComponentOption:
             value = "'" + value + "'"
 
         return value
+
+
+class ComponentBase(ABC):
+    """ The base class for the implementation of a component plugin. """
+
+    # A sequence of ComponentOption instances describing the options that can
+    # be specified for the component in the specification file.  These are made
+    # available as attributes of the plugin instance.
+    options = [
+        ComponentOption('version', required=True,
+                help="The version number of the component.")
+    ]
+
+    @abstractmethod
+    def build(self, sysroot):
+        """ Build the component. """
+
+    def configure(self, sysroot):
+        """ Complete the configuration of the component. """

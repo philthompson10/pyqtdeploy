@@ -47,9 +47,7 @@ class PythonComponent(ComponentBase):
         ComponentOption('host_installation_bin_dir',
                 help="The pathname of the directory containing the existing host Python interpreter installation. If it is not specified on Windows then the value found in the registry is used. On other platforms it is assumed to be on PATH."),
         ComponentOption('source',
-                help="The archive containing the Python source code."),
-        ComponentOption('version',
-                help="The Python version (if not building from source)."),
+                help="The archive containing the Python source code.")
     ]
 
     def build(self, sysroot):

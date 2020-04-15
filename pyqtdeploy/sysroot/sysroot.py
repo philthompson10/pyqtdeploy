@@ -59,7 +59,8 @@ def android_only(f):
 class Sysroot:
     """ Encapsulate a target-specific system root directory. """
 
-    def __init__(self, sysroot_dir, sysroot_json, plugin_dirs, source_dirs, target_arch_name, message_handler):
+    def __init__(self, sysroot_dir, sysroot_specification, plugin_dirs,
+            source_dirs, target_arch_name, message_handler):
         """ Initialise the object. """
 
         self._host = Architecture.architecture()
@@ -76,14 +77,15 @@ class Sysroot:
         self.sysroot_dir = os.path.abspath(sysroot_dir)
         self._build_dir = os.path.join(self.sysroot_dir, 'build')
 
-        self._specification = Specification(sysroot_json, plugin_dirs,
+        self._specification = Specification(sysroot_specification, plugin_dirs,
                 self._target)
         self._message_handler = message_handler
 
         if source_dirs:
             self._source_dirs = [os.path.abspath(s) for s in source_dirs]
         else:
-            self._source_dirs = [os.path.dirname(os.path.abspath(sysroot_json))]
+            self._source_dirs = [
+                    os.path.dirname(os.path.abspath(sysroot_specification))]
 
         self._target_py_version_nr = None
         self._host_qmake = None
@@ -470,7 +472,7 @@ class Sysroot:
         """ Find a file (or directory).  If the name is relative then it is
         relative to the directory specified by the --source-dir command line
         options.  If this is not specified then the directory containing the
-        JSON specification file is used.  The name may be a glob pattern.  The
+        specification file is used.  The name may be a glob pattern.  The
         absolute pathname of the file is returned.
         """
 
