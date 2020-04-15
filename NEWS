@@ -1,3 +1,6 @@
+v2.5.1 15th April 2020
+  - A bug fix only release.
+
 v2.5.0 13th April 2020
   - Added support for Python v3.7.3, v3.7.4, v3.7.5, v3.7.6 and v3.7.7.
   - Added support for Python v3.6.9 and v3.6.10.
