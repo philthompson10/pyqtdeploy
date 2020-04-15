@@ -1,4 +1,4 @@
-# Copyright (c) 2018, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,15 +24,15 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-import collections
+from  collections import OrderedDict
 import importlib
-import json
 import os
 import shutil
+import toml
 
-from collections import OrderedDict
-
+from ..platforms import Architecture
 from ..user_exception import UserException
+
 from .component import ComponentBase
 
 
@@ -46,72 +46,89 @@ class Specification:
 
         self.components = []
 
-        # Load the JSON file.
+        # Load the TOML file.
         with open(specification_file) as f:
             try:
-                spec = json.load(f, object_pairs_hook=collections.OrderedDict)
-            except json.JSONDecodeError as e:
+                spec = toml.load(f, _dict=OrderedDict)
+            except Exception as e:
                 raise UserException(
-                        "{0}:{1}: {2}".format(specification_file, e.lineno,
-                                e.msg))
+                        "{0}: {1}".format(specification_file, str(e)))
 
         # Do a high level parse and import the plugins.
+        all_architecture_names = [a.name
+                for a in Architecture.all_architectures]
+
         for name, value in spec.items():
-            if name == 'Description':
-                # Check its type even though we don't actually use it.
-                if not isinstance(value, str):
-                    self._bad_type(name)
-            else:
-                # Allow target-specific plugins.
-                name = self._value_for_target(name, target)
-                if name is None:
-                    continue
+            # At the moment every name is a component name and every value is a
+            # component configuration.
+            if not isinstance(value, OrderedDict):
+                raise UserException("unexpected option '{0}'".format(name))
 
-                # Find the component's plugin.
-                plugin = None
+            # Ignore the component if it is disabled for this target.
+            disabled_targets = value.get('disabled_targets')
+            if disabled_targets is not None and target in disabled_targets:
+                continue
 
-                # Search any user specified directories.
-                if plugin_dirs:
-                    for plugin_dir in plugin_dirs:
-                        plugin = self._plugin_from_file(name, plugin_dir)
-                        if plugin is not None:
-                            break
+            # Ignore the component if it not explicity enabled.
+            enabled_targets = value.get('enabled_targets')
+            if enabled_targets is not None and target not in enabled_targets:
+                continue
 
-                # Search the included plugin packages.
-                if plugin is None:
-                    # The name of the package root.
-                    package_root = '.'.join(__name__.split('.')[:-1])
+            # Identify the default configuration and any target-specific
+            # configuration.
+            default_config = OrderedDict()
+            target_config = None
 
-                    for package in ('.plugins', '.plugins.contrib'):
-                        plugin = self._plugin_from_package(name, package,
-                                package_root)
-                        if plugin is not None:
-                            break
-                    else:
-                        raise UserException(
-                                "unable to find a plugin for '{0}'".format(
-                                        name))
-
-                # Remove values unrelated to the target.
-                if not isinstance(value, dict):
-                    self._bad_type(name)
-
-                options_values = {}
-                for opt_name, opt_value in value.items():
-                    # Allow target-specific options.
-                    opt_name = self._value_for_target(opt_name, target)
-                    if opt_name is None:
+            for config_name, config_value in value.items():
+                if config_name in all_architecture_names:
+                    # Ignore if it isn't for the target.
+                    if config_name != target:
                         continue
 
-                    # The value is relevant so save it.
-                    options_values[opt_name] = opt_value
+                    if not isinstance(config_value, OrderedDict):
+                        raise UserException(
+                                "configuration for '{0}' must be a table".format(config_name))
 
-                # Create the component plugin.
-                component = plugin()
-                setattr(component, 'name', name)
-                setattr(component, '_options_values', options_values)
+                    target_config = config_value
+                else:
+                    default_config[config_name] = config_value
 
-                self.components.append(component)
+            # Apply any defaults to the target configuration.
+            if target_config is not None:
+                default_config.update(target_config)
+
+            target_config = default_config
+
+            # Find the component's plugin.
+            plugin = None
+
+            # Search any user specified directories.
+            if plugin_dirs:
+                for plugin_dir in plugin_dirs:
+                    plugin = self._plugin_from_file(name, plugin_dir)
+                    if plugin is not None:
+                        break
+
+            # Search the included plugin packages.
+            if plugin is None:
+                # The name of the package root.
+                package_root = '.'.join(__name__.split('.')[:-1])
+
+                for package in ('.plugins', '.plugins.contrib'):
+                    plugin = self._plugin_from_package(name, package,
+                            package_root)
+                    if plugin is not None:
+                        break
+                else:
+                    raise UserException(
+                            "unable to find a plugin for '{0}'".format(name))
+
+            # Create the component plugin.
+            component = plugin()
+            setattr(component, 'name', name)
+            setattr(component, '_options_values', target_config)
+
+            self.components.append(component)
 
     def parse_options(self):
         """ Parse all the components' options. """
@@ -135,45 +152,6 @@ class Specification:
                         component.name)
 
             del component._options_values
-
-    @staticmethod
-    def _value_for_target(value, target):
-        """ If a value is valid for a particular target architecture then
-        return the value, otherwise return None.
-        """
-
-        # Extract any scope.
-        parts = value.split('#', maxsplit=1)
-        if len(parts) != 2:
-            # Any unscoped value is valid.
-            return value
-
-        scope, value = parts
-
-        # A scope is a '|' separated list of target names.
-        for name in scope.replace(' ', '').split('|'):
-            # Remember if we are negating.
-            if name.startswith('!'):
-                negate = True
-                name = name[1:]
-            else:
-                negate = False
-
-            # See if the name matches the target (either architecture or
-            # platform).
-            if '-' in name:
-                matches = (target.name == name)
-            else:
-                matches = (target.platform.name == name)
-
-            if negate:
-                matches = not matches
-
-            # We only need one to match.
-            if matches:
-                return value
-
-        return None
 
     def _plugin_from_file(self, name, plugin_dir):
         """ Try and load a component plugin from a file. """
@@ -218,13 +196,13 @@ class Specification:
 
         return None
 
-    def _parse_options(self, json_array, options, component):
-        """ Parse a JSON array according to a set of options and add the
+    def _parse_options(self, options_values, options, component):
+        """ Parse a mapping of values according to a set of options and add the
         corresponding values as attributes of a component object.
         """
 
         for option in options:
-            value = json_array.get(option.name)
+            value = options_values.get(option.name)
 
             if value is None:
                 if option.required:
@@ -248,7 +226,7 @@ class Specification:
             setattr(component, option.name, value)
 
             try:
-                del json_array[option.name]
+                del options_values[option.name]
             except KeyError:
                 pass
 
