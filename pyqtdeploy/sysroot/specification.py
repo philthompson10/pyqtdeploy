@@ -66,13 +66,19 @@ class Specification:
 
             # Ignore the component if it is disabled for this target.
             disabled_targets = value.get('disabled_targets')
-            if disabled_targets is not None and target in disabled_targets:
-                continue
+            if disabled_targets is not None:
+                if target.is_targeted(disabled_targets):
+                    continue
+
+                del value['disabled_targets']
 
             # Ignore the component if it not explicity enabled.
             enabled_targets = value.get('enabled_targets')
-            if enabled_targets is not None and target not in enabled_targets:
-                continue
+            if enabled_targets is not None:
+                if not target.is_targeted(enabled_targets):
+                    continue
+
+                del value['enabled_targets']
 
             # Identify the default configuration and any target-specific
             # configuration.
@@ -80,16 +86,9 @@ class Specification:
             target_config = None
 
             for config_name, config_value in value.items():
-                if config_name in all_architecture_names:
-                    # Ignore if it isn't for the target.
-                    if config_name != target:
-                        continue
-
-                    if not isinstance(config_value, OrderedDict):
-                        raise UserException(
-                                "configuration for '{0}' must be a table".format(config_name))
-
-                    target_config = config_value
+                if isinstance(config_value, OrderedDict):
+                    if target.is_targeted(config_name):
+                        target_config = config_value
                 else:
                     default_config[config_name] = config_value
 
