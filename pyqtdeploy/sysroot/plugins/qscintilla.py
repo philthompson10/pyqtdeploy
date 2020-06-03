@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@ class QScintillaComponent(ComponentBase):
 
         # Get this package's source and version number.
         archive = sysroot.find_file(self.source)
-        version_nr = sysroot.extract_version_nr(archive)
+        version_nr = sysroot.extract_version(archive)
 
         sysroot.unpack_archive(archive)
 
@@ -76,7 +76,7 @@ module_dir = {4}
             cfg += 'pyqt_disabled_features = {0}\n'.format(
                     ' '.join(self._pyqt5.disabled_features))
 
-        if pyqt5_version_nr >= 0x050b00:
+        if pyqt5_version_nr >= (5, 11):
             cfg += 'sip_module = PyQt5.sip\n'
 
         cfg_name = 'qscintilla-' + sysroot.target_arch_name + '.cfg'
@@ -90,7 +90,7 @@ module_dir = {4}
             '--no-qsci-api', '--no-sip-files', '--no-stubs', '--configuration',
             cfg_name, '--sip', sysroot.host_sip, '-c', '--pyqt', 'PyQt5']
 
-        if version_nr >= 0x020a05:
+        if version_nr >= (2, 10, 5):
             args.append('--no-dist-info')
 
         if sysroot.verbose_enabled:
@@ -107,7 +107,7 @@ module_dir = {4}
 
         # The Scintilla code in v2.11 uses C++ library functions that are
         # missing prior to NDK v14.
-        if sysroot.target_platform_name == 'android' and version_nr >= 0x020b00 and sysroot.android_ndk_version < (14, 0, 0):
+        if sysroot.target_platform_name == 'android' and version_nr >= (2, 11) and sysroot.android_ndk_version < 14:
             sysroot.error(
                     "QScintilla v2.11 and later require NDK r14 or later")
 

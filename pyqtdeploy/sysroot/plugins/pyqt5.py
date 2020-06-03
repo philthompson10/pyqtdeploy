@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@ class PyQt5Component(ComponentBase):
         """ Build PyQt5 for the target. """
 
         archive = sysroot.find_file(self.source)
-        version_nr = sysroot.extract_version_nr(archive)
+        version_nr = sysroot.extract_version(archive)
 
         sysroot.unpack_archive(archive)
 
@@ -86,7 +86,7 @@ pyqt_modules = {6}
             '--no-qml-plugin', '--no-stubs', '--configuration', cfg_name,
             '--sip', sysroot.host_sip, '--confirm-license', '-c', '-j2']
 
-        if version_nr >= 0x050b00:
+        if version_nr >= (5, 11):
             args.append('--no-dist-info')
 
         if sysroot.verbose_enabled:
@@ -102,7 +102,7 @@ pyqt_modules = {6}
         version_nr = sysroot.verify_source(self.source)
 
         # v5.11.0-2 have too many problems so it's easier to blacklist them.
-        if version_nr >= 0x040b00 and version_nr <= 0x040b02:
+        if (5, 11) < version_nr <= (5, 11, 2):
             sysroot.error("please use PyQt v5.11.3 or later")
 
         # This is needed by dependent components.

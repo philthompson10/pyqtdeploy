@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,7 @@ class OpenSSLComponent(ComponentBase):
         sysroot.unpack_archive(archive)
 
         # Get the version number.
-        version_nr = sysroot.extract_version_nr(archive)
+        version_nr = sysroot.extract_version(archive)
 
         # Set common options.
         common_options = ['--prefix=' + sysroot.sysroot_dir, 'no-engine']
@@ -60,7 +60,7 @@ class OpenSSLComponent(ComponentBase):
         if self.no_asm:
             common_options.append('no-asm')
 
-        if version_nr >= 0x010100:
+        if version_nr >= (1, 1):
             self._build_1_1(sysroot, common_options)
         else:
             self._build_1_0(sysroot, common_options)
@@ -72,8 +72,10 @@ class OpenSSLComponent(ComponentBase):
         target = sysroot.target_platform_name
         version_nr = sysroot.verify_source(self.source)
 
-        if version_nr >= 0x010101:
-            sysroot.error("building OpenSSL v1.1.1 is not supported")
+        if version_nr >= (1, 1, 1):
+            sysroot.error(
+                    "building OpenSSL v{0} is not supported".format(
+                            version_nr))
 
         if target == host:
             supported = (target in ('macos', 'win'))
@@ -86,7 +88,7 @@ class OpenSSLComponent(ComponentBase):
                             target, host))
 
         # See if we will need to patch the Python source code.
-        if target == 'macos' and (version_nr & 0xffff00) == 0x010000 and self.python_source:
+        if target == 'macos' and version_nr == (1, 0) and self.python_source:
             sysroot.find_exe('patch')
 
         sysroot.find_exe('perl')
@@ -121,7 +123,7 @@ class OpenSSLComponent(ComponentBase):
         """ Build OpenSSL v1.1 for Android on either Linux or MacOS hosts. """
 
         # Configure the environment.
-        using_clang = (sysroot.android_ndk_version >= (16, 0, 0))
+        using_clang = (sysroot.android_ndk_version >= 16)
 
         original_path = sysroot.add_to_path(sysroot.android_toolchain_bin)
 
@@ -223,7 +225,7 @@ class OpenSSLComponent(ComponentBase):
         """ Build OpenSSL v1.0 for Android on either Linux or MacOS hosts. """
 
         # Configure the environment.
-        using_clang = (sysroot.android_ndk_version >= (16, 0, 0))
+        using_clang = (sysroot.android_ndk_version >= 16)
 
         original_path = sysroot.add_to_path(sysroot.android_toolchain_bin)
         os.environ['MACHINE'] = 'arm7'

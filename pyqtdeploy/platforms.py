@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,7 @@ import subprocess
 import sys
 
 from .user_exception import UserException
+from .version_number import VersionNumber
 
 
 class Platform:
@@ -282,7 +283,7 @@ class AndroidArchitecture(Architecture):
         # We use clang for r16 and later.
         cflags = []
 
-        if self.platform.android_ndk_version >= (16, 0, 0):
+        if self.platform.android_ndk_version >= (16, 0):
             self.android_toolchain_cc = '{}{}-clang'.format(self.clang_prefix,
                     android_api)
             toolchain_dir = 'llvm'
@@ -425,7 +426,7 @@ class Android(Platform):
         # files.  It is probably something simple, like a missing --sysroot
         # flag.  Also blacklist r16-18 to avoid having to deal with
         # make-standalone-toolchain.sh for clang.
-        revision = self.android_ndk_version[0]
+        revision = self.android_ndk_version.major
         if revision in (11, 12, 13, 16, 17, 18):
             raise UserException("NDK r{0} is not supported.".format(revision))
 
@@ -456,7 +457,7 @@ class Android(Platform):
         if not os.path.isdir(os.path.join(self.ndk_root, 'platforms', ndk_platform)):
             raise UserException(
                     "NDK r{0} does not support {1}.".format(
-                            self.android_ndk_version[0], ndk_platform))
+                            self.android_ndk_version.major, ndk_platform))
 
         parts = ndk_platform.split('-')
 
@@ -496,7 +497,8 @@ class Android(Platform):
 
                             try:
                                 # Note that we ignore the minor letter.
-                                self.android_ndk_version = (int(line), 0, 0)
+                                self.android_ndk_version = VersionNumber(
+                                        int(line))
                                 break
                             except ValueError:
                                 pass
@@ -515,31 +517,17 @@ class Android(Platform):
 
     @staticmethod
     def _get_version(source_properties):
-        """ Get the 3-tuple version number of a source.properties file. """
-
-        version = None
+        """ Get the version number of a source.properties file. """
 
         with open(source_properties) as f:
             for line in f:
                 line = line.replace(' ', '')
                 parts = line.split('=')
                 if parts[0] == 'Pkg.Revision' and len(parts) == 2:
-                    version_parts = parts[1].split('.')
-
-                    if len(version_parts) <= 3:
-                        while len(version_parts) < 3:
-                            version_parts.append('0')
-
-                        try:
-                            major = int(version_parts[0])
-                            minor = int(version_parts[1])
-                            maint = int(version_parts[2])
-
-                            version = (major, minor, maint)
-                        except ValueError:
-                            pass
-
+                    version = VersionNumber.parse_version_number(parts[1])
                     break
+            else:
+                version = None
 
         return version
 

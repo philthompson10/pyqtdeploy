@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@ class zlibComponent(ComponentBase):
             cflags = sysroot.android_toolchain_cflags
 
             # It isn't clear why this is needed, possibly a clang bug.
-            if sysroot.target_arch_name == 'android-32' and sysroot.android_ndk_version >= (16, 0, 0):
+            if sysroot.target_arch_name == 'android-32' and sysroot.android_ndk_version >= 16:
                 cflags.append('-fPIC')
 
             os.environ['CFLAGS'] = ' '.join(cflags)

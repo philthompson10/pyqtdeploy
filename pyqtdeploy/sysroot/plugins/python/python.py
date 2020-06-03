@@ -97,12 +97,10 @@ class PythonComponent(ComponentBase):
             if not self.version:
                 sysroot.error("the 'version' option must be specified")
 
-            version_nr = sysroot.extract_version_nr(self.version)
+            version_nr = sysroot.extract_version(self.version)
 
-        if version_nr < 0x030500:
-            sysroot.error(
-                    "Python v{0} is not supported".format(
-                            sysroot.format_version_nr(version_nr)))
+        if version_nr < (3, 5):
+            sysroot.error("Python v{0} is not supported".format(version_nr))
 
         if self.build_host_from_source and sys.platform == 'win32':
             sysroot.error(
@@ -113,15 +111,15 @@ class PythonComponent(ComponentBase):
                     "using an existing Python installation for the target is not supported on {0}".format(sysroot.target_platform_name))
 
         if sysroot.target_platform_name == 'android':
-            if version_nr < 0x030600:
+            if version_nr < (3, 6):
                 sysroot.error(
                         "Python v{0} is not supported on Android".format(
-                                sysroot.format_version_nr(version_nr)))
+                                version_nr))
 
             if sysroot.android_api < 21:
                 sysroot.error("Python requires API level 21 or greater")
 
-        sysroot.target_py_version_nr = version_nr
+        sysroot.target_py_version = version_nr
 
     def _build_host_from_source(self, sysroot):
         """ Build the host Python from source and return the absolute pathname
@@ -378,10 +376,8 @@ build_time_vars = {
     def _major_minor(sysroot):
         """ Return the Python major.minor as a tuple. """
 
-        major, minor, _ = sysroot.decode_version_nr(
-                sysroot.target_py_version_nr)
-
-        return (major, minor)
+        return (sysroot.target_py_version.major,
+                sysroot.target_py_version.minor)
 
     @classmethod
     def _major_minor_as_string(cls, sysroot):

@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@ class PyQtChartComponent(ComponentBase):
 
         # Get this package's source and version number.
         archive = sysroot.find_file(self.source)
-        version_nr = sysroot.extract_version_nr(archive)
+        version_nr = sysroot.extract_version(archive)
 
         sysroot.unpack_archive(archive)
 
@@ -67,7 +67,7 @@ module_dir = {5}
             cfg += 'pyqt_disabled_features = {0}\n'.format(
                     ' '.join(self._pyqt5.disabled_features))
 
-        if pyqt5_version_nr >= 0x050b00:
+        if pyqt5_version_nr >= (5, 11):
             cfg += 'sip_module = PyQt5.sip\n'
 
         cfg_name = 'pyqtchart-' + sysroot.target_arch_name + '.cfg'
@@ -81,7 +81,7 @@ module_dir = {5}
             '--no-qsci-api', '--no-sip-files', '--no-stubs', '--configuration',
             cfg_name, '--sip', sysroot.host_sip, '-c']
 
-        if version_nr >= 0x050b00:
+        if version_nr >= (5, 11):
             args.append('--no-dist-info')
 
         if sysroot.verbose_enabled:

@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -98,17 +98,17 @@ class Qt5Component(ComponentBase):
 
             if sysroot.target_platform_name == 'android':
                 # Get the Qt version number (assuming a standard installation).
-                qt_version_nr = sysroot.extract_version_nr(
+                qt_version_nr = sysroot.extract_version(
                         os.path.dirname(self._target_qt_dir))
 
-                if qt_version_nr >= 0x050c00:
+                if qt_version_nr >= (5, 12):
                     # It's possible that an earlier version will work but we
                     # haven't tested any.
                     if sysroot.android_sdk_version < (26, 1, 1):
                         sysroot.error(
                                 "Qt v5.12 and later require SDK v26.1.1 or later")
 
-                    if sysroot.android_ndk_version < (19, 0, 0):
+                    if sysroot.android_ndk_version < 19:
                         sysroot.error(
                                 "Qt v5.12 and later require NDK r19 or later")
                 else:
@@ -123,14 +123,14 @@ class Qt5Component(ComponentBase):
                         sysroot.error(
                                 "Qt v5.11 and earlier require SDK v25.2.5 or earlier")
 
-                    if sysroot.android_ndk_version[0] != 10:
+                    if sysroot.android_ndk_version.major != 10:
                         sysroot.error("Qt v5.11 and earlier require NDK r10")
 
                 if self._openssl_version_nr is not None:
                     # The standard Qt build for Android uses OpenSSL v1.0.* so
                     # we must use the same.
                     # TODO: Check if Qt v5.13 is built against OpenSSL v1.1.*.
-                    if self._openssl_version_nr >= 0x010100:
+                    if self._openssl_version_nr >= (1, 1):
                         sysroot.error("OpenSSL v1.0.* is required")
         else:
             # We don't support cross-compiling Qt.
@@ -147,7 +147,7 @@ class Qt5Component(ComponentBase):
 
                 # Make sure we have a Python v2.7 installation.
                 if sys.platform == 'win32':
-                    self._py_27 = sysroot.get_python_install_path(0x020700)
+                    self._py_27 = sysroot.get_python_install_path(2, 7)
             else:
                 sysroot.error(
                         "either the 'qt_dir' or 'source' option must be specified")
@@ -201,7 +201,7 @@ class Qt5Component(ComponentBase):
                 args.append('-openssl-linked')
 
                 if sys.platform == 'win32':
-                    if self._openssl_version_nr >= 0x010100:
+                    if self._openssl_version_nr >= (1, 1):
                         openssl_libs = '-llibssl -llibcrypto'
                     else:
                         openssl_libs = '-lssleay32 -llibeay32'

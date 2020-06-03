@@ -24,6 +24,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
+from ..version_number import VersionNumber
+
+
 __all__ = ['ExtensionModule', 'get_python_metadata', 'get_targeted_value',
         'supported_python_versions']
 
@@ -39,7 +42,7 @@ _supported_branches = (
 def _get_supported_versions():
     for major, minor, patch in _supported_branches:
         for p in range(patch, -1, -1):
-            yield (major, minor, p)
+            yield VersionNumber(major, minor, p)
 
 supported_python_versions = tuple(_get_supported_versions())
 
@@ -47,7 +50,8 @@ supported_python_versions = tuple(_get_supported_versions())
 class StdlibModule:
     """ Encapsulate the meta-data for a module in the standard library. """
 
-    def __init__(self, internal, target, deps, hidden_deps, core, builtin, defines, xlib, modules, source, libs, includepath, pyd, dlls):
+    def __init__(self, internal, target, deps, hidden_deps, core, builtin,
+            defines, xlib, modules, source, libs, includepath, pyd, dlls):
         """ Initialise the object. """
 
         # Set if the module is internal.
@@ -109,12 +113,14 @@ class StdlibModule:
 class VersionedModule:
     """ Encapsulate the meta-data common to all types of module. """
 
-    def __init__(self, min_version=None, version=None, max_version=None, internal=False, target='', deps=(), hidden_deps=(), core=False, builtin=False, defines=None, xlib=None, modules=None, source=None, libs=None, includepath=None, pyd=None, dlls=None):
+    def __init__(self, min_version=None, version=None, max_version=None,
+            internal=False, target='', deps=(), hidden_deps=(), core=False,
+            builtin=False, defines=None, xlib=None, modules=None, source=None,
+            libs=None, includepath=None, pyd=None, dlls=None):
         """ Initialise the object. """
 
-        # A meta-datum is uniquely identified by a range of version numbers.  A
-        # version number is a 3-tuple of major, minor and patch number.  It is
-        # an error if version numbers for a particular module overlaps.
+        # A meta-datum is uniquely identified by a range of version numbers.
+        # It is an error if version numbers for a particular module overlaps.
         if version is None:
             if min_version is None:
                 min_version = 3
@@ -124,32 +130,21 @@ class VersionedModule:
         else:
             min_version = max_version = version
 
-        self.min_version = self._expand_version(min_version, 0)
-        self.max_version = self._expand_version(max_version, 255)
+        self.min_version = min_version
+        self.max_version = max_version
 
         self.module = StdlibModule(internal, target, deps, hidden_deps, core,
                 builtin, defines, xlib, modules, source, libs, includepath,
                 pyd, dlls)
 
-    @staticmethod
-    def _expand_version(version, default):
-        """ Ensure a version number is a 3-tuple. """
-
-        if not isinstance(version, tuple):
-            version = (version, )
-
-        default = (default, )
-
-        while len(version) < 3:
-            version += default
-
-        return version
-
 
 class ExtensionModule(VersionedModule):
     """ Encapsulate the meta-data for a single extension module. """
 
-    def __init__(self, source, libs=None, includepath=None, min_version=None, version=None, max_version=None, internal=False, target='', deps=(), hidden_deps=(), core=False, defines=None, xlib=None, pyd=None, dlls=None):
+    def __init__(self, source, libs=None, includepath=None, min_version=None,
+            version=None, max_version=None, internal=False, target='', deps=(),
+            hidden_deps=(), core=False, defines=None, xlib=None, pyd=None,
+            dlls=None):
         """ Initialise the object. """
 
         super().__init__(min_version=min_version, version=version,
@@ -165,7 +160,8 @@ class CoreExtensionModule(ExtensionModule):
     relies on and modules that can only be build with Py_BUILD_CORE defined.
     """
 
-    def __init__(self, min_version=None, version=None, max_version=None, internal=False, target='', deps=(), hidden_deps=()):
+    def __init__(self, min_version=None, version=None, max_version=None,
+            internal=False, target='', deps=(), hidden_deps=()):
         """ Initialise the object. """
 
         super().__init__(source=(), min_version=min_version, version=version,
@@ -176,7 +172,9 @@ class CoreExtensionModule(ExtensionModule):
 class PythonModule(VersionedModule):
     """ Encapsulate the meta-data for a single Python module. """
 
-    def __init__(self, min_version=None, version=None, max_version=None, internal=False, target='', deps=(), hidden_deps=(), core=False, builtin=False, modules=None):
+    def __init__(self, min_version=None, version=None, max_version=None,
+            internal=False, target='', deps=(), hidden_deps=(), core=False,
+            builtin=False, modules=None):
         """ Initialise the object. """
 
         super().__init__(min_version=min_version, version=version,
@@ -190,7 +188,9 @@ class CorePythonModule(PythonModule):
     by an application.
     """
 
-    def __init__(self, min_version=None, version=None, max_version=None, internal=False, target='', deps=(), hidden_deps=(), builtin=False, modules=None):
+    def __init__(self, min_version=None, version=None, max_version=None,
+            internal=False, target='', deps=(), hidden_deps=(), builtin=False,
+            modules=None):
         """ Initialise the object. """
 
         super().__init__(min_version=min_version, version=version,
@@ -204,7 +204,8 @@ class CodecModule(PythonModule):
     in the encodings package.
     """
 
-    def __init__(self, min_version=None, version=None, max_version=None, target='', deps=(), core=False):
+    def __init__(self, min_version=None, version=None, max_version=None,
+            target='', deps=(), core=False):
         """ Initialise the object. """
 
         if isinstance(deps, str):
@@ -213,7 +214,8 @@ class CodecModule(PythonModule):
         all_deps = ('encodings', 'codecs') + deps
 
         super().__init__(min_version=min_version, version=version,
-                max_version=max_version, target=target, deps=all_deps, core=core)
+                max_version=max_version, target=target, deps=all_deps,
+                core=core)
 
 
 # The encodings modules.
@@ -3570,33 +3572,29 @@ _metadata = {
 _metadata_cache = {}
 
 
-def get_python_metadata(version):
+def get_python_metadata(version_nr):
     """ Return the dict of StdlibModule instances for a particular version of
     Python.  It is assumed that the version is valid.
     """
 
-    nr = _version_from_tuple(version)
-
     # Use the cached value if there is one.
-    version_metadata = _metadata_cache.get(nr)
-    if version_metadata is not None:
-        return version_metadata
+    key = str(version_nr)
 
-    _metadata_cache[nr] = version_metadata = {}
+    try:
+        return _metadata_cache[key]
+    except KeyError:
+        pass
+
+    _metadata_cache[key] = version_metadata = {}
 
     for name, versions in _metadata.items():
         if not isinstance(versions, tuple):
             versions = (versions, )
 
         for versioned_module in versions:
-            min_nr = _version_from_tuple(versioned_module.min_version)
-
-            if nr >= min_nr:
-                max_nr = _version_from_tuple(versioned_module.max_version)
-
-                if nr <= max_nr:
-                    version_metadata[name] = versioned_module.module
-                    break
+            if versioned_module.min_version <= version_nr <= versioned_module.max_version:
+                version_metadata[name] = versioned_module.module
+                break
 
     return version_metadata
 
@@ -3615,12 +3613,6 @@ def get_targeted_value(value, target):
             value = None
 
     return value
-
-
-def _version_from_tuple(version):
-    """ Convert a 3-tuple version to an integer. """
-
-    return (version[0] << 16) + (version[1] << 8) + version[2]
 
 
 if __name__ == '__main__':
@@ -3642,14 +3634,13 @@ if __name__ == '__main__':
             except KeyError:
                 pass
 
-    def check_version(major, minor, patch=0):
+    def check_version(version_nr):
         """ Carry out sanity checks for a particular version of Python. """
 
-        print("Checking Python v{0}.{1}.{2}...".format(major, minor, patch))
+        print("Checking Python v{0}...".format(version_nr))
 
         # Get the meta-data for this version.
         version_metadata = {}
-        version_nr = _version_from_tuple((major, minor, patch))
 
         for name, versions in _metadata.items():
             if not isinstance(versions, tuple):
@@ -3658,13 +3649,11 @@ if __name__ == '__main__':
             # Check the version numbers.
             matches = []
             for module in versions:
-                min_nr = _version_from_tuple(module.min_version)
-                max_nr = _version_from_tuple(module.max_version)
+                if module.min_version > module.max_version:
+                    print("Module '{0}' version numbers are swapped".format(
+                            name))
 
-                if min_nr > max_nr:
-                    print("Module '{0}' version numbers are swapped".format(name))
-
-                if version_nr >= min_nr and version_nr <= max_nr:
+                if module.min_version <= version_nr <= module.max_version:
                     matches.append(module)
 
             nr_matches = len(matches)
@@ -3696,5 +3685,5 @@ if __name__ == '__main__':
                 print("Unused module '{0}'".format(name))
 
     # Check each supported version.
-    for major, minor, patch in supported_python_versions:
-        check_version(major, minor, patch)
+    for version_nr in supported_python_versions:
+        check_version(version_nr)

@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,10 +34,10 @@ from ..file_utilities import (copy_embedded_file as fu_copy_embedded_file,
         create_file as fu_create_file, extract_version as fu_extract_version,
         get_embedded_dir as fu_get_embedded_dir,
         get_embedded_file_for_version as fu_get_embedded_file_for_version,
-        open_file as fu_open_file, parse_version as fu_parse_version)
+        open_file as fu_open_file)
 from ..platforms import Architecture, Platform
 from ..user_exception import UserException
-from ..windows import get_py_install_path
+from ..version_number import VersionNumber
 
 from .specification import Specification
 
@@ -87,7 +87,7 @@ class Sysroot:
             self._source_dirs = [
                     os.path.dirname(os.path.abspath(sysroot_specification))]
 
-        self._target_py_version_nr = None
+        self._target_py_version = None
         self._host_qmake = None
 
         self._target.configure()
@@ -200,10 +200,9 @@ class Sysroot:
     def get_embedded_file_for_version(version, root, *subdirs):
         """ Return the absolute file name in an embedded directory of a file
         that is the most appropriate for a particular version.  version is the
-        encoded version.  root is the root directory and will be the __file__
-        attribute of a pyqtdeploy module.  subdirs is a sequence of
-        sub-directories from the root.  An empty string is returned if the
-        version is not supported.
+        version.  root is the root directory and will be the __file__ attribute
+        of a pyqtdeploy module.  subdirs is a sequence of sub-directories from
+        the root.  An empty string is returned if the version is not supported.
         """
 
         return fu_get_embedded_file_for_version(version, root, *subdirs)
@@ -244,7 +243,9 @@ class Sysroot:
     @property
     @android_only
     def android_ndk_version(self):
-        """ The 3-tuple version number of the Android NDK. """
+        """ The VersionNumber object representing the version number of the
+        Android NDK.
+        """
 
         ndk_version = self._target.platform.android_ndk_version
 
@@ -256,7 +257,9 @@ class Sysroot:
     @property
     @android_only
     def android_sdk_version(self):
-        """ The 3-tuple version number of the Android SDK. """
+        """ The VersionNumber object representing the version number of the
+        Android SDK.
+        """
 
         sdk_version = self._target.platform.android_sdk_version
 
@@ -388,16 +391,6 @@ class Sysroot:
                 self.error("unable to create directory {0}".format(name),
                         detail=str(e))
 
-    @staticmethod
-    def decode_version_nr(version_nr):
-        """ Decode an encoded version number to a 3-tuple. """
-
-        major = version_nr >> 16
-        minor = (version_nr >> 8) & 0xff
-        patch = version_nr & 0xff
-
-        return major, minor, patch
-
     def delete_dir(self, name):
         """ Delete a directory and its contents. """
 
@@ -425,15 +418,15 @@ class Sysroot:
 
         raise UserException(message, detail=detail) from exception
 
-    def extract_version_nr(self, name):
-        """ Return an encoded version number from the name of a file or
-        directory.  name is the name of the file or directory.  An exception is
-        raised if a version number could not be extracted.
+    def extract_version(self, name):
+        """ Return a VersionNumber object from the name of a file or directory.
+        name is the name of the file or directory.  An exception is raised if a
+        version number could not be extracted.
         """
 
         version_nr = fu_extract_version(name)
 
-        if version_nr == 0:
+        if version_nr is None:
             self.error(
                     "unable to extract a version number from '{0}'".format(
                             name))
@@ -507,23 +500,20 @@ class Sysroot:
 
         return None
 
-    @classmethod
-    def format_version_nr(cls, version_nr):
-        """ Convert an encoded version number to a string. """
-
-        return '.'.join([str(v) for v in cls.decode_version_nr(version_nr)])
-
-    def get_python_install_path(self, version_nr=None):
+    def get_python_install_path(self, major=None, minor=None):
         """ Return the name of the directory containing the root of the Python
         installation directory for an existing installation.  It must not be
         called on a non-Windows platform.
         """
 
-        if version_nr is None:
-            version_nr = self.target_py_version_nr
+        from ..windows import get_py_install_path
 
-        return get_py_install_path(self.decode_version_nr(version_nr),
-                self._target)
+        if major is None or minor is None:
+            version_nr = self.target_py_version
+        else:
+            version_nr = VersionNumber(major, minor)
+
+        return get_py_install_path(version_nr, self._target)
 
     @property
     def host_arch_name(self):
@@ -635,21 +625,6 @@ class Sysroot:
 
         return fu_open_file(name)
 
-    def parse_version_nr(version_str):
-        """ Return an encoded version number from a string.  version_str is the
-        string.  An exception is raised if a version number could not be
-        parsed.
-        """
-
-        version_nr = fu_parse_version(version_str)
-
-        if version_nr == 0:
-            self.error(
-                    "unable to convert a version number from '{0}'".format(
-                            version_str))
-
-        return version_nr
-
     def pip_install(self, package):
         """ Use pip to install a package in the sysroot site-packages
         directory.
@@ -714,19 +689,18 @@ class Sysroot:
         return os.path.join(self.target_lib_dir, self._py_subdir)
 
     @property
-    def target_py_version_nr(self):
-        """ The Python version being targeted. """
+    def target_py_version(self):
+        """ The VersionNumber object for the Python version being targeted. """
 
-        if self._target_py_version_nr is None:
-            self._missing_component('python')
+        self._check_python_component()
 
-        return self._target_py_version_nr
+        return self._target_py_version
 
-    @target_py_version_nr.setter
-    def target_py_version_nr(self, version_nr):
+    @target_py_version.setter
+    def target_py_version(self, version_nr):
         """ The setter for the Python version being targeted. """
 
-        self._target_py_version_nr = version_nr
+        self._target_py_version = version_nr
 
     @property
     def target_pyqt_platform(self):
@@ -830,25 +804,24 @@ class Sysroot:
         return self._message_handler.verbose
 
     def verify_source(self, name):
-        """ Verify that a source file exists and return the encoded version
-        number embedded in its name.  See find_file() for how the name is
-        interpreted.
+        """ Verify that a source file exists and return the VersionNumber
+        objectcorresponding to the version number embedded in its name.  See
+        find_file() for how the name is interpreted.
         """
 
-        return self.extract_version_nr(self.find_file(name))
+        return self.extract_version(self.find_file(name))
 
     @property
     def _py_subdir(self):
         """ The name of a version-specific Python sub-directory. """
 
-        major, minor, _ = self.decode_version_nr(self.target_py_version_nr)
-
-        return 'python' + str(major) + '.' + str(minor)
+        return 'python{}.{}'.format(self.target_py_version.major,
+                self.target_py_version.minor)
 
     def _check_python_component(self):
         """ Check that the Python component plugin has been run. """
 
-        if self._target_py_version_nr is None:
+        if self._target_py_version is None:
             self._missing_component('python')
 
     def _missing_component(self, name):
