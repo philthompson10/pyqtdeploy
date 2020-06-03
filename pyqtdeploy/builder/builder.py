@@ -1,4 +1,4 @@
-# Copyright (c) 2018, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,13 +35,14 @@ from PyQt5.QtCore import (QByteArray, QCoreApplication, QDir, QFile,
         QFileDevice, QFileInfo, QProcess, QTemporaryDir, QTextCodec)
 
 from ..file_utilities import (create_file, get_embedded_dir,
-        get_embedded_file_for_version, parse_version, read_embedded_file)
+        get_embedded_file_for_version, read_embedded_file)
 from ..metadata import (external_libraries_metadata, get_python_metadata,
         get_targeted_value, pyqt4_metadata, pyqt5_metadata)
 from ..project import QrcDirectory
 from ..platforms import Architecture, Platform
 from ..user_exception import UserException
 from ..version import PYQTDEPLOY_HEXVERSION
+from ..version_number import VersionNumber
 from ..windows import get_py_install_path
 
 
@@ -63,9 +64,7 @@ class Builder:
         """
 
         project = self._project
-
-        py_major, py_minor, py_patch = project.python_target_version
-        py_version = (py_major << 16) + (py_minor << 8) + py_patch
+        python_target_version = project.python_target_version
 
         # Set $SYSROOT.  An explicit sysroot will override any existing value.
         if sysroot:
@@ -84,7 +83,7 @@ class Builder:
 
         # Get the names of the required Python modules, extension modules and
         # libraries.
-        metadata = get_python_metadata(project.python_target_version)
+        metadata = get_python_metadata(python_target_version)
         required_modules, required_libraries = project.get_stdlib_requirements(
                 include_hidden=True)
 
@@ -138,10 +137,11 @@ class Builder:
                 interpreter = project.expandvars(
                         project.python_host_interpreter)
             elif self._host.platform.name == 'win':
-                interpreter = get_py_install_path(
-                        project.python_target_version, self._target) + 'python'
+                interpreter = get_py_install_path(python_target_version,
+                        self._target) + 'python'
             else:
-                interpreter = 'python{0}.{1}'.format(py_major, py_minor)
+                interpreter = 'python{}.{}'.format(python_target_version.major,
+                        python_target_version.minor)
 
         # On Windows the interpreter name is simply 'python'.  So in order to
         # make the .pdy file more portable we strip any trailing version
@@ -155,7 +155,7 @@ class Builder:
         interpreter = QDir.toNativeSeparators(interpreter)
 
         # Make sure the interpreter being used is the one we are targetting.
-        self._check_interpreter_version(interpreter, py_version)
+        self._check_interpreter_version(interpreter)
 
         if python_library is None:
             python_library = project.path_from_user(
@@ -191,12 +191,12 @@ class Builder:
         # original source.  We continue to use a local copy of _bootstrap.py
         # as it still needs to be frozen and we don't want to depend on an
         # external source.
-        self._freeze_bootstrap('bootstrap', py_version, self._build_dir,
-                temp_dir, job_writer)
+        self._freeze_bootstrap('bootstrap', self._build_dir, temp_dir,
+                job_writer)
 
-        if py_version >= 0x030500:
-            self._freeze_bootstrap('bootstrap_external', py_version,
-                    self._build_dir, temp_dir, job_writer)
+        if python_target_version >= (3, 5):
+            self._freeze_bootstrap('bootstrap_external', self._build_dir,
+                    temp_dir, job_writer)
 
         # Freeze any main application script.
         if project.application_script != '':
@@ -224,9 +224,9 @@ class Builder:
                 standard_library_dir, private_sip, job_writer, nr_resources)
 
         # Write the .pro file.
-        self._write_qmake(py_version, required_ext, required_libraries,
-                include_dir, python_library, standard_library_dir, private_sip,
-                source_dir, job_writer, opt, resource_names)
+        self._write_qmake(required_ext, required_libraries, include_dir,
+                python_library, standard_library_dir, private_sip, source_dir,
+                job_writer, opt, resource_names)
 
         # Run the freeze jobs.
         job_file.close()
@@ -238,11 +238,11 @@ class Builder:
 
         self._run_freeze(freeze, interpreter, job_filename, opt)
 
-    def _freeze_bootstrap(self, name, py_version, build_dir, temp_dir, job_writer):
+    def _freeze_bootstrap(self, name, build_dir, temp_dir, job_writer):
         """ Freeze a version dependent bootstrap script. """
 
-        bootstrap_src = get_embedded_file_for_version(py_version, __file__,
-                'lib', name)
+        bootstrap_src = get_embedded_file_for_version(
+                self._project.python_target_version, __file__, 'lib', name)
         bootstrap = self._copy_lib_file(bootstrap_src, temp_dir.path(),
                 dst_file_name=name + '.py')
         self._freeze(job_writer, build_dir + '/frozen_' + name + '.h',
@@ -417,18 +417,20 @@ class Builder:
         ('.y',      'YACCSOURCES')
     )
 
-    def _write_qmake(self, py_version, required_ext, required_libraries, include_dir, python_library, standard_library_dir, private_sip, source_dir, job_writer, opt, resource_names):
+    def _write_qmake(self, required_ext, required_libraries, include_dir,
+            python_library, standard_library_dir, private_sip, source_dir,
+            job_writer, opt, resource_names):
         """ Create the .pro file for qmake. """
 
         project = self._project
+        python_target_version = project.python_target_version
         target_platform = self._target.platform.name
 
         f = self._create_file(self._build_dir + '/' +
                 project.get_executable_basename() + '.pro')
 
-        f.write('# Generated for {0} and Python v{1}.{2}.{3}.\n\n'.format(
-                self._target.name, (py_version >> 16),
-                (py_version >> 8) & 0xff, py_version & 0xff))
+        f.write('# Generated for {0} and Python v{1}.\n\n'.format(
+                self._target.name, python_target_version))
 
         f.write('TEMPLATE = app\n')
         f.write('\n')
@@ -660,7 +662,7 @@ class Builder:
 
         # Python v3.6.0 requires C99 at least.  Note that specifying 'c++11' in
         # 'CONFIG' doesn't affect 'CFLAGS'.
-        if py_version >= 0x030600 and target_platform != 'win':
+        if python_target_version >= (3, 6) and target_platform != 'win':
             f.write('\n')
             f.write('QMAKE_CFLAGS += -std=c99\n')
 
@@ -674,7 +676,7 @@ class Builder:
         defines = []
         headers = ['pyqtdeploy_version.h', 'frozen_bootstrap.h']
 
-        if py_version >= 0x030500:
+        if python_target_version >= (3, 5):
             headers.append('frozen_bootstrap_external.h')
 
         if project.application_script != '':
@@ -701,7 +703,7 @@ class Builder:
         f.write('\n')
         f.write('SOURCES = pyqtdeploy_main.cpp pyqtdeploy_start.cpp pdytools_module.cpp\n')
         self._write_used_values(f, used_sources, 'SOURCES')
-        self._write_main(py_version, used_inittab, used_defines)
+        self._write_main(used_inittab, used_defines)
         self._copy_lib_file('pyqtdeploy_start.cpp', self._build_dir)
         self._copy_lib_file('pdytools_module.cpp', self._build_dir)
 
@@ -721,7 +723,7 @@ class Builder:
         # If we are using the platform Python on Windows then copy in the
         # required DLLs if they can be found.
         if 'win' in project.python_use_platform and used_dlls and py_lib_dir is not None:
-            self._copy_windows_dlls(py_version, py_lib_dir, used_dlls, f)
+            self._copy_windows_dlls(py_lib_dir, used_dlls, f)
 
         # Add the project independent post-configuration stuff.
         self._write_embedded_lib_file('post_configuration.pro', f)
@@ -839,17 +841,17 @@ class Builder:
 
             f.write('{0} += {1}\n'.format(qmake_var, value))
 
-    def _copy_windows_dlls(self, py_version, py_lib_dir, modules, f):
+    def _copy_windows_dlls(self, py_lib_dir, modules, f):
         """ Generate additional qmake commands to install additional Windows
         DLLs so that the application will be able to run.
         """
 
-        py_major = py_version >> 16
-        py_minor = (py_version >> 8) & 0xff
+        python_target_version = self._project.python_target_version
 
-        dlls = ['python{0}{1}.dll'.format(py_major, py_minor)]
+        dlls = ['python{}{}.dll'.format(python_target_version._major,
+                python_target_version._minor)]
 
-        if py_version >= 0x030500:
+        if python_target_version >= (3, 5):
             dlls.append('vcruntime140.dll')
 
         for module in modules:
@@ -1069,7 +1071,7 @@ exists($$PDY_DLL) {
 
                 resource_contents.append(file_path)
 
-    def _write_main(self, py_version, inittab, defines):
+    def _write_main(self, inittab, defines):
         """ Create the application specific pyqtdeploy_main.cpp file. """
 
         project = self._project
@@ -1096,7 +1098,7 @@ exists($$PDY_DLL) {
         if len(inittab) > 0:
             c_inittab = 'extension_modules'
 
-            self._write_inittab(f, inittab, c_inittab, py_version)
+            self._write_inittab(f, inittab, c_inittab)
         else:
             c_inittab = 'NULL'
 
@@ -1123,7 +1125,7 @@ exists($$PDY_DLL) {
 
         path_dirs = 'path_dirs' if sys_path != '' else 'NULL'
 
-        if self._target.platform.name == 'win' and py_version >= 0x030000:
+        if self._target.platform.name == 'win' and project.python_target_version >= 3:
             f.write('''
 
 #include <windows.h>
@@ -1154,11 +1156,10 @@ int main(int argc, char **argv)
 
         f.close()
 
-    @classmethod
-    def _write_inittab(cls, f, inittab, c_inittab, py_version):
+    def _write_inittab(self, f, inittab, c_inittab):
         """ Write the Python version specific extension module inittab. """
 
-        if py_version >= 0x030000:
+        if self._project.python_target_version >= 3:
             init_type = 'PyObject *'
             init_prefix = 'PyInit_'
         else:
@@ -1318,8 +1319,10 @@ static struct _inittab %s[] = {
                     str(e))
 
     @staticmethod
-    def _check_interpreter_version(interpreter, py_version):
+    def _check_interpreter_version(interpreter):
         """ Check that the interpreter version matches the target version. """
+
+        python_target_version = self._project.python_target_version
 
         argv = [interpreter, '-c', 'import sys; print(sys.version)']
 
@@ -1335,10 +1338,11 @@ static struct _inittab %s[] = {
             raise UserException("Unable to run '{0}'".format(interpreter),
                     detail=detail)
 
-        interpreter_version = stdout.strip().split()[0]
+        interpreter_version = VersionNumber.parse_version_number(
+                stdout.strip().split()[0])
 
         # We ignore the micro version.
-        if parse_version(interpreter_version) >> 8 != py_version >> 8:
+        if interpreter_version.major != python_target_version.major or interpreter_version.minor != python_target_version_minor:
             raise UserException(
                     "The host interpreter version '{0}' does not match the "
                     "target version".format(interpreter_version))

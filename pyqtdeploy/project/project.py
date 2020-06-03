@@ -32,6 +32,7 @@ from PyQt5.QtCore import QDir, QFileInfo, QObject, pyqtSignal
 from ..metadata import get_python_metadata, supported_python_versions
 from ..platforms import Platform
 from ..user_exception import UserException
+from ..version_number import VersionNumber
 
 from .project_parts import (ExternalLibrary, ExtensionModule, QrcDirectory,
         QrcFile, QrcPackage)
@@ -171,10 +172,9 @@ class Project(QObject):
     def expandvars(self, path):
         """ Call os.path.expandvars() after expanding some internal values. """
 
-        major, minor, micro = self.python_target_version
-        major = str(major)
-        minor = str(minor)
-        micro = str(micro)
+        major = str(self.python_target_version.major)
+        minor = str(self.python_target_version.minor)
+        patch = str(self.python_target_version.patch)
 
         path = path.replace('$PDY_PY_MAJOR', major)
         path = path.replace('${PDY_PY_MAJOR}', major)
@@ -182,8 +182,8 @@ class Project(QObject):
         path = path.replace('$PDY_PY_MINOR', minor)
         path = path.replace('${PDY_PY_MINOR}', minor)
 
-        path = path.replace('$PDY_PY_MICRO', micro)
-        path = path.replace('${PDY_PY_MICRO}', micro)
+        path = path.replace('$PDY_PY_MICRO', patch)
+        path = path.replace('${PDY_PY_MICRO}', patch)
 
         return os.path.expandvars(path)
 
@@ -308,8 +308,7 @@ class Project(QObject):
         if project.python_target_version not in supported_python_versions:
             raise UserException(
                     "Python v{0} is not supported.".format(
-                            '.'.join([str(v)
-                                    for v in project.python_target_version])))
+                            project.python_target_version))
 
         # If the default locations are being used then use the current defaults
         # instead of those (possibly out of date) in the project file.
@@ -418,7 +417,7 @@ class Project(QObject):
         major = python.get('major', 0)
         minor = python.get('minor', 0)
         patch = python.get('patch', 0)
-        project.python_target_version = (major, minor, patch)
+        project.python_target_version = VersionNumber(major, minor, patch)
 
         project.python_use_platform = cls._get_list(python, 'platform_python')
         project.python_host_interpreter = python.get('host_interpreter', '')
@@ -500,9 +499,9 @@ class Project(QObject):
 
         python = {
             'platform_python': self.python_use_platform,
-            'major': self.python_target_version[0],
-            'minor': self.python_target_version[1],
-            'patch': self.python_target_version[2]
+            'major': self.python_target_version.major,
+            'minor': self.python_target_version.minor,
+            'patch': self.python_target_version.patch
         }
 
         if not self.using_default_locations:

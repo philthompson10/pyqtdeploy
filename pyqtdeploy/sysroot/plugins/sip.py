@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@ class SIPComponent(ComponentBase):
         """ Build SIP for the target. """
 
         archive = sysroot.find_file(self.source)
-        version_nr = sysroot.extract_version_nr(archive)
+        version_nr = sysroot.extract_version(archive)
 
         build_generator = os.path.join(os.getcwd(), 'sip-generator')
         build_module = os.path.join(os.getcwd(), 'sip-module')
@@ -63,11 +63,11 @@ class SIPComponent(ComponentBase):
         version_nr = sysroot.verify_source(self.source)
 
         # v4.19.9-12 have too many problems so it's easier to blacklist them.
-        if version_nr >= 0x041309 and version_nr <= 0x04130c:
+        if (4, 19, 9) <= version_nr <= (4, 19, 12):
             sysroot.error("please use SIP v4.19.13 or later")
 
         # v5 is not yet supported.
-        if version_nr >= 0x050000:
+        if version_nr >= 5:
             sysroot.error("SIP v5 is not yet supported")
 
     def _build_code_generator(self, sysroot, archive, version_nr):
@@ -80,7 +80,7 @@ class SIPComponent(ComponentBase):
         args = [sysroot.host_python, 'configure.py', '--bindir',
                 sysroot.host_bin_dir]
 
-        if version_nr >= 0x04130c:
+        if version_nr >= (4, 19, 12):
             # From v4.19.12 sip.h is considered part of the tools.
             args.extend(['--incdir', sysroot.target_py_include_dir,
                     '--no-module'])
@@ -114,7 +114,7 @@ sip_module_dir = {2}
                 sysroot.sysroot_dir, '--no-pyi', '--no-tools', '--use-qmake',
                 '--configuration', cfg_name]
 
-        if version_nr >= 0x041309:
+        if version_nr >= (4, 19, 9):
             args.append('--no-dist-info')
 
         if self.module_name:

@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,7 @@ import os
 from PyQt5.QtCore import QDir, QFile, QFileInfo, QIODevice
 
 from .user_exception import UserException
+from .version_number import VersionNumber
 
 
 def get_embedded_dir(root, *subdirs):
@@ -143,19 +144,19 @@ def open_file(file_name):
 
 def get_embedded_file_for_version(version, root, *subdirs):
     """ Return the absolute file name in an embedded directory of a file that
-    is the most appropriate for a particular version.  version is the encoded
-    version.  root is the root directory and will be the __file__ attribute of
-    a pyqtdeploy module.  subdirs is a sequence of sub-directories from the
-    root.  An empty string is returned if the version is not supported.
+    is the most appropriate for a particular version.  version is the version.
+    root is the root directory and will be the __file__ attribute of a
+    pyqtdeploy module.  subdirs is a sequence of sub-directories from the root.
+    An empty string is returned if the version is not supported.
     """
 
-    best_version = 0
+    best_version = VersionNumber(0)
     best_name = ''
 
     for name in get_embedded_file_names(root, *subdirs):
         this_version = extract_version(name)
 
-        if this_version <= version and this_version > best_version:
+        if version >= this_version > best_version:
             best_version = this_version
             best_name = name
 
@@ -163,8 +164,8 @@ def get_embedded_file_for_version(version, root, *subdirs):
 
 
 def extract_version(name):
-    """ Return an encoded version number from the name of a file or directory.
-    name is the name of the file or directory.  0 is returned if a version
+    """ Return a VersionNumber object from the name of a file or directory.
+    name is the name of the file or directory.  None is returned if a version
     number could not be extracted.
     """
 
@@ -174,45 +175,9 @@ def extract_version(name):
         if len(version_str) != 0 and version_str[0].isdigit():
             break
     else:
-        return 0
+        return None
 
-    # Strip any trailing non-digits.
-    while not version_str[-1].isdigit():
-        version_str = version_str[:-1]
-
-    return parse_version(version_str)
-
-
-def parse_version(version_str):
-    """ Return an encoded version number from a string.  version_str is the
-    string.  0 is returned if a version number could not be extracted.
-    """
-
-    version_parts = version_str.split('.')
-
-    while len(version_parts) < 3:
-        version_parts.append('0')
-
-    # Remove any trailing non-digits in the third part, eg. 'rc1'.
-    micro = ''
-    for ch in version_parts[2]:
-        if ch.isdigit():
-            micro += ch
-        else:
-            break
-
-    version_parts[2] = micro
-
-    version = 0
-
-    # Ignore anything after the third part (eg. '.dev').
-    for i in range(3):
-        try:
-            part = int(version_parts[i])
-        except ValueError:
-            version = 0
-            break
-
-        version = (version << 8) + part
-
-    return version
+    try:
+        return VersionNumber.parse_version_number(version_str)
+    except UserException:
+        return None

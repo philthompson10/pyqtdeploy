@@ -29,6 +29,7 @@ from xml.etree.ElementTree import Element, ElementTree, SubElement
 from ..metadata import supported_python_versions
 from ..platforms import Platform
 from ..user_exception import UserException
+from ..version_number import VersionNumber
 
 from .project_parts import (ExternalLibrary, ExtensionModule, QrcDirectory,
         QrcFile, QrcPackage)
@@ -97,11 +98,11 @@ def load_xml(project, file_path):
     major = _get_int(python, 'major', 'Python')
     minor = _get_int(python, 'minor', 'Python')
     patch = _get_int(python, 'patch', 'Python', default=0)
-    project.python_target_version = (major, minor, patch)
+    project.python_target_version = VersionNumber(major, minor, patch)
     if project.python_target_version not in supported_python_versions:
         raise UserException(
-                "Python v{0}.{1}.{2} is not supported.".format(major, minor,
-                        patch))
+                "Python v{0} is not supported.".format(
+                        project.python_target_version))
 
     # The application specific configuration.
     application = root.find('Application')

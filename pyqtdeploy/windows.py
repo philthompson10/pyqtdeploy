@@ -1,4 +1,4 @@
-# Copyright (c) 2018, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,9 +35,8 @@ def get_py_install_path(version, target):
 
     from winreg import HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, QueryValue
 
-    major, minor, _ = version
-    reg_version = '{0}.{1}'.format(major, minor)
-    if (major, minor) >= (3, 5) and target.name.endswith('-32'):
+    reg_version = '{0}.{1}'.format(version.major, version.minor)
+    if version >= (3, 5) and target.name.endswith('-32'):
         reg_version += '-32'
 
     sub_key_user = 'Software\\Python\\PythonCore\\{}\\InstallPath'.format(

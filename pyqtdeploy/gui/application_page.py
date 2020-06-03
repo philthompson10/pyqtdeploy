@@ -111,9 +111,8 @@ class ApplicationPage(QWidget):
 
         self._py_version_edit = QComboBox(
                 whatsThis="Select the target Python version.")
-        for major, minor, patch in supported_python_versions:
-            self._py_version_edit.addItem(
-                    "v{0}.{1}.{2}".format(major, minor, patch))
+        for version_nr in supported_python_versions:
+            self._py_version_edit.addItem("v{}".format(version_nr))
         self._py_version_edit.currentIndexChanged.connect(
                 self._py_version_changed)
         options_layout.addRow("Target Python version", self._py_version_edit)
