@@ -558,15 +558,13 @@ class is.
 
     .. py:attribute:: android_ndk_version
 
-        .. versionadded:: 2.4
-
-        The 3-tuple version number of the Android NDK.
+        The :py:class:`VersionNumber` object representing the version number of
+        the Android NDK.
 
     .. py:attribute:: android_sdk_version
 
-        .. versionadded:: 2.4
-
-        The 3-tuple version number of the Android SDK.
+        The :py:class:`VersionNumber` object representing the version number of
+        the Android SDK.
 
     .. py:attribute:: android_toolchain_bin
 
@@ -574,13 +572,9 @@ class is.
 
     .. py:attribute:: android_toolchain_cc
 
-        .. versionadded:: 2.4
-
         The name of the Android toolchain's C compiler.
 
     .. py:attribute:: android_toolchain_cflags
-
-        .. versionadded:: 2.4
 
         The list of the Android toolchain's C compiler's recommended flags.
 
@@ -638,14 +632,6 @@ class is.
         :param str name: is the name of the directory.
         :param bool empty: ``True`` if an existing directory should be emptied.
 
-    .. py:method:: decode_version_nr(version_nr)
-
-        An encoded version number is decoded to a 3-tuple of major version,
-        minor version and patch version.
-
-        :param int version_nr: is the encoded version number.
-        :return: the decoded 3-tuple.
-
     .. py:method:: delete_dir(name)
 
         A directory and any contents are deleted.  Any errors are handled
@@ -663,13 +649,13 @@ class is.
             :option:`--verbose <pyqtdeploy-sysroot --verbose>` option was
             specified.
 
-    .. py:method:: extract_version_nr(name)
+    .. py:method:: extract_version(name)
 
-        An encoded version number is extracted from the name of file or
-        directory based on common naming standards.
+        A :py:class:`VersionNumber` object is returned for the version number
+        extracted from the name of file or directory.
 
         :param str name: is the name of the file or directory.
-        :return: the encoded version number.
+        :return: the :py:class:`VersionNumber` object.
 
     .. py:method:: find_component(name, required=True)
 
@@ -701,21 +687,15 @@ class is.
         :param bool required: ``True`` if the file or directory must exist.
         :return: the absolute path name of the file or directory.
 
-    .. py:method:: format_version_nr(version_nr)
-
-        An encoded version number is converted to a string.
-
-        :param int version_nr: is the encoded version number.
-        :return: the string conversion.
-
-    .. py:method:: get_python_install_path(version_nr=None)
+    .. py:method:: get_python_install_path(major=None, minor=None)
 
         The name of the directory containing the root of a Python installation
-        on Windows is returned.  If an encoded version number is not given then
-        :py:attr:`target_py_version_nr` is used.  It must only be called by a
-        Windows host.
+        on Windows is returned.  If the major and minor version numbers are not
+        given then :py:attr:`target_py_version` is used.  It must only be
+        called by a Windows host.
 
-        :param int version_nr: is the encoded version number.
+        :param int major: is the major version number.
+        :param int minor: is the major version number.
         :return: the absolute path of the installation directory.
 
     .. py:attribute:: host_arch_name
@@ -779,13 +759,6 @@ class is.
         :param str name: is the name of the file.
         :return: the file object of the opened file.
 
-    .. py:method:: parse_version_nr(version_str)
-
-        Convert a string in the form [M[.m[.p]]] to an encoded version number.
-
-        :param str version_str: is the version number to parse.
-        :return: an encoded version number.
-
     .. py:method:: pip_install(package)
 
         Install a package using :py:attr:`host_pip` to
@@ -845,9 +818,10 @@ class is.
         The name of the directory where the Python standard library built for
         the target architecture can be found.
 
-    .. py:attribute:: target_py_version_nr
+    .. py:attribute:: target_py_version
 
-        The version of Python being targeted.
+        The :py:class:`VersionNumber` object representing the version of Python
+        being targeted.
 
     .. py:attribute:: target_pyqt_platform
 
@@ -896,12 +870,48 @@ class is.
 
     .. py:method:: verify_source(name)
 
-        .. versionadded:: 2.4
-
         Verify that a source file or directory exists and return the encoded
         version number embedded in its name.  See :py:meth:`find_file` for how
         the name is interpreted.
 
         :param str name: is the name of the source file or directory.
         :return: the encoded version number.
+
+
+.. py:class:: VersionNumber
+
+    This class encapsulates a version number in the form ``M[.m[.p]][suffix]``
+    where ``M`` is an integer major version number, ``m`` is an optional
+    integer minor version number, ``p`` is an optional integer patch version
+    number and ``suffix`` is an optional string suffix.
+
+    Instances may be compared with other instances, integers or tuples to
+    determine equality or relative chronology.  An integer is interpreted as a
+    major version number.  A tuple may have between one and four elements and
+    the number of elements determines the precision of the comparison.  For
+    example, if a 2-tuple is specified then only the major and minor version
+    numbers are considered and the patch version numbers and suffixes are
+    ignored.
+
+    .. py:method:: __str__()
+
+        Convert the version number to a user friendly representation.
+
+        :return: the version number as a string.
+
+    .. py:attribute:: major
+
+        The major version number.
+
+    .. py:attribute:: minor
+
+        The minor version number.
+
+    .. py:attribute:: patch
+
+        The patch version number.
+
+    .. py:attribute:: suffix
+
+        The suffix.
 

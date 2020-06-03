@@ -51,3 +51,7 @@ div.legalese {
     border: 10px solid white;
     padding: 15px;
 }
+
+th, dl.field-list > dt {
+    background-color: white;
+}
