@@ -1,4 +1,4 @@
-# Copyright (c) 2018, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,8 @@ from abc import ABC, abstractmethod
 class ComponentOption:
     """ Encapsulate an option for the component in the specification file. """
 
-    def __init__(self, name, type=str, required=False, default=None, values=None, help=''):
+    def __init__(self, name, type=str, required=False, default=None,
+            values=None, help=''):
         """ Initialise the object. """
 
         self.name = name
@@ -66,8 +67,7 @@ class ComponentBase(ABC):
     # be specified for the component in the specification file.  These are made
     # available as attributes of the plugin instance.
     options = [
-        ComponentOption('version', required=True,
-                help="The version number of the component.")
+        ComponentOption('version', help="The version number of the component.")
     ]
 
     @abstractmethod
