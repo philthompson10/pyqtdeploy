@@ -25,7 +25,6 @@
 
 
 import functools
-import glob
 import os
 import shutil
 import sys
@@ -463,10 +462,10 @@ class Sysroot:
 
     def find_file(self, name, required=True):
         """ Find a file (or directory).  If the name is relative then it is
-        relative to the directory specified by the --source-dir command line
-        options.  If this is not specified then the directory containing the
-        specification file is used.  The name may be a glob pattern.  The
-        absolute pathname of the file is returned.
+        relative to a directory specified by the --source-dir command line
+        option.  If this is not specified then the directory containing the
+        specification file is used.  The absolute pathname of the file is
+        returned.
         """
 
         # Convert the name to a normalised absolute pathname.
@@ -479,24 +478,17 @@ class Sysroot:
 
         # Check the name matches exactly one file.
         for target in targets:
-            self.verbose("Looking for '{}'".format(target))
+            target = os.path.normpath(target)
 
-            names = glob.glob(target)
-            if names:
-                if len(names) > 1:
-                    self.error(
-                            "'{0}' matched several files and/or directories".format(
-                                    name))
+            self.verbose("Looking for '{0}'".format(target))
 
-                found = os.path.normpath(names[0])
-
-                self.verbose("Found '{}'".format(found))
-
-                return found
+            if os.path.isfile(target) or os.path.isdir(target):
+                self.verbose("Found '{0}'".format(target))
+                return target
 
         if required:
             self.error(
-                    "nothing matching '{0}' could not be found".format(name))
+                    "unable to find '{0}' could not be found".format(name))
 
         return None
 
