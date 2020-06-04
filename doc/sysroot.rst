@@ -677,11 +677,10 @@ class is.
     .. py:method:: find_file(name, required=True)
 
         The absolute path name of a file or directory is returned.  If the name
-        is relative then it is assumed t be relative to the directory specified
-        by the :option:`--source-dir <pyqtdeploy-sysroot --source-dir>` option.
-        If this option has not been specified then the directory containing the
-        JSON specification file is used.  The name may be a glob pattern but
-        must only identify a single file or directory.
+        is relative then it is assumed to be relative to the directory
+        specified by a :option:`--source-dir <pyqtdeploy-sysroot --source-dir>`
+        option.  If this option has not been specified then the directory
+        containing the TOML specification file is used.
 
         :param str name: is the name of the file or directory.
         :param bool required: ``True`` if the file or directory must exist.
