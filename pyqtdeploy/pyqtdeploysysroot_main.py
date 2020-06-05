@@ -38,6 +38,8 @@ def main():
     # Parse the command line.
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('-V', '--version', action='version',
+            version=PYQTDEPLOY_RELEASE)
     parser.add_argument('--component', help="the component name to build",
             action='append')
     parser.add_argument('--no-clean',
@@ -57,17 +59,21 @@ def main():
     parser.add_argument('--target', help="the target architecture"),
     parser.add_argument('--quiet', help="disable progress messages",
             action='store_true')
+    parser.add_argument('--validate', help="validate the specification",
+            action='store_true')
     parser.add_argument('--verbose', help="enable verbose progress messages",
             action='store_true')
-    parser.add_argument('-V', '--version', action='version',
-            version=PYQTDEPLOY_RELEASE)
+    parser.add_argument('--no-warnings-are-errors',
+            help="warnings are not treated as errors",
+            dest='warnings_are_errors', default=True, action='store_false')
     parser.add_argument('specification',
-            help="JSON specification of the system image root directory")
+            help="TOML specification of the system image root directory")
 
     args = parser.parse_args()
 
     # Perform the required action.
-    message_handler = MessageHandler(args.quiet, args.verbose)
+    message_handler = MessageHandler(args.quiet, args.verbose,
+            args.warnings_are_errors)
 
     try:
         sysroot_dir = args.sysroot
@@ -79,6 +85,8 @@ def main():
 
         if args.options:
             sysroot.show_options(args.component)
+        elif args.validate:
+            sysroot.validate()
         else:
             sysroot.build_components(args.component, args.source_dirs,
                     args.no_clean)

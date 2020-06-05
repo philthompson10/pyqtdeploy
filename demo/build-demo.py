@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -59,6 +59,9 @@ parser.add_argument('--quiet', help="disable progress messages",
         action='store_true')
 parser.add_argument('--verbose', help="enable verbose progress messages",
         action='store_true')
+parser.add_argument('--no-warnings-as-errors',
+        help="warnings are not treated as errors", dest='warnings_are_errors',
+        default=True, action='store_false')
 cmd_line_args = parser.parse_args()
 build_sysroot = not cmd_line_args.no_sysroot
 installed_qt_dir = cmd_line_args.installed_qt_dir
@@ -66,6 +69,7 @@ source_dirs = cmd_line_args.source_dirs
 target = cmd_line_args.target
 quiet = cmd_line_args.quiet
 verbose = cmd_line_args.verbose
+warnings_are_errors = cmd_line_args.warnings_are_errors
 
 # Pick a default target if none is specified.
 if not target:
@@ -127,15 +131,25 @@ if build_sysroot:
     if verbose:
         args.append('--verbose')
 
-    args.append('sysroot.json')
+    if not warnings_are_errors:
+        args.append('--no-warnings-are-errors')
+
+    args.append('sysroot.toml')
 
     run(args)
 
 # Build the demo.
 shutil.copy('pyqt-demo.py', os.path.join('data', 'pyqt-demo.py.dat'))
 
-run(['pyqtdeploy-build', '--target', target, '--sysroot', sysroot_dir,
-            '--build-dir', build_dir, 'pyqt-demo.pdy'])
+args = ['pyqtdeploy-build', '--target', target, '--sysroot', sysroot_dir,
+            '--build-dir', build_dir]
+
+if not warnings_are_errors:
+    args.append('--no-warnings-are-errors')
+
+args.append('pyqt-demo.pdy')
+
+run(args)
 
 # Run qmake.  Use the qmake left by pyqtdeploy-sysroot.
 os.chdir(build_dir)

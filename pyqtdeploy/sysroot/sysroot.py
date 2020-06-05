@@ -76,8 +76,8 @@ class Sysroot:
         self.sysroot_dir = os.path.abspath(sysroot_dir)
         self._build_dir = os.path.join(self.sysroot_dir, 'build')
 
-        self._specification = Specification(sysroot_specification, plugin_dirs,
-                self._target)
+        self._specification = Specification(self, sysroot_specification,
+                plugin_dirs, self._target)
         self._message_handler = message_handler
 
         self._target_py_version = None
@@ -94,23 +94,18 @@ class Sysroot:
         UserException if there is an error.
         """
 
+        # Validate the configuration.
+        self.validate()
+
+        # Normalise the list of source directories to search.
         if source_dirs:
             self._source_dirs = [os.path.abspath(s) for s in source_dirs]
         else:
             self._source_dirs = [
                     os.path.dirname(self._specification.specification_file)]
 
-        # Handle the options now we know they are needed.
-        self._specification.parse_options()
-
         # Host/target independent configuration checks.
         self.find_exe(self.host_make)
-
-        # Allow the components to configure themselves even if they are not
-        # being built.
-        for component in self.components:
-            self.progress("Configuring {0}...".format(component.name))
-            component.configure(self)
 
         if component_names:
             components = self._components_from_names(component_names)
@@ -143,6 +138,14 @@ class Sysroot:
             except UserException as e:
                 self.verbose("Warning: " + e.text)
 
+    @staticmethod
+    def error(message, detail='', exception=None):
+        """ Raise an exception that will report an error is a user friendly
+        manner.
+        """
+
+        raise UserException(message, detail=detail) from exception
+
     def show_options(self, component_names):
         """ Show the options for a sequence of components.  If no names are
         given then show the options of all components.  Raise a UserException
@@ -155,6 +158,32 @@ class Sysroot:
             components = self.components
 
         self._specification.show_options(components, self._message_handler)
+
+    def validate(self):
+        """ Validate the configuration.  Raise a UserException if there is an
+        error.
+        """
+
+        self._specification.parse_options()
+
+        for component in self.components:
+            # Use any explicitly specified version number.
+            if component.version != '':
+                component.version = component.parse_version_number(
+                        component.version)
+            else:
+                component.version = component.get_implied_version()
+
+            self.progress(
+                    "Configuring {0} v{1}...".format(component.name,
+                            component.version))
+
+            component.configure()
+
+    def warning(self, message):
+        """ Issue a warning message. """
+
+        self._message_handler.warning(message)
 
     def _components_from_names(self, component_names):
         """ Return a sequence of components from a sequence of names. """
@@ -401,8 +430,9 @@ class Sysroot:
 
             self.verbose("Deleting {0}".format(name))
 
-            # Windows has a 256 character limit on file names which we can hit.
-            # The Microsoft work around is to prepend a magic string.
+            # 32 bit applications on Windows have a 256 character limit on file
+            # names which we can hit.  The Microsoft work around is to prepend
+            # a magic string.
             name_hack = '\\\\?\\' + name if sys.platform == 'win32' else name
 
             try:
@@ -410,14 +440,6 @@ class Sysroot:
             except Exception as e:
                 self.error("unable to remove directory {0}.".format(name),
                         detail=str(e))
-
-    @staticmethod
-    def error(message, detail='', exception=None):
-        """ Raise an exception that will report an error is a user friendly
-        manner.
-        """
-
-        raise UserException(message, detail=detail) from exception
 
     def extract_version(self, name):
         """ Return a VersionNumber object from the name of a file or directory.
@@ -799,7 +821,7 @@ class Sysroot:
 
     def verify_source(self, name):
         """ Verify that a source file exists and return the VersionNumber
-        objectcorresponding to the version number embedded in its name.  See
+        object corresponding to the version number embedded in its name.  See
         find_file() for how the name is interpreted.
         """
 

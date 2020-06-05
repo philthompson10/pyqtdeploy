@@ -28,10 +28,10 @@ import glob
 import os
 import sys
 
-from ... import ComponentBase, ComponentOption
+from ... import ComponentOption, SourceComponent
 
 
-class OpenSSLComponent(ComponentBase):
+class OpenSSLComponent(SourceComponent):
     """ The OpenSSL component. """
 
     # The component options.
@@ -39,9 +39,7 @@ class OpenSSLComponent(ComponentBase):
         ComponentOption('no_asm', type=bool,
                 help="Disable the use of assembly language speedups."),
         ComponentOption('python_source',
-                help="The archive of the Python source code containing patches to build OpenSSL on macOS for Python v3.6.4 and earlier."),
-        ComponentOption('source', required=True,
-                help="The archive containing the OpenSSL source code."),
+                help="The archive of the Python source code containing patches to build OpenSSL on macOS for Python v3.6.4 and earlier.")
     ]
 
     def build(self, sysroot):
@@ -65,7 +63,7 @@ class OpenSSLComponent(ComponentBase):
         else:
             self._build_1_0(sysroot, common_options)
 
-    def configure(self, sysroot):
+    def configure(self):
         """ Complete the configuration of the component. """
 
         host = sysroot.host_platform_name
