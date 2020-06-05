@@ -59,7 +59,7 @@ class Sysroot:
     """ Encapsulate a target-specific system root directory. """
 
     def __init__(self, sysroot_dir, sysroot_specification, plugin_dirs,
-            source_dirs, target_arch_name, message_handler):
+            target_arch_name, message_handler):
         """ Initialise the object. """
 
         self._host = Architecture.architecture()
@@ -80,23 +80,25 @@ class Sysroot:
                 self._target)
         self._message_handler = message_handler
 
-        if source_dirs:
-            self._source_dirs = [os.path.abspath(s) for s in source_dirs]
-        else:
-            self._source_dirs = [
-                    os.path.dirname(os.path.abspath(sysroot_specification))]
-
         self._target_py_version = None
         self._host_qmake = None
 
         self._target.configure()
         self._building_for_target = True
 
-    def build_components(self, component_names, no_clean):
+        self._source_dirs = None
+
+    def build_components(self, component_names, source_dirs, no_clean):
         """ Build a sequence of components.  If no names are given then create
         the system image root directory and build everything.  Raise a
         UserException if there is an error.
         """
+
+        if source_dirs:
+            self._source_dirs = [os.path.abspath(s) for s in source_dirs]
+        else:
+            self._source_dirs = [
+                    os.path.dirname(self._specification.specification_file)]
 
         # Handle the options now we know they are needed.
         self._specification.parse_options()
