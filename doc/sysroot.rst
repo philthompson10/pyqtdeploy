@@ -38,7 +38,7 @@ Standard Component Plugins
 The following component plugins are included as standard with
 :program:`pyqtdeploy`.
 
-**openssl**
+**OpenSSL**
     This builds the OpenSSL libraries for v1.0.* and v1.1.* on Android
     (dynamically), macOS (statically) and Windows (statically).  It requires
     ``perl`` to be installed on :envvar:`PATH`.
@@ -143,22 +143,25 @@ The :program:`pyqt-demo` Sysroot
 In this section we walk through the sysroot specification file for
 :program:`pyqt-demo`, component by component.
 
-openssl
+OpenSSL
 .......
 
 ::
 
-    "android|macos|win#openssl": {
-        "android#source":   "openssl-1.0.2r.tar.gz",
-        "macos|win#source": "openssl-1.1.0j.tar.gz",
-        "win#no_asm":       true
-    },
+    [OpenSSL]
+    enabled_targets = ["android", "macos", "win"]
+    source = "openssl-1.1.0j.tar.gz"
 
-The first thing to notice is that the object name is scoped so that the
-component is only built for Android, macOS and Windows.  On iOS we choose to
-not support SSL from Python and use Qt's SSL support instead (which will use
-Apple's Secure Transport).  On Linux we will use the system versions of the
-OpenSSL libraries.
+    [OpenSSL.android]
+    source = "openssl-1.0.2r.tar.gz"
+
+    [OpenSSL.win]
+    no_asm = true
+
+The first thing to notice is that the component is only built for Android,
+macOS and Windows.  On iOS we choose to not support SSL from Python and use
+Qt's SSL support instead (which will use Apple's Secure Transport).  On Linux
+we will use the system versions of the OpenSSL libraries.
 
 On Android we use OpenSSL v1.0 because that is the version used by the
 pre-built binaries provided by the Qt installer.
@@ -175,14 +178,14 @@ zlib
 
 ::
 
-    "ios|linux|macos|win#zlib": {
-        "source":               "zlib-1.2.11.tar.gz",
-        "static_msvc_runtime":  true
-    },
+    [zlib]
+    enabled_targets = ["linux", "macos", "win"]
+    source = "zlib-1.2.11.tar.gz"
+    static_msvc_runtime = true
 
-On Android we are using the zlib library provided on the device.  On other
-architectures we choose to use a static version of the library.  On Windows we
-choose to link to static versions of the MSVC runtime libraries.
+On Android and iOS we are using the zlib library provided on the devices.  On
+other architectures we choose to use a static version of the library.  On
+Windows we choose to link to static versions of the MSVC runtime libraries.
 
 
 qt5
@@ -408,6 +411,11 @@ The full set of command line options is:
 
     This will display a summary of the command line options.
 
+.. option:: -V, --version
+
+    This specifies that the version number should be displayed on ``stdout``.
+    The program will then terminate.
+
 .. option:: --component COMPONENT
 
     ``COMPONENT`` is the name of the component (specified in the JSON file)
@@ -464,10 +472,9 @@ The full set of command line options is:
 
     This specifies that additional progress messages should be enabled.
 
-.. option:: -V, --version
+.. option:: --no-warnings-are-errors
 
-    This specifies that the version number should be displayed on ``stdout``.
-    The program will then terminate.
+    This specifies that any warnings are not treated as errors.
 
 .. option:: specification
 
@@ -875,6 +882,15 @@ class is.
 
         :param str name: is the name of the source file or directory.
         :return: the encoded version number.
+
+    .. py:method:: warning(message)
+
+        A warning progress message is displayed to the user.  It will be
+        treated as an error unless the
+        :option:`--verbose <pyqtdeploy-sysroot --no-warnings-are-errors>`
+        option was specified.
+
+        :param str message: is the message.
 
 
 .. py:class:: VersionNumber

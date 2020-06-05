@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,8 @@ def main():
     # Parse the command line.
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('-V', '--version', action='version',
+            version=PYQTDEPLOY_RELEASE)
     parser.add_argument('--build-dir', help="the name of the build directory",
             metavar="DIR")
     parser.add_argument('--include-dir',
@@ -68,14 +70,16 @@ def main():
             action='store_true')
     parser.add_argument('--verbose', help="enable verbose progress messages",
             action='store_true')
-    parser.add_argument('-V', '--version', action='version',
-            version=PYQTDEPLOY_RELEASE)
+    parser.add_argument('--no-warnings-are-errors',
+            help="warnings are not treated as errors",
+            dest='warnings_are_errors', default=True, action='store_false')
     parser.add_argument('project', help="the project to build")
 
     args = parser.parse_args()
 
     # Perform the build.
-    message_handler = MessageHandler(args.quiet, args.verbose)
+    message_handler = MessageHandler(args.quiet, args.verbose,
+            args.warnings_are_errors)
 
     if args.resources < 1:
         message_handler.error(

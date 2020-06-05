@@ -33,6 +33,11 @@ The full set of command line options is:
 
     This will display a summary of the command line options.
 
+.. option:: -V, --version
+
+    This specifies that the version number should be displayed on ``stdout``.
+    The program will then terminate.
+
 .. option:: --build-dir DIR
 
     ``DIR`` is the name of the directory where all the application source code
@@ -115,10 +120,9 @@ The full set of command line options is:
 
     This specifies that additional progress messages should be enabled.
 
-.. option:: -V, --version
+.. option:: --no-warnings-are-errors
 
-    This specifies that the version number should be displayed on ``stdout``.
-    The program will then terminate.
+    This specifies that any warnings are not treated as errors.
 
 .. option:: project
 

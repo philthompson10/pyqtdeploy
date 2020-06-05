@@ -34,4 +34,4 @@ from .version import PYQTDEPLOY_RELEASE
 
 
 # These are for component plugins.
-from .sysroot import ComponentBase, ComponentOption
+from .sysroot import ComponentBase, ComponentOption, SourceComponent

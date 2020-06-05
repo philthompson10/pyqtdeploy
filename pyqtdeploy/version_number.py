@@ -31,7 +31,7 @@ from .user_exception import UserException
 
 
 @total_ordering
-class VersionNumber(VersionNumberBase):
+class VersionNumber:
     """ A parsed version number.  The major, minor and patch attributes are
     integers and the suffix attribute is a string.  Instances can be compared
     to determine the chronology of releases.
@@ -133,6 +133,9 @@ class VersionNumber(VersionNumberBase):
 
         if int_part:
             version_parts.append(int_part)
+        elif len(version_parts) == 0:
+            raise UserException(
+                    "'{0}' has no major number".format(version_str))
 
         # Make sure there are 3 integer parts.
         while len(version_parts) < 3:

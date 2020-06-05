@@ -25,6 +25,9 @@
 
 
 from abc import ABC, abstractmethod
+import os
+
+from ..user_exception import UserException
 
 
 class ComponentOption:
@@ -70,9 +73,83 @@ class ComponentBase(ABC):
         ComponentOption('version', help="The version number of the component.")
     ]
 
+    def __init__(self, name, sysroot):
+        """ Initialise the component. """
+
+        self.name = name
+        self._sysroot = sysroot
+
     @abstractmethod
     def build(self, sysroot):
         """ Build the component. """
 
     def configure(self, sysroot):
         """ Complete the configuration of the component. """
+
+    def error(self, message):
+        """ Issue an error message.  This method will not return. """
+
+        self._sysroot.error("{0}: {1}".format(self.name, message))
+
+    def parse_version_number(self, version_str):
+        """ Parse a version number of the component returning a VersionNumber
+        object.  UserException is raised if it couldn't be parsed.
+
+        The version number format supported by the default implementation is
+        M[.m[.p]][suffix] where M is the int major version, m is the int minor
+        version, p is the int patch version and suffix is a str suffix.
+        """
+
+        from ..version_number import VersionNumber
+
+        return VersionNumber.parse_version_number(version_str)
+
+    def get_implied_version(self):
+        """ Return the VersionNumber object corresponding to the implied
+        version number of the component.  This will never be called if the
+        version number was specified explicitly.  This default implementation
+        raises an exception.
+        """
+
+        self.error("the version number has not been set")
+
+    def warning(self, message):
+        """ Issue a warning message. """
+
+        self._sysroot.warning("{0}: {1}".format(self.name, message))
+
+
+class SourceComponent(ComponentBase):
+    """ The base class for the implemenation of component plugins that build
+    from a source package.
+    """
+
+    # The options.
+    options = [
+        ComponentOption('source', required=True,
+                help="The archive containing the source code.")
+    ]
+
+    _ARCHIVE_EXTENSIONS = ('.tar.bz2', '.tar.gz', '.tar.xz', 'tgz', '.zip')
+
+    def get_implied_version(self):
+        """ Return the VersionNumber object corresponding to the version number
+        implied by the component source.
+        """
+
+        # Get the basename without any standard source archive extensions.
+        name = os.path.basename(self.source)
+
+        for ext in self._ARCHIVE_EXTENSIONS:
+            if name.endswith(ext):
+                name = name[:-len(ext)]
+                break
+
+        for version_str in name.split('-'):
+            try:
+                return self.parse_version_number(version_str)
+            except UserException:
+                pass
+
+        self.error(
+                "unable to extract a version number from '{0}'".format(name))

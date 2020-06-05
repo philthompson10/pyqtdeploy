@@ -33,33 +33,16 @@ class MessageHandler:
     messages.  This base implementation issues messages to the console.
     """
 
-    def __init__(self, quiet, verbose):
+    def __init__(self, quiet, verbose, warnings_are_errors):
         """ Initialise the object.  quiet is set if all progress messages
         should be disabled.  verbose is set if verbose progress messages should
-        be enabled.  Messages do not have trailing newlines.
+        be enabled.  warnings_are_errors is set if warning messages should be
+        treated as errors.  Messages do not have trailing newlines.
         """
 
         self.quiet = quiet
         self.verbose = verbose
-
-    def progress_message(self, message):
-        """ Handle a progress message. """
-
-        if not self.quiet:
-            self.message(message)
-
-    def verbose_message(self, message):
-        """ Handle a verbose progress message. """
-
-        if self.verbose:
-            self.progress_message(message)
-
-    def message(self, message):
-        """ Handle a message.  This method may be reimplemented to send the
-        message to somewhere other that stdout.
-        """
-
-        print(message, flush=True)
+        self._warnings_are_errors = warnings_are_errors
 
     @classmethod
     def error(cls, message):
@@ -75,3 +58,32 @@ class MessageHandler:
             self.error("{0}: {1}".format(e.text, e.detail))
         else:
             self.error(e.text)
+
+    def message(self, message):
+        """ Handle a message.  This method may be reimplemented to send the
+        message to somewhere other that stdout.
+        """
+
+        print(message, flush=True)
+
+    def progress_message(self, message):
+        """ Handle a progress message. """
+
+        if not self.quiet:
+            self.message(message)
+
+    def verbose_message(self, message):
+        """ Handle a verbose progress message. """
+
+        if self.verbose:
+            self.progress_message(message)
+
+    def warning(self, message):
+        """ Handle a warning message.  This is raised as an exception if
+        warnings are treated as errors.
+        """
+
+        if self._warnings_are_errors:
+            raise UserException(message)
+
+        self.verbose_message(message)

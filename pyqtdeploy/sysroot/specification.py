@@ -39,7 +39,7 @@ from .component import ComponentBase
 class Specification:
     """ Encapsulate the specification of a system root directory. """
 
-    def __init__(self, specification_file, plugin_dirs, target):
+    def __init__(self, sysroot, specification_file, plugin_dirs, target):
         """ Initialise the object. """
 
         self.specification_file = os.path.abspath(specification_file)
@@ -123,8 +123,7 @@ class Specification:
                             "unable to find a plugin for '{0}'".format(name))
 
             # Create the component plugin.
-            component = plugin()
-            setattr(component, 'name', name)
+            component = plugin(name, sysroot)
             setattr(component, '_options_values', target_config)
 
             self.components.append(component)
