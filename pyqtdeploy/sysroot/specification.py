@@ -42,7 +42,7 @@ class Specification:
     def __init__(self, specification_file, plugin_dirs, target):
         """ Initialise the object. """
 
-        self._specification_file = specification_file
+        self.specification_file = os.path.abspath(specification_file)
 
         self.components = []
 
@@ -240,9 +240,9 @@ class Specification:
 
         if component_name:
             exception = "{0}: Component '{1}': {2}".format(
-                    self._specification_file, component_name, message)
+                    self.specification_file, component_name, message)
         else:
-            exception = "{0}: {1}".format(self._specification_file, message)
+            exception = "{0}: {1}".format(self.specification_file, message)
 
         raise UserException(exception)
 
