@@ -88,7 +88,7 @@ def main():
         elif args.validate:
             sysroot.validate()
         else:
-            sysroot.build_components(args.component, args.source_dirs,
+            sysroot.install_components(args.component, args.source_dirs,
                     args.no_clean)
     except UserException as e:
         message_handler.exception(e)

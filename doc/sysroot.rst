@@ -419,9 +419,9 @@ The full set of command line options is:
 .. option:: --component COMPONENT
 
     ``COMPONENT`` is the name of the component (specified in the JSON file)
-    that will be built.  It may be used more than once to build multiple
+    that will be installed.  It may be used more than once to install multiple
     components.  If the option is not specified then all components specified
-    in the JSON file will be built.
+    in the TOML file will be installed.
 
 .. option:: --no-clean
 
@@ -447,7 +447,7 @@ The full set of command line options is:
 .. option:: --source-dir DIR
 
     ``DIR`` is the name of a directory containing the source archives used to
-    build the components specified in the JSON file.  It may be specified any
+    install the components specified in the TOML file.  It may be specified any
     number of times and each directory will be searched in turn.  If it is
     omitted then the current directory is searched.
 
@@ -488,8 +488,8 @@ Writing a Component Plugin
 
 A component plugin is a Python module that defines a sub-class of
 :py:class:`pyqtdeploy.ComponentBase`.  The sub-class must re-implement the
-:py:meth:`~pyqtdeploy.ComponentBase.build` method and may also
-re-implement the :py:meth:`~pyqtdeploy.ComponentBase.configure` method.  It
+:py:meth:`~pyqtdeploy.ComponentBase.install` method and may also
+re-implement the :py:meth:`~pyqtdeploy.ComponentBase.validate` method.  It
 should also include a class attribute called
 :py:attr:`~pyqtdeploy.ComponentBase.options` which is a sequence of
 :py:class:`pyqtdeploy.ComponentOption` instances that describe each of the
@@ -508,20 +508,16 @@ class is.
         :py:class:`~pyqtdeploy.ComponentOption` instances describing the
         component's configurable options.
 
-    .. py:method:: build(sysroot)
+    .. py:method:: install()
 
-        This abstract method is re-implemented to build the component.
+        This abstract method is re-implemented to install the component.
 
-        :param Sysroot sysroot:  the sysroot being built.
+    .. py:method:: validate()
 
-    .. py:method:: configure(sysroot)
-
-        This method is re-implemented to configure the component.  A component
-        will always be configured even if it does not get built.  The plugin
-        should check that everything is available (e.g. source code, external
-        tools) for a successful build.
-
-        :param Sysroot sysroot:  the sysroot being configured.
+        This method is re-implemented to validate the component.  A component
+        will always be validated even if it does not get installed.  The plugin
+        should check that everything is available (e.g. other components,
+        external tools) for a successful installation.
 
 .. py:class:: ComponentOption(name, type=str, required=False, default=None, values=None, help='')
 

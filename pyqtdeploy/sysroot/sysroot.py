@@ -88,9 +88,17 @@ class Sysroot:
 
         self._source_dirs = None
 
-    def build_components(self, component_names, source_dirs, no_clean):
-        """ Build a sequence of components.  If no names are given then create
-        the system image root directory and build everything.  Raise a
+    @staticmethod
+    def error(message, detail='', exception=None):
+        """ Raise an exception that will report an error is a user friendly
+        manner.
+        """
+
+        raise UserException(message, detail=detail) from exception
+
+    def install_components(self, component_names, source_dirs, no_clean):
+        """ Install a sequence of components.  If no names are given then
+        create the system image root directory and install everything.  Raise a
         UserException if there is an error.
         """
 
@@ -121,11 +129,11 @@ class Sysroot:
         self.create_dir(self._build_dir, empty=True)
         cwd = os.getcwd()
 
-        # Build the components.
+        # Install the components.
         for component in components:
-            self.progress("Building {0}...".format(component.name))
+            self.progress("Installing {0}...".format(component.name))
             os.chdir(self._build_dir)
-            component.build(self)
+            component.install()
 
         # Remove the build directory if requested.
         os.chdir(cwd)
@@ -137,14 +145,6 @@ class Sysroot:
                 self.delete_dir(self._build_dir)
             except UserException as e:
                 self.verbose("Warning: " + e.text)
-
-    @staticmethod
-    def error(message, detail='', exception=None):
-        """ Raise an exception that will report an error is a user friendly
-        manner.
-        """
-
-        raise UserException(message, detail=detail) from exception
 
     def show_options(self, component_names):
         """ Show the options for a sequence of components.  If no names are
@@ -164,8 +164,10 @@ class Sysroot:
         error.
         """
 
+        # Parse the options.
         self._specification.parse_options()
 
+        # Set the version numbers of each component.
         for component in self.components:
             # Use any explicitly specified version number.
             if component.version != '':
@@ -174,11 +176,13 @@ class Sysroot:
             else:
                 component.version = component.get_implied_version()
 
+        # Validate the components.
+        for component in self.components:
             self.progress(
-                    "Configuring {0} v{1}...".format(component.name,
+                    "Validating {0} v{1}...".format(component.name,
                             component.version))
 
-            component.configure()
+            component.validate()
 
     def warning(self, message):
         """ Issue a warning message. """

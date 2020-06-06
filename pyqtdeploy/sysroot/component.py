@@ -80,11 +80,13 @@ class ComponentBase(ABC):
         self._sysroot = sysroot
 
     @abstractmethod
-    def build(self, sysroot):
-        """ Build the component. """
+    def install(self):
+        """ Install the component. """
 
-    def configure(self, sysroot):
-        """ Complete the configuration of the component. """
+    def validate(self):
+        """ Validate the component.  This will be called after the options have
+        been parsed and after the version number has been set.
+        """
 
     def error(self, message):
         """ Issue an error message.  This method will not return. """
@@ -120,7 +122,7 @@ class ComponentBase(ABC):
 
 
 class SourceComponent(ComponentBase):
-    """ The base class for the implemenation of component plugins that build
+    """ The base class for the implemenation of component plugins that install
     from a source package.
     """
 
