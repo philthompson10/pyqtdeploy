@@ -1,4 +1,3 @@
-# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -132,24 +131,7 @@ class Specification:
         """ Parse all the components' options. """
 
         for component in self.components:
-            options_values = component._options_values
-
-            # Parse the component-specific options.
-            for cls in type(component).__mro__:
-                options = cls.__dict__.get('options')
-                if options:
-                    self._parse_options(options_values, options, component)
-
-                if cls is ComponentBase:
-                    break
-
-            unused = options_values.keys()
-            if unused:
-                self._parse_error(
-                        "unknown option(s): {0}".format(', '.join(unused)),
-                        component.name)
-
-            del component._options_values
+            self._parse_options(component)
 
     def _plugin_from_file(self, name, plugin_dir):
         """ Try and load a component plugin from a file. """
@@ -194,12 +176,14 @@ class Specification:
 
         return None
 
-    def _parse_options(self, options_values, options, component):
-        """ Parse a mapping of values according to a set of options and add the
-        corresponding values as attributes of a component object.
+    def _parse_options(self, component):
+        """ Parse a mapping of values according to a component's options and
+        add the corresponding values as attributes of the component object.
         """
 
-        for option in options:
+        options_values = component._options_values
+
+        for option in component.get_options():
             value = options_values.get(option.name)
 
             if value is None:
@@ -227,6 +211,14 @@ class Specification:
                 del options_values[option.name]
             except KeyError:
                 pass
+
+        unused = options_values.keys()
+        if unused:
+            self._parse_error(
+                    "unknown option(s): {0}".format(', '.join(unused)),
+                    component.name)
+
+        del component._options_values
 
     def _bad_type(self, name, component_name=None):
         """ Raise an exception when an option name has the wrong type. """

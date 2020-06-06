@@ -66,18 +66,20 @@ class ComponentOption:
 class ComponentBase(ABC):
     """ The base class for the implementation of a component plugin. """
 
-    # A sequence of ComponentOption instances describing the options that can
-    # be specified for the component in the specification file.  These are made
-    # available as attributes of the plugin instance.
-    options = [
-        ComponentOption('version', help="The version number of the component.")
-    ]
-
     def __init__(self, name, sysroot):
         """ Initialise the component. """
 
         self.name = name
         self._sysroot = sysroot
+
+    @property
+    def android_api(self):
+        """ The Android API to use. """
+
+        try:
+            return self._sysroot.target.platform.android_api
+        except AttributeError:
+            self._android_only('android_api')
 
     def error(self, message):
         """ Issue an error message.  This method will not return. """
@@ -96,6 +98,14 @@ class ComponentBase(ABC):
                 return exe_path
 
         self.error("'{0}' must be installed on PATH".format(name))
+
+    def get_options(self):
+        """ Return a list of ComponentOption objects that define the components
+        configurable options.
+        """
+
+        return [ComponentOption('version',
+                help="The version number of the component.")]
 
     def get_component(self, name, required=True):
         """ Return the component object for the given name or None if the
@@ -172,17 +182,16 @@ class ComponentBase(ABC):
 
         self._sysroot.warning("{0}: {1}".format(self.name, message))
 
+    def _android_only(self, attr_name):
+        """ Issue an error message about an Android-only attribute. """
+
+        self.error(
+                "the '{0}' attribute is only support for Android targets".format(attr_name))
 
 class SourceComponent(ComponentBase):
     """ The base class for the implemenation of component plugins that install
     from a source package.
     """
-
-    # The options.
-    options = [
-        ComponentOption('source', required=True,
-                help="The archive containing the source code.")
-    ]
 
     _ARCHIVE_EXTENSIONS = ('.tar.bz2', '.tar.gz', '.tar.xz', 'tgz', '.zip')
 
@@ -190,6 +199,11 @@ class SourceComponent(ComponentBase):
         """ Return the VersionNumber object corresponding to the version number
         implied by the component source.
         """
+
+        # If 'source' hasn't been specified then use the super-class
+        # implementation.
+        if self.source == '':
+            return super().get_implied_version()
 
         # Get the basename without any standard source archive extensions.
         name = os.path.basename(self.source)
@@ -207,3 +221,16 @@ class SourceComponent(ComponentBase):
 
         self.error(
                 "unable to extract a version number from '{0}'".format(name))
+
+    def get_options(self):
+        """ Return a list of ComponentOption objects that define the components
+        configurable options.
+        """
+
+        options = super().get_options()
+
+        options.append(
+                ComponentOption('source',
+                        help="The archive containing the source code."))
+
+        return options

@@ -33,14 +33,21 @@ from ... import ComponentOption, SourceComponent
 class OpenSSLComponent(SourceComponent):
     """ The OpenSSL component. """
 
-    # The component options.
-    options = [
-        ComponentOption('no_asm', type=bool,
-                help="Disable the use of assembly language speedups.")
-    ]
+    def get_options(self):
+        """ Return a list of ComponentOption objects that define the components
+        configurable options.
+        """
+
+        options = super().get_options()
+
+        options.append(
+                ComponentOption('no_asm', type=bool,
+                        help="Disable the use of assembly language speedups."))
+
+        return options
 
     def install(self):
-        """ Install OpenSSL for the target. """
+        """ Install for the target. """
 
 		# Unpack the source.
         archive = sysroot.find_file(self.source)

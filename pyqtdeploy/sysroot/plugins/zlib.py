@@ -32,14 +32,22 @@ from ... import ComponentOption, SourceComponent
 class zlibComponent(SourceComponent):
     """ The zlib component. """
 
-    # The component options.
-    options = [
-        ComponentOption('static_msvc_runtime', type=bool,
-                help="Set if the MSVC runtime should be statically linked.")
-    ]
+    def get_options(self):
+        """ Return a list of ComponentOption objects that define the components
+        configurable options.
+        """
+
+        options = super().get_options()
+
+        options.append(
+                ComponentOption('static_msvc_runtime', type=bool,
+                        help="Set if the MSVC runtime should be statically "
+                                "linked."))
+
+        return options
 
     def install(self):
-        """ Install zlib for the target. """
+        """ Install for the target. """
 
         archive = sysroot.find_file(self.source)
         sysroot.unpack_archive(archive)

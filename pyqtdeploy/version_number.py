@@ -30,7 +30,7 @@ from functools import total_ordering
 from .user_exception import UserException
 
 
-@total_ordering
+#@total_ordering
 class VersionNumber:
     """ A parsed version number.  The major, minor and patch attributes are
     integers and the suffix attribute is a string.  Instances can be compared
@@ -108,6 +108,35 @@ class VersionNumber:
             return True
 
         return self.suffix < other.suffix
+
+    def __ge__(self, other):
+        """ Return True if this version number is less than another. """
+
+        other = self._resolve_other(other)
+        if other is None:
+            return NotImplemented
+
+        major, minor, patch, suffix = other
+
+        if self.major < major:
+            return False
+
+        if minor is None:
+            return True
+
+        if self.minor < minor:
+            return False
+
+        if patch is None:
+            return True
+
+        if self.patch < patch:
+            return False
+
+        if suffix is None:
+            return True
+
+        return self.suffix >= other.suffix
 
     @classmethod
     def parse_version_number(cls, version_str):
