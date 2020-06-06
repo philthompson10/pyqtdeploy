@@ -489,7 +489,7 @@ Writing a Component Plugin
 A component plugin is a Python module that defines a sub-class of
 :py:class:`pyqtdeploy.ComponentBase`.  The sub-class must re-implement the
 :py:meth:`~pyqtdeploy.ComponentBase.install` method and may also
-re-implement the :py:meth:`~pyqtdeploy.ComponentBase.validate` method.  It
+re-implement the :py:meth:`~pyqtdeploy.ComponentBase.verify` method.  It
 should also include a class attribute called
 :py:attr:`~pyqtdeploy.ComponentBase.options` which is a sequence of
 :py:class:`pyqtdeploy.ComponentOption` instances that describe each of the
@@ -512,10 +512,10 @@ class is.
 
         This abstract method is re-implemented to install the component.
 
-    .. py:method:: validate()
+    .. py:method:: verify()
 
-        This method is re-implemented to validate the component.  A component
-        will always be validated even if it does not get installed.  The plugin
+        This method is re-implemented to verify the component.  A component
+        will always be verified even if it does not get installed.  The plugin
         should check that everything is available (e.g. other components,
         external tools) for a successful installation.
 

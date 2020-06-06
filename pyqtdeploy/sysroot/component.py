@@ -79,19 +79,63 @@ class ComponentBase(ABC):
         self.name = name
         self._sysroot = sysroot
 
-    @abstractmethod
-    def install(self):
-        """ Install the component. """
-
-    def validate(self):
-        """ Validate the component.  This will be called after the options have
-        been parsed and after the version number has been set.
-        """
-
     def error(self, message):
         """ Issue an error message.  This method will not return. """
 
         self._sysroot.error("{0}: {1}".format(self.name, message))
+
+    def find_exe(self, name):
+        """ Return the absolute pathname of an executable located on PATH. """
+
+        host_exe = self.host_exe(name)
+
+        for d in os.environ.get('PATH', '').split(os.pathsep):
+            exe_path = os.path.join(d, host_exe)
+
+            if os.access(exe_path, os.X_OK):
+                return exe_path
+
+        self.error("'{0}' must be installed on PATH".format(name))
+
+    def get_component(self, name, required=True):
+        """ Return the component object for the given name or None if the
+        component hasn't been specified.  If it has not been specified and it
+        is required then raise an exception.
+        """
+
+        for component in self._sysroot.components:
+            if component.name == name:
+                return component
+
+        if required:
+            self.error(
+                    "'{0}' must be specified as a component of the sysroot".format(name))
+
+        return None
+
+    def get_implied_version(self):
+        """ Return the VersionNumber object corresponding to the implied
+        version number of the component.  This will never be called if the
+        version number was specified explicitly.  This default implementation
+        raises an exception.
+        """
+
+        self.error("the version number has not been set")
+
+    def host_exe(self, name):
+        """ Convert a generic executable name to a host-specific version. """
+
+        return self._sysroot.host.platform.exe(name)
+
+    @property
+    def host_platform_name(self):
+        """ The name of the host platform. """
+
+        return self._sysroot.host.platform.name
+
+    @abstractmethod
+    def install(self):
+        """ Install the component. """
 
     def parse_version_number(self, version_str):
         """ Parse a version number of the component returning a VersionNumber
@@ -106,14 +150,22 @@ class ComponentBase(ABC):
 
         return VersionNumber.parse_version_number(version_str)
 
-    def get_implied_version(self):
-        """ Return the VersionNumber object corresponding to the implied
-        version number of the component.  This will never be called if the
-        version number was specified explicitly.  This default implementation
-        raises an exception.
+    @property
+    def target_platform_name(self):
+        """ The name of the target platform. """
+
+        return self._sysroot.target.platform.name
+
+    def verify(self):
+        """ Verify the component.  This will be called after the options have
+        been parsed and after the version number has been set.
         """
 
-        self.error("the version number has not been set")
+    def verify_host_tools(self, tools):
+        """ Verify that a sequence of host tools is available. """
+
+        for tool in tools:
+            self.find_exe(tool)
 
     def warning(self, message):
         """ Issue a warning message. """

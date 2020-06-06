@@ -62,28 +62,28 @@ class Sysroot:
             target_arch_name, message_handler):
         """ Initialise the object. """
 
-        self._host = Architecture.architecture()
-        self._target = Architecture.architecture(target_arch_name)
+        self.host = Architecture.architecture()
+        self.target = Architecture.architecture(target_arch_name)
 
-        if not self._host.supported_target(self._target):
+        if not self.host.supported_target(self.target):
             raise UserException(
                     "{0} is not a supported {1} development host".format(
-                            self._host.name, self._target.name))
+                            self.host.name, self.target.name))
 
         if not sysroot_dir:
-            sysroot_dir = 'sysroot-' + self._target.name
+            sysroot_dir = 'sysroot-' + self.target.name
 
         self.sysroot_dir = os.path.abspath(sysroot_dir)
         self._build_dir = os.path.join(self.sysroot_dir, 'build')
 
         self._specification = Specification(self, sysroot_specification,
-                plugin_dirs, self._target)
+                plugin_dirs, self.target)
         self._message_handler = message_handler
 
         self._target_py_version = None
         self._host_qmake = None
 
-        self._target.configure()
+        self.target.configure()
         self._building_for_target = True
 
         self._source_dirs = None
@@ -102,8 +102,8 @@ class Sysroot:
         UserException if there is an error.
         """
 
-        # Validate the configuration.
-        self.validate()
+        # Verify the configuration.
+        self.verify()
 
         # Normalise the list of source directories to search.
         if source_dirs:
@@ -111,9 +111,6 @@ class Sysroot:
         else:
             self._source_dirs = [
                     os.path.dirname(self._specification.specification_file)]
-
-        # Host/target independent configuration checks.
-        self.find_exe(self.host_make)
 
         if component_names:
             components = self._components_from_names(component_names)
@@ -159,8 +156,8 @@ class Sysroot:
 
         self._specification.show_options(components, self._message_handler)
 
-    def validate(self):
-        """ Validate the configuration.  Raise a UserException if there is an
+    def verify(self):
+        """ Verify the configuration.  Raise a UserException if there is an
         error.
         """
 
@@ -176,13 +173,13 @@ class Sysroot:
             else:
                 component.version = component.get_implied_version()
 
-        # Validate the components.
+        # Verify the components.
         for component in self.components:
             self.progress(
-                    "Validating {0} v{1}...".format(component.name,
+                    "Verifying {0} v{1}...".format(component.name,
                             component.version))
 
-            component.validate()
+            component.verify()
 
     def warning(self, message):
         """ Issue a warning message. """
@@ -265,14 +262,14 @@ class Sysroot:
     def android_api(self):
         """ The Android API to use. """
 
-        return self._target.platform.android_api
+        return self.target.platform.android_api
 
     @property
     @android_only
     def android_ndk_sysroot(self):
         """ The path of the Android NDK's sysroot directory. """
 
-        return self._target.android_ndk_sysroot
+        return self.target.android_ndk_sysroot
 
     @property
     @android_only
@@ -281,7 +278,7 @@ class Sysroot:
         Android NDK.
         """
 
-        ndk_version = self._target.platform.android_ndk_version
+        ndk_version = self.target.platform.android_ndk_version
 
         if ndk_version is None:
             self.error("unable to determine the NDK version number")
@@ -295,7 +292,7 @@ class Sysroot:
         Android SDK.
         """
 
-        sdk_version = self._target.platform.android_sdk_version
+        sdk_version = self.target.platform.android_sdk_version
 
         if sdk_version is None:
             self.error("unable to determine the SDK version number")
@@ -307,14 +304,14 @@ class Sysroot:
     def android_toolchain_bin(self):
         """ The path of the Android toolchain's bin directory. """
 
-        return self._target.android_toolchain_bin
+        return self.target.android_toolchain_bin
 
     @property
     @android_only
     def android_toolchain_cc(self):
         """ The name of the Android toolchain's C compiler. """
 
-        return self._target.android_toolchain_cc
+        return self.target.android_toolchain_cc
 
     @property
     @android_only
@@ -322,20 +319,20 @@ class Sysroot:
         """ The list of the Android toolchain's C compiler's recommended flags.
         """
 
-        return self._target.android_toolchain_cflags
+        return self.target.android_toolchain_cflags
 
     @property
     @android_only
     def android_toolchain_prefix(self):
         """ The name of the Android toolchain's prefix. """
 
-        return self._target.android_toolchain_prefix
+        return self.target.android_toolchain_prefix
 
     @property
     def apple_sdk(self):
         """ The Apple SDK to use. """
 
-        arch = self._target if self._building_for_target else self._host
+        arch = self.target if self._building_for_target else self.host
 
         return arch.platform.get_apple_sdk(self._message_handler)
 
@@ -354,11 +351,11 @@ class Sysroot:
         """
 
         if value:
-            self._host.deconfigure()
-            self._target.configure()
+            self.host.deconfigure()
+            self.target.configure()
         else:
-            self._target.deconfigure()
-            self._host.configure()
+            self.target.deconfigure()
+            self.host.configure()
 
         self._building_for_target = value
 
@@ -460,34 +457,6 @@ class Sysroot:
 
         return version_nr
 
-    def find_component(self, name, required=True):
-        """ Return the component object for the given name or None if the
-        component isn't specified.  If it is not specified and it is required
-        then raise an exception.
-        """
-
-        for component in self.components:
-            if component.name == name:
-                return component
-
-        if required:
-            self._missing_component(name)
-
-        return None
-
-    def find_exe(self, name):
-        """ Return the absolute pathname of an executable located on PATH. """
-
-        host_exe = self.host_exe(name)
-
-        for d in os.environ.get('PATH', '').split(os.pathsep):
-            exe_path = os.path.join(d, host_exe)
-
-            if os.access(exe_path, os.X_OK):
-                return exe_path
-
-        self.error("'{0}' must be installed on PATH".format(name))
-
     def find_file(self, name, required=True):
         """ Find a file (or directory).  If the name is relative then it is
         relative to a directory specified by the --source-dir command line
@@ -533,13 +502,13 @@ class Sysroot:
         else:
             version_nr = VersionNumber(major, minor)
 
-        return get_py_install_path(version_nr, self._target)
+        return get_py_install_path(version_nr, self.target)
 
     @property
     def host_arch_name(self):
         """ The name of the host architecture. """
 
-        return self._host.arch_name
+        return self.host.arch_name
 
     @property
     def host_bin_dir(self):
@@ -553,22 +522,11 @@ class Sysroot:
 
         return os.path.join(self.sysroot_dir, 'host')
 
-    def host_exe(self, name):
-        """ Convert a generic executable name to a host-specific version. """
-
-        return self._host.platform.exe(name)
-
     @property
     def host_make(self):
         """ The name of the host make executable. """
 
-        return self._host.platform.make
-
-    @property
-    def host_platform_name(self):
-        """ The name of the host platform. """
-
-        return self._host.platform.name
+        return self.host.platform.make
 
     @property
     def host_pip(self):
@@ -668,7 +626,7 @@ class Sysroot:
     def target_arch_name(self):
         """ The name of the target architecture. """
 
-        return self._target.name
+        return self.target.name
 
     @property
     def target_include_dir(self):
@@ -681,12 +639,6 @@ class Sysroot:
         """ The name of the directory containing target libraries. """
 
         return os.path.join(self.sysroot_dir, 'lib')
-
-    @property
-    def target_platform_name(self):
-        """ The name of the target platform. """
-
-        return self._target.platform.name
 
     @property
     def target_py_include_dir(self):
