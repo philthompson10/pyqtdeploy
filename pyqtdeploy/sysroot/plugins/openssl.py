@@ -42,8 +42,8 @@ class OpenSSLComponent(SourceComponent):
                 help="The archive of the Python source code containing patches to build OpenSSL on macOS for Python v3.6.4 and earlier.")
     ]
 
-    def build(self, sysroot):
-        """ Build OpenSSL for the target. """
+    def install(self):
+        """ Install OpenSSL for the target. """
 
 		# Unpack the source.
         archive = sysroot.find_file(self.source)
@@ -63,8 +63,8 @@ class OpenSSLComponent(SourceComponent):
         else:
             self._build_1_0(sysroot, common_options)
 
-    def configure(self):
-        """ Complete the configuration of the component. """
+    def validate(self):
+        """ Validate the component. """
 
         host = sysroot.host_platform_name
         target = sysroot.target_platform_name

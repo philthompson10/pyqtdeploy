@@ -26,18 +26,16 @@
 
 import os
 
-from ... import ComponentBase, ComponentOption
+from ... import ComponentOption, SourceComponent
 
 
-class zlibComponent(ComponentBase):
+class zlibComponent(SourceComponent):
     """ The zlib component. """
 
     # The component options.
     options = [
-        ComponentOption('source', required=True,
-                help="The archive containing the zlib source code."),
         ComponentOption('static_msvc_runtime', type=bool,
-                help="Set if the MSVC runtime should be statically linked."),
+                help="Set if the MSVC runtime should be statically linked.")
     ]
 
     def build(self, sysroot):
@@ -97,8 +95,3 @@ class zlibComponent(ComponentBase):
 
             if sysroot.target_platform_name == 'ios':
                 del os.environ['CFLAGS']
-
-    def configure(self, sysroot):
-        """ Complete the configuration of the component. """
-
-        sysroot.verify_source(self.source)
