@@ -9,7 +9,7 @@ source = "openssl-1.1.0j.tar.gz"
 source = "openssl-1.0.2r.tar.gz"
 
 [OpenSSL.win]
-no_asm = true
+no_asm = true       # This means that NASM doesn't need to be installed.
 
 
 [zlib]

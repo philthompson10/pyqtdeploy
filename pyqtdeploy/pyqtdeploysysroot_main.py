@@ -59,7 +59,7 @@ def main():
     parser.add_argument('--target', help="the target architecture"),
     parser.add_argument('--quiet', help="disable progress messages",
             action='store_true')
-    parser.add_argument('--validate', help="validate the specification",
+    parser.add_argument('--verify', help="verify the specification",
             action='store_true')
     parser.add_argument('--verbose', help="enable verbose progress messages",
             action='store_true')
@@ -85,8 +85,8 @@ def main():
 
         if args.options:
             sysroot.show_options(args.component)
-        elif args.validate:
-            sysroot.validate()
+        elif args.verify:
+            sysroot.verify()
         else:
             sysroot.install_components(args.component, args.source_dirs,
                     args.no_clean)

@@ -26,7 +26,6 @@
 
 import glob
 import os
-import sys
 
 from ... import ComponentOption, SourceComponent
 
@@ -37,9 +36,7 @@ class OpenSSLComponent(SourceComponent):
     # The component options.
     options = [
         ComponentOption('no_asm', type=bool,
-                help="Disable the use of assembly language speedups."),
-        ComponentOption('python_source',
-                help="The archive of the Python source code containing patches to build OpenSSL on macOS for Python v3.6.4 and earlier.")
+                help="Disable the use of assembly language speedups.")
     ]
 
     def install(self):
@@ -59,44 +56,47 @@ class OpenSSLComponent(SourceComponent):
             common_options.append('no-asm')
 
         if version_nr >= (1, 1):
-            self._build_1_1(sysroot, common_options)
+            self._install_1_1(sysroot, common_options)
         else:
-            self._build_1_0(sysroot, common_options)
+            self._install_1_0(sysroot, common_options)
 
-    def validate(self):
-        """ Validate the component. """
+    def verify(self):
+        """ Verify the component. """
 
-        host = sysroot.host_platform_name
-        target = sysroot.target_platform_name
-        version_nr = sysroot.verify_source(self.source)
+        host = self.host_platform_name
+        target = self.target_platform_name
 
-        if version_nr >= (1, 1, 1):
-            sysroot.error(
-                    "building OpenSSL v{0} is not supported".format(
-                            version_nr))
+        # We only install v1.0 and v1.1.0.
+        if 1 > self.version >= (1, 1, 1):
+            self.error("installing v{0} is not supported".format(self.version))
 
         if target == host:
+            # We only natively compile on macOS and Windows.
             supported = (target in ('macos', 'win'))
         else:
+            # We only cross-compile to Android.
             supported = (target == 'android')
 
         if not supported:
-            sysroot.error(
-                    "building OpenSSL for {0} on {1} is not supported".format(
-                            target, host))
+            self.error(
+                    "installing for {0} on {1} is not supported".format(target,
+                            host))
 
-        # See if we will need to patch the Python source code.
-        if target == 'macos' and version_nr == (1, 0) and self.python_source:
-            sysroot.find_exe('patch')
+        # Check the required host tools are available.
+        tools = ['make', 'perl']
 
-        sysroot.find_exe('perl')
+        # See if we will need to apply a patch from the Python source code.
+        if target == 'macos' and self.version == (1, 0):
+            if self.get_component('Python').version <= (3, 6, 4):
+                tools.append('patch')
 
-        # Check NASM is available if it is required.
-        if sys.platform == 'win' and not self.no_asm:
-            sysroot.find_exe('nasm')
+        if host == 'win' and not self.no_asm:
+            tools.append('nasm')
 
-    def _build_1_1(self, sysroot, common_options):
-        """ Build OpenSSL v1.1 for supported platforms. """
+        self.verify_host_tools(tools)
+
+    def _install_1_1(self, sysroot, common_options):
+        """ Install v1.1 for supported platforms. """
 
         if sysroot.target_platform_name == sysroot.host_platform_name:
             # We are building natively.
@@ -110,15 +110,15 @@ class OpenSSLComponent(SourceComponent):
                 sysroot.run(sysroot.host_make, 'install')
 
             elif sysroot.target_platform_name == 'win':
-                self._build_1_1_win(sysroot, common_options)
+                self._install_1_1_win(sysroot, common_options)
         else:
             # We are cross-compiling.
 
             if sysroot.target_platform_name == 'android':
-                self._build_1_1_android(sysroot, common_options)
+                self._install_1_1_android(sysroot, common_options)
 
-    def _build_1_1_android(self, sysroot, common_options):
-        """ Build OpenSSL v1.1 for Android on either Linux or MacOS hosts. """
+    def _install_1_1_android(self, sysroot, common_options):
+        """ Install v1.1 for Android on either Linux or MacOS hosts. """
 
         # Configure the environment.
         using_clang = (sysroot.android_ndk_version >= 16)
@@ -172,8 +172,8 @@ class OpenSSLComponent(SourceComponent):
 
         os.environ['PATH'] = original_path
 
-    def _build_1_1_win(self, sysroot, common_options):
-        """ Build OpenSSL v1.1 for Windows. """
+    def _install_1_1_win(self, sysroot, common_options):
+        """ Install v1.1 for Windows. """
 
         # Set the architecture-specific values.
         if sysroot.target_arch_name.endswith('-64'):
@@ -189,8 +189,8 @@ class OpenSSLComponent(SourceComponent):
         sysroot.run(sysroot.host_make)
         sysroot.run(sysroot.host_make, 'install')
 
-    def _build_1_0(self, sysroot, common_options):
-        """ Build OpenSSL v1.0 for supported platforms. """
+    def _install_1_0(self, sysroot, common_options):
+        """ Install v1.0 for supported platforms. """
 
         # Add the common options that Python used prior to v3.7.
         common_options.extend([
@@ -209,18 +209,18 @@ class OpenSSLComponent(SourceComponent):
             # We are building natively.
 
             if sysroot.target_arch_name == 'macos-64':
-                self._build_1_0_macos(sysroot, common_options)
+                self._install_1_0_macos(sysroot, common_options)
 
             elif sysroot.target_platform_name == 'win':
-                self._build_1_0_win(sysroot, common_options)
+                self._install_1_0_win(sysroot, common_options)
         else:
             # We are cross-compiling.
 
             if sysroot.target_platform_name == 'android':
-                self._build_1_0_android(sysroot, common_options)
+                self._install_1_0_android(sysroot, common_options)
 
-    def _build_1_0_android(self, sysroot, common_options):
-        """ Build OpenSSL v1.0 for Android on either Linux or MacOS hosts. """
+    def _install_1_0_android(self, sysroot, common_options):
+        """ Install v1.0 for Android on either Linux or MacOS hosts. """
 
         # Configure the environment.
         using_clang = (sysroot.android_ndk_version >= 16)
@@ -290,8 +290,8 @@ class OpenSSLComponent(SourceComponent):
         del os.environ['ANDROID_DEV']
         os.environ['PATH'] = original_path
 
-    def _build_1_0_macos(self, sysroot, common_options):
-        """ Build OpenSSL v1.0 for 64 bit macOS. """
+    def _install_1_0_macos(self, sysroot, common_options):
+        """ Install v1.0 for 64 bit macOS. """
 
         # Find and apply any Python patch.
         if self.python_source:
@@ -319,8 +319,8 @@ class OpenSSLComponent(SourceComponent):
         sysroot.run(sysroot.host_make, 'all', sdk_env)
         sysroot.run(sysroot.host_make, 'install_sw', sdk_env)
 
-    def _build_1_0_win(self, sysroot, common_options):
-        """ Build OpenSSL v1.0 for Windows. """
+    def _install_1_0_win(self, sysroot, common_options):
+        """ Install v1.0 for Windows. """
 
         # Set the architecture-specific values.
         if sysroot.target_arch_name.endswith('-64'):

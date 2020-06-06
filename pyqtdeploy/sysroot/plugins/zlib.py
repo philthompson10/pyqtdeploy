@@ -38,8 +38,8 @@ class zlibComponent(SourceComponent):
                 help="Set if the MSVC runtime should be statically linked.")
     ]
 
-    def build(self, sysroot):
-        """ Build zlib for the target. """
+    def install(self):
+        """ Install zlib for the target. """
 
         archive = sysroot.find_file(self.source)
         sysroot.unpack_archive(archive)
