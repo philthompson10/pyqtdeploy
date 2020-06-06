@@ -80,7 +80,7 @@ class Sysroot:
                 plugin_dirs, self.target)
         self._message_handler = message_handler
 
-        self._target_py_version = None
+        self._python_component = None
         self._host_qmake = None
 
         self.target.configure()
@@ -164,7 +164,8 @@ class Sysroot:
         # Parse the options.
         self._specification.parse_options()
 
-        # Set the version numbers of each component.
+        # Set the version numbers of each component and remember the Python
+        # component.
         for component in self.components:
             # Use any explicitly specified version number.
             if component.version != '':
@@ -172,6 +173,12 @@ class Sysroot:
                         component.version)
             else:
                 component.version = component.get_implied_version()
+
+            if component.name == 'Python':
+                self._python_component = component
+
+        if self._python_component is None:
+            self.error("the 'Python' component has not been specified")
 
         # Verify the components.
         for component in self.components:
@@ -256,13 +263,6 @@ class Sysroot:
             os.environ['PATH'] = os.pathsep.join(path)
 
         return original_path
-
-    @property
-    @android_only
-    def android_api(self):
-        """ The Android API to use. """
-
-        return self.target.platform.android_api
 
     @property
     @android_only
@@ -498,7 +498,7 @@ class Sysroot:
         from ..windows import get_py_install_path
 
         if major is None or minor is None:
-            version_nr = self.target_py_version
+            version_nr = self._python_component.version
         else:
             version_nr = VersionNumber(major, minor)
 
@@ -661,20 +661,6 @@ class Sysroot:
         return os.path.join(self.target_lib_dir, self._py_subdir)
 
     @property
-    def target_py_version(self):
-        """ The VersionNumber object for the Python version being targeted. """
-
-        self._check_python_component()
-
-        return self._target_py_version
-
-    @target_py_version.setter
-    def target_py_version(self, version_nr):
-        """ The setter for the Python version being targeted. """
-
-        self._target_py_version = version_nr
-
-    @property
     def target_pyqt_platform(self):
         """ The name of the target Python platform (as known by PyQt's
         configure.py).
@@ -787,14 +773,8 @@ class Sysroot:
     def _py_subdir(self):
         """ The name of a version-specific Python sub-directory. """
 
-        return 'python{}.{}'.format(self.target_py_version.major,
-                self.target_py_version.minor)
-
-    def _check_python_component(self):
-        """ Check that the Python component plugin has been run. """
-
-        if self._target_py_version is None:
-            self._missing_component('python')
+        return 'python{}.{}'.format(self._python_component.version.major,
+                self._python_component.version.minor)
 
     def _missing_component(self, name):
         """ Raise an exception about a missing component. """

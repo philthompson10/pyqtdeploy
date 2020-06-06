@@ -28,30 +28,50 @@ import os
 import shutil
 import sys
 
-from .... import ComponentBase, ComponentOption
+from .... import ComponentOption, SourceComponent
 
 from .configure_python import configure_python
 
 
-class PythonComponent(ComponentBase):
+class PythonComponent(SourceComponent):
     """ The host and target Python component. """
 
-    # The component options.
-    options = [
-        ComponentOption('build_host_from_source', type=bool,
-                help="Build the host Python from source code rather than use an existing installation."),
-        ComponentOption('build_target_from_source', type=bool,
-                help="Build the target Python from source code rather than use an existing installation."),
-        ComponentOption('dynamic_loading', type=bool,
-                help="Set to enable support for the dynamic loading of extension modules when building from source."),
-        ComponentOption('host_installation_bin_dir',
-                help="The pathname of the directory containing the existing host Python interpreter installation. If it is not specified on Windows then the value found in the registry is used. On other platforms it is assumed to be on PATH."),
-        ComponentOption('source',
-                help="The archive containing the Python source code.")
-    ]
+    def get_options(self):
+        """ Return a list of ComponentOption objects that define the components
+        configurable options.
+        """
 
-    def build(self, sysroot):
-        """ Build Python for the host and target. """
+        options = super().get_options()
+
+        options.append(
+                ComponentOption('build_host_from_source', type=bool,
+                        help="Build the host Python from source code rather "
+                                "than use an existing installation."))
+
+        options.append(
+                ComponentOption('build_target_from_source', type=bool,
+                        help="Build the target Python from source code rather "
+                                "than use an existing installation."))
+
+        options.append(
+                ComponentOption('dynamic_loading', type=bool,
+                        help="Set to enable support for the dynamic loading "
+                                "of extension modules when building from "
+                                "source."))
+
+        options.append(
+                ComponentOption('host_installation_bin_dir',
+                        help="The pathname of the directory containing the "
+                                "existing host Python interpreter "
+                                "installation. If it is not specified on "
+                                "Windows then the value found in the registry "
+                                "is used. On other platforms it is assumed to "
+                                "be on PATH."))
+
+        return options
+
+    def install(self):
+        """ Install for the host and target. """
 
         # Build the host installation.
         if self.build_host_from_source:
@@ -85,41 +105,29 @@ class PythonComponent(ComponentBase):
         else:
             self._install_target_from_existing_windows_version(sysroot)
 
-    def configure(self, sysroot):
-        """ Complete the configuration of the component. """
+    def verify(self):
+        """ Verify the component. """
 
-        if self.build_host_from_source or self.build_target_from_source:
-            if not self.source:
-                sysroot.error("the 'source' option must be specified")
+        if self.version < (3, 5) or self.version >= (3, 8):
+            self.error("v{0} is not supported".format(self.version))
 
-            version_nr = sysroot.verify_source(self.source)
+        if self.host_platform_name == 'win':
+            if self.build_host_from_source:
+                self.error(
+                        "building the host Python from source on Windows is not supported")
         else:
-            if not self.version:
-                sysroot.error("the 'version' option must be specified")
+            if not self.build_target_from_source:
+                self.error(
+                        "using an existing Python installation for the target is not supported on {0}".format(self.target_platform_name))
 
-            version_nr = sysroot.extract_version(self.version)
+        if self.target_platform_name == 'android':
+            if self.version < (3, 6):
+                self.error(
+                        "v{0} is not supported on Android".format(
+                                self.version))
 
-        if version_nr < (3, 5):
-            sysroot.error("Python v{0} is not supported".format(version_nr))
-
-        if self.build_host_from_source and sys.platform == 'win32':
-            sysroot.error(
-                    "building the host Python from source on Windows is not supported")
-
-        if not self.build_target_from_source and sys.platform != 'win32':
-            sysroot.error(
-                    "using an existing Python installation for the target is not supported on {0}".format(sysroot.target_platform_name))
-
-        if sysroot.target_platform_name == 'android':
-            if version_nr < (3, 6):
-                sysroot.error(
-                        "Python v{0} is not supported on Android".format(
-                                version_nr))
-
-            if sysroot.android_api < 21:
-                sysroot.error("Python requires API level 21 or greater")
-
-        sysroot.target_py_version = version_nr
+            if self.android_api < 21:
+                self.error("Android API level 21 or greater is required")
 
     def _build_host_from_source(self, sysroot):
         """ Build the host Python from source and return the absolute pathname
