@@ -25,12 +25,10 @@
 
 
 from collections import namedtuple
-from functools import total_ordering
 
 from .user_exception import UserException
 
 
-#@total_ordering
 class VersionNumber:
     """ A parsed version number.  The major, minor and patch attributes are
     integers and the suffix attribute is a string.  Instances can be compared

@@ -62,13 +62,10 @@ class Sysroot:
             target_arch_name, message_handler):
         """ Initialise the object. """
 
+        self._message_handler = message_handler
+
         self.host = Architecture.architecture()
         self.target = Architecture.architecture(target_arch_name)
-
-        if not self.host.supported_target(self.target):
-            raise UserException(
-                    "{0} is not a supported {1} development host".format(
-                            self.host.name, self.target.name))
 
         if not sysroot_dir:
             sysroot_dir = 'sysroot-' + self.target.name
@@ -76,17 +73,9 @@ class Sysroot:
         self.sysroot_dir = os.path.abspath(sysroot_dir)
         self._build_dir = os.path.join(self.sysroot_dir, 'build')
 
+        self._python_component = None
         self._specification = Specification(self, sysroot_specification,
                 plugin_dirs, self.target)
-        self._message_handler = message_handler
-
-        self._python_component = None
-        self._host_qmake = None
-
-        self.target.configure()
-        self._building_for_target = True
-
-        self._source_dirs = None
 
     @staticmethod
     def error(message, detail='', exception=None):
@@ -111,6 +100,10 @@ class Sysroot:
         else:
             self._source_dirs = [
                     os.path.dirname(self._specification.specification_file)]
+
+        # Default to building for the target.
+        self._building_for_target = True
+        self.target.configure()
 
         if component_names:
             components = self._components_from_names(component_names)
@@ -163,6 +156,16 @@ class Sysroot:
 
         # Parse the options.
         self._specification.parse_options()
+
+        # Verify the host and target.
+        self.progress(
+                "Verifying host architecture '{0}'...".format(self.host.name))
+        self.host.verify_as_host(self.target, self._message_handler)
+
+        self.progress(
+                "Verifying target architecture '{0}'...".format(
+                        self.target.name))
+        self.target.verify_as_target(self._message_handler)
 
         # Set the version numbers of each component and remember the Python
         # component.
