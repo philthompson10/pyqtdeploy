@@ -43,6 +43,8 @@ class OpenSSLComponent(SourceComponent):
         self._use_native_installation = False
 
         if self.version == '' and self.source == '' and self.target_platform_name == 'linux':
+            self.verbose("Determining installed version")
+
             # Determine the version number from this particular target.  Note
             # that it may not be the same as a system the application is
             # actually deployed to.
@@ -100,6 +102,8 @@ class OpenSSLComponent(SourceComponent):
         common_options = ['--prefix=' + sysroot.sysroot_dir, 'no-engine']
 
         if self.host_platform_name == 'win' and self.find_exe('nasm', required=False) is None:
+            self.verbose(
+                    "Disabling assembler optimisations as nasm isn't installed")
             common_options.append('no-asm')
 
         if version_nr >= (1, 1):

@@ -163,6 +163,11 @@ class ComponentBase(ABC):
 
         return VersionNumber.parse_version_number(version_str)
 
+    def progress(self, message):
+        """ Issue a progress message. """
+
+        self._sysroot.progress("{0}: {1}".format(self.name, message))
+
     @property
     def target_platform_name(self):
         """ The name of the target platform. """
@@ -173,6 +178,11 @@ class ComponentBase(ABC):
         """ Verify the component.  This will be called after the options have
         been parsed and after the version number has been set.
         """
+
+    def verbose(self, message):
+        """ Issue a verbose progress message. """
+
+        self._sysroot.verbose("{0}: {1}".format(self.name, message))
 
     def verify_host_tools(self, tools):
         """ Verify that a sequence of host tools is available. """
