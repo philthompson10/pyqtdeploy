@@ -8,14 +8,14 @@ build_target_from_source = true
 
 
 [OpenSSL]
-enabled_targets = ["android", "macos", "win"]
+enabled_targets = ["android", "linux", "macos", "win"]
 source = "openssl-1.1.0j.tar.gz"
 
 [OpenSSL.android]
 source = "openssl-1.0.2r.tar.gz"
 
-[OpenSSL.win]
-no_asm = true       # This means that NASM doesn't need to be installed.
+[OpenSSL.linux]
+source = ""
 
 
 [zlib]
