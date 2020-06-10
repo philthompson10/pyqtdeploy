@@ -86,7 +86,7 @@ class ComponentBase(ABC):
 
         self._sysroot.error("{0}: {1}".format(self.name, message))
 
-    def find_exe(self, name):
+    def find_exe(self, name, required=True):
         """ Return the absolute pathname of an executable located on PATH. """
 
         host_exe = self.host_exe(name)
@@ -97,7 +97,10 @@ class ComponentBase(ABC):
             if os.access(exe_path, os.X_OK):
                 return exe_path
 
-        self.error("'{0}' must be installed on PATH".format(name))
+        if required:
+            self.error("'{0}' must be installed on PATH".format(name))
+
+        return None
 
     def get_options(self):
         """ Return a list of ComponentOption objects that define the components

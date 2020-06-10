@@ -33,21 +33,61 @@ from ... import ComponentOption, SourceComponent
 class OpenSSLComponent(SourceComponent):
     """ The OpenSSL component. """
 
-    def get_options(self):
-        """ Return a list of ComponentOption objects that define the components
-        configurable options.
+    def get_implied_version(self):
+        """ Return the VersionNumber object corresponding to the version number
+        implied by the component source.
         """
 
-        options = super().get_options()
+        # If no version or source is explicitly specified and the target
+        # platform is Linux then try to use the native installation.
+        self._use_native_installation = False
 
-        options.append(
-                ComponentOption('no_asm', type=bool,
-                        help="Disable the use of assembly language speedups."))
+        if self.version == '' and self.source == '' and self.target_platform_name == 'linux':
+            # Determine the version number from this particular target.  Note
+            # that it may not be the same as a system the application is
+            # actually deployed to.
+            opensslv_h = '/usr/include/openssl/opensslv.h'
+            if os.path.isfile(opensslv_h):
+                with open(opensslv_h) as f:
+                    for line in f:
+                        if 'OPENSSL_VERSION_NUMBER' in line:
+                            version = line.strip().split()[-1]
+                            if version.startswith('0x'):
+                                version = version[2:]
+                            if version.endswith('L'):
+                                version = version[:-1]
 
-        return options
+                            try:
+                                version = int(version, base=16)
+                            except ValueError:
+                                version = 0
+
+                            break
+                    else:
+                        version = 0
+
+                    major = (version >> 28) & 0xff
+                    minor = (version >> 20) & 0xff
+                    patch = (version >> 12) & 0xff
+                    suffix = (version >> 4) & 0xff
+                    suffix = '' if suffix == 0 else chr(ord('a') + suffix - 1)
+
+                    version = '{}.{}.{}{}'.format(major, minor, patch, suffix)
+
+                    # Ignore a native version that is earlier than v1.0.0.
+                    if major >= 1:
+                        self._use_native_installation = True
+                        return self.parse_version_number(version)
+
+        # Revert to the super-class implementation.
+        return super().get_implied_version()
 
     def install(self):
         """ Install for the target. """
+
+        # There is nothing to do if the native installation is used.
+        if self._use_native_installation:
+            return
 
 		# Unpack the source.
         archive = sysroot.find_file(self.source)
@@ -59,7 +99,7 @@ class OpenSSLComponent(SourceComponent):
         # Set common options.
         common_options = ['--prefix=' + sysroot.sysroot_dir, 'no-engine']
 
-        if self.no_asm:
+        if self.host_platform_name == 'win' and self.find_exe('nasm', required=False) is None:
             common_options.append('no-asm')
 
         if version_nr >= (1, 1):
@@ -70,21 +110,19 @@ class OpenSSLComponent(SourceComponent):
     def verify(self):
         """ Verify the component. """
 
+        # We only support v1.0 and v1.1.0.
+        if 1 > self.version >= (1, 1, 1):
+            self.error("v{0} is not supported".format(self.version))
+
+        # That's all we need to check if the native installation is used.
+        if self._use_native_installation:
+            return
+
+        # We only cross-compile to Android.
         host = self.host_platform_name
         target = self.target_platform_name
 
-        # We only install v1.0 and v1.1.0.
-        if 1 > self.version >= (1, 1, 1):
-            self.error("installing v{0} is not supported".format(self.version))
-
-        if target == host:
-            # We only natively compile on macOS and Windows.
-            supported = (target in ('macos', 'win'))
-        else:
-            # We only cross-compile to Android.
-            supported = (target == 'android')
-
-        if not supported:
+        if target != host and target != 'android':
             self.error(
                     "installing for {0} on {1} is not supported".format(target,
                             host))
@@ -97,9 +135,6 @@ class OpenSSLComponent(SourceComponent):
             if self.get_component('Python').version <= (3, 6, 4):
                 tools.append('patch')
 
-        if host == 'win' and not self.no_asm:
-            tools.append('nasm')
-
         self.verify_host_tools(tools)
 
     def _install_1_1(self, sysroot, common_options):
@@ -108,6 +143,7 @@ class OpenSSLComponent(SourceComponent):
         if sysroot.target_platform_name == sysroot.host_platform_name:
             # We are building natively.
 
+            # TODO: add support for Linux.
             if sysroot.target_arch_name == 'macos-64':
                 args = ['./config', 'no-shared']
                 args.extend(common_options)
@@ -335,7 +371,7 @@ class OpenSSLComponent(SourceComponent):
             post_config = 'ms\\do_win64a.bat'
         else:
             target = 'VC-WIN32'
-            post_config = 'ms\\do_ms.bat' if self.no_asm else 'ms\\do_nasm.bat'
+            post_config = 'ms\\do_ms.bat' if 'no-asm' in common_options else 'ms\\do_nasm.bat'
 
         # 'no-engine' seems to be broken on Windows.  It (correctly) doesn't
         # install the header file but tries to build the engines anyway.
