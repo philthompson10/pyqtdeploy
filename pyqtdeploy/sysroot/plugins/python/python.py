@@ -129,6 +129,25 @@ class PythonComponent(SourceComponent):
             if self.android_api < 21:
                 self.error("Android API level 21 or greater is required")
 
+        # Check the OpenSSL support.
+        if self.build_target_from_source:
+            openssl = self.get_component('OpenSSL', required=False)
+            if openssl is None:
+                self._has_openssl = False
+            else:
+                if self.version < (3, 5, 3) and openssl.version >= (1, 1, 0):
+                    self.error(
+                            "v{0} requires OpenSSL v1.0".format(self.version))
+                elif self.version >= (3, 6) and openssl.version < (1, 0, 2):
+                    self.error(
+                            "v{0} requires OpenSSL v1.0.2 or later".format(
+                                    self.version))
+
+                self._has_openssl = True
+        else:
+            # The standard Python builds support OpenSSL.
+            self._has_openssl = True
+
     def _build_host_from_source(self, sysroot):
         """ Build the host Python from source and return the absolute pathname
         of the interpreter.
