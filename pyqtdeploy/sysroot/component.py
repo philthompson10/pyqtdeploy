@@ -72,6 +72,8 @@ class ComponentBase(ABC):
         self.name = name
         self._sysroot = sysroot
 
+        self.use_native_version = False
+
     @property
     def android_api(self):
         """ The Android API to use. """
@@ -80,6 +82,17 @@ class ComponentBase(ABC):
             return self._sysroot.target.platform.android_api
         except AttributeError:
             self._android_only('android_api')
+
+    @property
+    def apple_sdk(self):
+        """ The Apple SDK to use. """
+
+        arch = self._sysroot.target if self._sysroot.building_for_target else self._sysroot.host
+
+        try:
+            return arch.platform.apple_sdk
+        except AttributeError:
+            self._apple_only('apple_sdk')
 
     def error(self, message):
         """ Issue an error message.  This method will not return. """
@@ -129,11 +142,45 @@ class ComponentBase(ABC):
     def get_implied_version(self):
         """ Return the VersionNumber object corresponding to the implied
         version number of the component.  This will never be called if the
-        version number was specified explicitly.  This default implementation
-        raises an exception.
+        version number was specified explicitly.
         """
 
+        # See if a native version (ie. one supplied by the target operating
+        # system) is to be used.
+        version = self.get_native_version()
+        if version is not None:
+            self.use_native_version = True
+            return version
+
         self.error("the version number has not been set")
+
+    def get_native_version(self):
+        """ Return the VersionNumber object corresponding to the version number
+        of the component provided by the target operating system.
+        """
+
+        # This default implementation does not support native versions.
+        return None
+
+    def get_version_from_file(self, identifier, filename):
+        """ Return the stripped line from a file containing an identifier
+        (typically a pre-processor macro defining a version number).  None is
+        returned if the file doesn't exist or doesn't contain the identifier.
+        """
+
+        self.verbose(
+                "Determining installed version from '{0}'".format(filename))
+
+        version_line = None
+
+        if os.path.isfile(filename):
+            with open(filename) as f:
+                for line in f:
+                    if identifier in line:
+                        version_line = line.strip()
+                        break
+
+        return version_line
 
     def host_exe(self, name):
         """ Convert a generic executable name to a host-specific version. """
@@ -200,6 +247,14 @@ class ComponentBase(ABC):
 
         self.error(
                 "the '{0}' attribute is only support for Android targets".format(attr_name))
+
+    def _apple_only(self, attr_name):
+        """ Issue an error message about an Apple-only attribute. """
+
+        self.error(
+                "the '{0}' attribute is only support for Apple targets".format(
+                        attr_name))
+
 
 class SourceComponent(ComponentBase):
     """ The base class for the implemenation of component plugins that install

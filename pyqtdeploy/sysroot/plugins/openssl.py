@@ -33,63 +33,48 @@ from ... import ComponentOption, SourceComponent
 class OpenSSLComponent(SourceComponent):
     """ The OpenSSL component. """
 
-    def get_implied_version(self):
+    def get_native_version(self):
         """ Return the VersionNumber object corresponding to the version number
-        implied by the component source.
+        component provided by the target operating system.
         """
 
-        # If no version or source is explicitly specified and the target
-        # platform is Linux then try to use the native installation.
-        self._use_native_installation = False
+        # We only support Linux native versions.
+        if self.target_platform_name != 'linux':
+            return None
 
-        if self.version == '' and self.source == '' and self.target_platform_name == 'linux':
-            self.verbose("Determining installed version")
+        version_line = self.get_version_from_file('OPENSSL_VERSION_NUMBER',
+                '/usr/include/openssl/opensslv.h')
+        if version_line is None:
+            return None
 
-            # Determine the version number from this particular target.  Note
-            # that it may not be the same as a system the application is
-            # actually deployed to.
-            opensslv_h = '/usr/include/openssl/opensslv.h'
-            if os.path.isfile(opensslv_h):
-                with open(opensslv_h) as f:
-                    for line in f:
-                        if 'OPENSSL_VERSION_NUMBER' in line:
-                            version = line.strip().split()[-1]
-                            if version.startswith('0x'):
-                                version = version[2:]
-                            if version.endswith('L'):
-                                version = version[:-1]
+        # Extract the version number from the line.
+        version = version_line.split()[-1]
+        if version.startswith('0x'):
+            version = version[2:]
+        if version.endswith('L'):
+            version = version[:-1]
 
-                            try:
-                                version = int(version, base=16)
-                            except ValueError:
-                                version = 0
+        try:
+            version = int(version, base=16)
+        except ValueError:
+            return None
 
-                            break
-                    else:
-                        version = 0
+        major = (version >> 28) & 0xff
+        minor = (version >> 20) & 0xff
+        patch = (version >> 12) & 0xff
+        suffix = (version >> 4) & 0xff
+        suffix = '' if suffix == 0 else chr(ord('a') + suffix - 1)
 
-                    major = (version >> 28) & 0xff
-                    minor = (version >> 20) & 0xff
-                    patch = (version >> 12) & 0xff
-                    suffix = (version >> 4) & 0xff
-                    suffix = '' if suffix == 0 else chr(ord('a') + suffix - 1)
+        version = '{}.{}.{}{}'.format(major, minor, patch, suffix)
 
-                    version = '{}.{}.{}{}'.format(major, minor, patch, suffix)
+        # Ignore a native version that is earlier than v1.0.0.
+        if major < 1:
+            return None
 
-                    # Ignore a native version that is earlier than v1.0.0.
-                    if major >= 1:
-                        self._use_native_installation = True
-                        return self.parse_version_number(version)
-
-        # Revert to the super-class implementation.
-        return super().get_implied_version()
+        return self.parse_version_number(version)
 
     def install(self):
         """ Install for the target. """
-
-        # There is nothing to do if the native installation is used.
-        if self._use_native_installation:
-            return
 
 		# Unpack the source.
         archive = sysroot.find_file(self.source)
@@ -118,8 +103,8 @@ class OpenSSLComponent(SourceComponent):
         if 1 > self.version >= (1, 1, 1):
             self.error("v{0} is not supported".format(self.version))
 
-        # That's all we need to check if the native installation is used.
-        if self._use_native_installation:
+        # That's all we need to check if the native version is used.
+        if self.use_native_version:
             return
 
         # We only cross-compile to Android.

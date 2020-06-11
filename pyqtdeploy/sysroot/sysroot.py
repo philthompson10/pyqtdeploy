@@ -77,6 +77,8 @@ class Sysroot:
         self._specification = Specification(self, sysroot_specification,
                 plugin_dirs, self.target)
 
+        self._building_for_target = True
+
     @staticmethod
     def error(message, detail='', exception=None):
         """ Raise an exception that will report an error is a user friendly
@@ -101,8 +103,6 @@ class Sysroot:
             self._source_dirs = [
                     os.path.dirname(self._specification.specification_file)]
 
-        # Default to building for the target.
-        self._building_for_target = True
         self.target.configure()
 
         if component_names:
@@ -121,9 +121,10 @@ class Sysroot:
 
         # Install the components.
         for component in components:
-            self.progress("Installing {0}...".format(component.name))
-            os.chdir(self._build_dir)
-            component.install()
+            if not component.use_native_version:
+                self.progress("Installing {0}...".format(component.name))
+                os.chdir(self._build_dir)
+                component.install()
 
         # Remove the build directory if requested.
         os.chdir(cwd)
@@ -337,7 +338,7 @@ class Sysroot:
 
         arch = self.target if self._building_for_target else self.host
 
-        return arch.platform.get_apple_sdk(self._message_handler)
+        return arch.platform.apple_sdk
 
     @property
     def building_for_target(self):

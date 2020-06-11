@@ -19,6 +19,7 @@ source = ""
 
 
 [zlib]
-enabled_targets = ["linux", "macos", "win"]
+
+[zlib.win]
 source = "zlib-1.2.11.tar.gz"
 static_msvc_runtime = true
