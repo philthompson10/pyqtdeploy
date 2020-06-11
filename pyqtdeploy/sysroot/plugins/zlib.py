@@ -46,6 +46,37 @@ class zlibComponent(SourceComponent):
 
         return options
 
+    def get_native_version(self):
+        """ Return the VersionNumber object corresponding to the version number
+        component provided by the target operating system.
+        """
+
+        # We support native versions for everything except Windows.
+        if self.target_platform_name == 'android':
+            # TODO: should android_sdk_system include the 'sysroot' directory
+            # itself? Is the value set in platform.py correct or should it be
+            # ndk_root + sysroot?
+            root_dir = self.android_ndk_sysroot
+        elif self.target_platform_name in ('ios', 'macos'):
+            root_dir = self.apple_sdk
+        elif self.target_platform_name == 'linux':
+            root_dir = ''
+        else:
+            return None
+
+        version_file = root_dir + '/usr/include/zlib.h'
+        version_line = self.get_version_from_file('ZLIB_VERSION', version_file)
+        if version_line is None:
+            return None
+
+        version = version_line.split()[-1]
+        if version.startswith('"'):
+            version = version[1:]
+        if version.endswith('"'):
+            version = version[:-1]
+
+        return self.parse_version_number(version)
+
     def install(self):
         """ Install for the target. """
 
