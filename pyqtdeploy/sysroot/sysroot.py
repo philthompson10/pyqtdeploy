@@ -38,7 +38,7 @@ from ..platforms import Architecture, Platform
 from ..user_exception import UserException
 from ..version_number import VersionNumber
 
-from .specification import Specification
+from .specification import SysrootSpecification
 
 
 def android_only(f):
@@ -58,26 +58,19 @@ def android_only(f):
 class Sysroot:
     """ Encapsulate a target-specific system root directory. """
 
-    def __init__(self, sysroot_dir, sysroot_specification, plugin_dirs,
-            target_arch_name, message_handler):
+    def __init__(self, specification, host, target, message_handler=None):
         """ Initialise the object. """
 
+        self._specification = specification
+        self.host = host
+        self.target = target
         self._message_handler = message_handler
 
-        self.host = Architecture.architecture()
-        self.target = Architecture.architecture(target_arch_name)
-
-        if not sysroot_dir:
-            sysroot_dir = 'sysroot-' + self.target.name
-
-        self.sysroot_dir = os.path.abspath(sysroot_dir)
-        self._build_dir = os.path.join(self.sysroot_dir, 'build')
-
-        self._python_component = None
-        self._specification = Specification(self, sysroot_specification,
-                plugin_dirs, self.target)
-
         self._building_for_target = True
+        self._python_component = None
+
+        self.components = specification.create_components_for_target(target,
+                self)
 
     @staticmethod
     def error(message, detail='', exception=None):
@@ -87,7 +80,8 @@ class Sysroot:
 
         raise UserException(message, detail=detail) from exception
 
-    def install_components(self, component_names, source_dirs, no_clean):
+    def install_components(self, sysroot_dir, component_names, source_dirs,
+            no_clean):
         """ Install a sequence of components.  If no names are given then
         create the system image root directory and install everything.  Raise a
         UserException if there is an error.
@@ -148,6 +142,7 @@ class Sysroot:
         else:
             components = self.components
 
+        assert self._message_handler is not None
         self._specification.show_options(components, self._message_handler)
 
     def verify(self):
@@ -155,8 +150,7 @@ class Sysroot:
         error.
         """
 
-        # Parse the options.
-        self._specification.parse_options()
+        assert self._message_handler is not None
 
         # Verify the host and target.
         self.progress(
@@ -168,21 +162,9 @@ class Sysroot:
                         self.target.name))
         self.target.verify_as_target(self._message_handler)
 
-        # Set the version numbers of each component and remember the Python
-        # component.
+        # Resolve all version numbers.
         for component in self.components:
-            # Use any explicitly specified version number.
-            if component.version != '':
-                component.version = component.parse_version_number(
-                        component.version)
-            else:
-                component.version = component.get_implied_version()
-
-            if component.name == 'Python':
-                self._python_component = component
-
-        if self._python_component is None:
-            self.error("the 'Python' component has not been specified")
+            component.resolve_version()
 
         # Verify the components.
         for component in self.components:
@@ -192,9 +174,16 @@ class Sysroot:
 
             component.verify()
 
+            if component.name == 'Python':
+                self._python_component = component
+
+        if self._python_component is None:
+            self.error("the 'Python' component has not been specified")
+
     def warning(self, message):
         """ Issue a warning message. """
 
+        assert self._message_handler is not None
         self._message_handler.warning(message)
 
     def _components_from_names(self, component_names):
@@ -362,12 +351,6 @@ class Sysroot:
             self.host.configure()
 
         self._building_for_target = value
-
-    @property
-    def components(self):
-        """ The sequence of component names in the sysroot specification. """
-
-        return self._specification.components
 
     def copy_file(self, src, dst):
         """ Copy a file. """
@@ -618,11 +601,13 @@ class Sysroot:
     def progress(self, message):
         """ Issue a progress message. """
 
+        assert self._message_handler is not None
         self._message_handler.progress_message(message)
 
     def run(self, *args, capture=False):
         """ Run a command, optionally capturing stdout. """
 
+        assert self._message_handler is not None
         return Platform.run(*args, message_handler=self._message_handler,
                 capture=capture)
 
@@ -757,12 +742,14 @@ class Sysroot:
     def verbose(self, message):
         """ Issue a verbose progress message. """
 
+        assert self._message_handler is not None
         self._message_handler.verbose_message(message)
 
     @property
     def verbose_enabled(self):
         """ True if verbose messages are being displayed. """
 
+        assert self._message_handler is not None
         return self._message_handler.verbose
 
     def verify_source(self, name):

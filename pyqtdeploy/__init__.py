@@ -27,8 +27,9 @@
 # Publish the package's API.  These are for the tools.
 from .builder import Builder
 from .message_handler import MessageHandler
+from .platforms import Architecture
 from .project import Project
-from .sysroot import Sysroot
+from .sysroot import Sysroot, SysrootSpecification
 from .user_exception import UserException
 from .version import PYQTDEPLOY_RELEASE
 

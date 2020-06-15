@@ -1,3 +1,4 @@
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,34 +36,67 @@ from ..user_exception import UserException
 from .component import ComponentBase
 
 
-class Specification:
+class SysrootSpecification:
     """ Encapsulate the specification of a system root directory. """
 
-    def __init__(self, sysroot, specification_file, plugin_dirs, target):
+    def __init__(self, specification_file, project_file=None):
         """ Initialise the object. """
 
-        self.specification_file = os.path.abspath(specification_file)
-
-        self.components = []
+        # Determine the name of the specification file.
+        if specification_file == '':
+            self.specification_file = os.path.join(
+                    os.path.dirname(os.path.abspath(project_file)),
+                    'sysroot.toml')
+        else:
+            self.specification_file = os.path.abspath(
+                    os.path.expandvars(specification_file))
 
         # Load the TOML file.
-        with open(specification_file) as f:
+        with open(self.specification_file) as f:
             try:
-                spec = toml.load(f, _dict=OrderedDict)
+                self._spec = toml.load(f, _dict=OrderedDict)
             except Exception as e:
                 raise UserException(
-                        "{0}: {1}".format(specification_file, str(e)))
+                        "{0}: {1}".format(self.specification_file, str(e)))
 
-        # Do a high level parse and import the plugins.
-        all_architecture_names = [a.name
-                for a in Architecture.all_architectures]
+        # Do a high level parse and import the plugins (ie. component
+        # factories).
+        default_plugin_dir = os.path.dirname(self.specification_file)
+        package_root = '.'.join(__name__.split('.')[:-1])
 
-        for name, value in spec.items():
+        self._plugins = {}
+
+        for name, value in self._spec.items():
             # At the moment every name is a component name and every value is a
             # component configuration.
             if not isinstance(value, OrderedDict):
                 raise UserException("unexpected option '{0}'".format(name))
 
+            # Find the component's plugin.  First search the directory
+            # containing the specification file.
+            plugin = self._plugin_from_file(name, default_plugin_dir)
+
+            # Search the bundled plugin packages.
+            if plugin is None:
+                for package in ('.plugins', '.plugins.contrib'):
+                    plugin = self._plugin_from_package(name, package,
+                            package_root)
+                    if plugin is not None:
+                        break
+                else:
+                    raise UserException(
+                            "unable to find a plugin for '{0}'".format(name))
+
+            self._plugins[name] = plugin
+
+    def create_components_for_target(self, target, sysroot):
+        """ Return the list of target-specific components according to this
+        specification.
+        """
+
+        components = []
+
+        for name, value in self._spec.items():
             # Ignore the component if it is disabled for this target.
             disabled_targets = value.get('disabled_targets')
             if disabled_targets is not None:
@@ -97,41 +131,13 @@ class Specification:
 
             target_config = default_config
 
-            # Find the component's plugin.
-            plugin = None
+            # Create the component using the corresponding plugin.
+            plugin = self._plugins[name]
+            component = plugin(name, target_config, sysroot)
 
-            # Search any user specified directories.
-            if plugin_dirs:
-                for plugin_dir in plugin_dirs:
-                    plugin = self._plugin_from_file(name, plugin_dir)
-                    if plugin is not None:
-                        break
+            components.append(component)
 
-            # Search the included plugin packages.
-            if plugin is None:
-                # The name of the package root.
-                package_root = '.'.join(__name__.split('.')[:-1])
-
-                for package in ('.plugins', '.plugins.contrib'):
-                    plugin = self._plugin_from_package(name, package,
-                            package_root)
-                    if plugin is not None:
-                        break
-                else:
-                    raise UserException(
-                            "unable to find a plugin for '{0}'".format(name))
-
-            # Create the component plugin.
-            component = plugin(name, sysroot)
-            setattr(component, '_options_values', target_config)
-
-            self.components.append(component)
-
-    def parse_options(self):
-        """ Parse all the components' options. """
-
-        for component in self.components:
-            self._parse_options(component)
+        return components
 
     def _plugin_from_file(self, name, plugin_dir):
         """ Try and load a component plugin from a file. """
@@ -175,67 +181,6 @@ class Specification:
                         return component_type
 
         return None
-
-    def _parse_options(self, component):
-        """ Parse a mapping of values according to a component's options and
-        add the corresponding values as attributes of the component object.
-        """
-
-        options_values = component._options_values
-
-        for option in component.get_options():
-            value = options_values.get(option.name)
-
-            if value is None:
-                if option.required:
-                    self._parse_error(
-                            "'{0}' has not been specified".format(option.name),
-                            component.name)
-
-                # Create a default value.
-                if option.default is None:
-                    value = option.type()
-                else:
-                    value = option.default
-            elif not isinstance(value, option.type):
-                self._bad_type(option.name, component.name)
-            elif option.values:
-                if value not in option.values:
-                    self._parse_error(
-                            "'{0}' must have be one of these values: {1}".format(option.name, ','.join(option.values)),
-                            component.name)
-
-            setattr(component, option.name, value)
-
-            try:
-                del options_values[option.name]
-            except KeyError:
-                pass
-
-        unused = options_values.keys()
-        if unused:
-            self._parse_error(
-                    "unknown option(s): {0}".format(', '.join(unused)),
-                    component.name)
-
-        del component._options_values
-
-    def _bad_type(self, name, component_name=None):
-        """ Raise an exception when an option name has the wrong type. """
-
-        self._parse_error("value of '{0}' has an unexpected type".format(name),
-                component_name)
-
-    def _parse_error(self, message, component_name):
-        """ Raise an exception for by an error in the specification file. """
-
-        if component_name:
-            exception = "{0}: Component '{1}': {2}".format(
-                    self.specification_file, component_name, message)
-        else:
-            exception = "{0}: {1}".format(self.specification_file, message)
-
-        raise UserException(exception)
 
     def show_options(self, components, message_handler):
         """ Show the options for a sequence of components. """

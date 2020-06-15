@@ -25,9 +25,9 @@
 
 
 import argparse
-import os
 
-from . import MessageHandler, PYQTDEPLOY_RELEASE, Sysroot, UserException
+from . import (Architecture, MessageHandler, PYQTDEPLOY_RELEASE, Sysroot,
+        SysrootSpecification, UserException)
 
 
 def main():
@@ -48,9 +48,6 @@ def main():
     parser.add_argument('--options',
             help="show the options available for the components",
             action='store_true')
-    parser.add_argument('--plugin-dir',
-            help="search a directory for component plugins", metavar="DIR",
-            action='append')
     parser.add_argument('--source-dir',
             help="a directory containing the source archives",
             metavar="DIR", dest='source_dirs', action='append')
@@ -76,20 +73,19 @@ def main():
             args.warnings_are_errors)
 
     try:
-        sysroot_dir = args.sysroot
-        if not sysroot_dir:
-            sysroot_dir = os.environ.get('SYSROOT')
-
-        sysroot = Sysroot(sysroot_dir, args.specification, args.plugin_dir,
-                args.target, message_handler)
+        specification = SysrootSpecification(args.specification)
+        host = Architecture.architecture()
+        target = Architecture.architecture(args.target)
+        sysroot = Sysroot(specification, host, target,
+                message_handler=message_handler)
 
         if args.options:
             sysroot.show_options(args.component)
         elif args.verify:
             sysroot.verify()
         else:
-            sysroot.install_components(args.component, args.source_dirs,
-                    args.no_clean)
+            sysroot.install_components(args.sysroot, args.component,
+                    args.source_dirs, args.no_clean)
     except UserException as e:
         message_handler.exception(e)
         return 1

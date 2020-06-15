@@ -66,13 +66,48 @@ class ComponentOption:
 class ComponentBase(ABC):
     """ The base class for the implementation of a component plugin. """
 
-    def __init__(self, name, sysroot):
+    def __init__(self, name, configuration, sysroot):
         """ Initialise the component. """
 
         self.name = name
         self._sysroot = sysroot
 
         self.use_native_version = False
+
+        # Configure the component.
+        for option in self.get_options():
+            value = configuration.get(option.name)
+
+            if value is None:
+                if option.required:
+                    self._parse_error(
+                            "'{0}' has not been specified".format(option.name))
+
+                # Create a default value.
+                if option.default is None:
+                    value = option.type()
+                else:
+                    value = option.default
+            elif not isinstance(value, option.type):
+                self._parse_error(
+                        "value of '{0}' has an unexpected type".format(
+                                option.name))
+            elif option.values:
+                if value not in option.values:
+                    self._parse_error(
+                            "'{0}' must have be one of these values: {1}".format(option.name, ','.join(option.values)))
+
+            setattr(self, option.name, value)
+
+            try:
+                del configuration[option.name]
+            except KeyError:
+                pass
+
+        unused = configuration.keys()
+        if unused:
+            self._parse_error(
+                    "unknown option(s): {0}".format(', '.join(unused)))
 
     @property
     def android_api(self):
@@ -215,6 +250,16 @@ class ComponentBase(ABC):
 
         self._sysroot.progress("{0}: {1}".format(self.name, message))
 
+    def resolve_version(self):
+        """ Make sure the version attribute is a VersionNumber object. """
+
+        if isinstance(self.version, str):
+            if self.version != '':
+                # Use an explicitly specified version number.
+                self.version = self.parse_version_number(self.version)
+            else:
+                self.version = self.get_implied_version()
+
     @property
     def target_platform_name(self):
         """ The name of the target platform. """
@@ -223,7 +268,7 @@ class ComponentBase(ABC):
 
     def verify(self):
         """ Verify the component.  This will be called after the options have
-        been parsed and after the version number has been set.
+        been parsed and the version number resolved.
         """
 
     def verbose(self, message):
@@ -246,14 +291,21 @@ class ComponentBase(ABC):
         """ Issue an error message about an Android-only attribute. """
 
         self.error(
-                "the '{0}' attribute is only support for Android targets".format(attr_name))
+                "the '{0}' attribute is only supported for Android targets".format(attr_name))
 
     def _apple_only(self, attr_name):
         """ Issue an error message about an Apple-only attribute. """
 
         self.error(
-                "the '{0}' attribute is only support for Apple targets".format(
+                "the '{0}' attribute is only supported for Apple targets".format(
                         attr_name))
+
+    def _parse_error(self, message):
+        """ Raise an exception for by an error in the specification file. """
+
+        raise UserException(
+                "{0}: Component '{1}': {2}".format(self.specification_file,
+                        self.name, message))
 
 
 class SourceComponent(ComponentBase):
