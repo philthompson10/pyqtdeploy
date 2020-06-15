@@ -50,6 +50,9 @@ class StandardLibraryPage(QWidget):
         if self._project != value:
             self._project = value
 
+            self._project.python_target_version_changed.connect(
+                    self._update_page)
+
             self._update_page()
 
     def __init__(self):
@@ -77,18 +80,8 @@ class StandardLibraryPage(QWidget):
         self.setLayout(layout)
 
     @pyqtSlot()
-    def python_target_version_changed(self):
-        """ Configure the page after the Python target version has changed. """
-
-        self._update_page()
-
     def _update_page(self):
         """ Update the page using the current project. """
-
-        self._update_stdlib_editor()
-
-    def _update_stdlib_editor(self):
-        """ Update the standard library module editor. """
 
         project = self.project
         editor = self._stdlib_edit
@@ -131,7 +124,7 @@ class StandardLibraryPage(QWidget):
         project = self.project
         editor = self._stdlib_edit
 
-        required_modules, required_libraries = project.get_stdlib_requirements()
+        required_modules, _ = project.get_stdlib_requirements()
 
         blocked = editor.blockSignals(True)
 

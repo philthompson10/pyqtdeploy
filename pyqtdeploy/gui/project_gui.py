@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,6 @@ from .application_page import ApplicationPage
 from .exception_handlers import handle_user_exception
 from .other_extension_modules_page import OtherExtensionModulesPage
 from .other_packages_page import OtherPackagesPage
-from .pyqt_page import PyQtPage
 from .qmake_page import QMakePage
 from .standard_library_page import StandardLibraryPage
 from .sysroot_page import SysrootPage
@@ -62,14 +61,6 @@ class ProjectGUI(QMainWindow):
 
         self._set_project(project)
 
-    @classmethod
-    def load(cls, filename):
-        """ Create a project from the given file.  Return None if there was an
-        error.
-        """
-
-        return cls._load_project(filename) if QFileInfo(filename).exists() else Project(filename)
-
     def closeEvent(self, event):
         """ Handle a close event. """
 
@@ -79,29 +70,48 @@ class ProjectGUI(QMainWindow):
         else:
             event.ignore()
 
-    def _set_project(self, project):
-        """ Set the GUI's project. """
+    @classmethod
+    def load(cls, filename):
+        """ Create a project from the given file.  Return None if there was an
+        error.
+        """
 
-        self._project = project
+        return cls._load_project(filename) if QFileInfo(filename).exists() else Project(filename)
 
-        self._project.modified_changed.connect(self.setWindowModified)
-        self._project.name_changed.connect(self._name_changed)
+    def _about(self):
+        """ Tell the user about the application. """
 
-        self._name_changed(self._project.name)
+        QMessageBox.about(self, "About pyqtdeploy",
+"""This is pyqtdeploy v%s
 
-        tabs = self.centralWidget()
+pyqtdeploy is a tool for deploying PyQt applications written using Python v3.5 or later to desktop and mobile devices.
+""" % PYQTDEPLOY_RELEASE)
 
-        for p in range(tabs.count()):
-            page = tabs.widget(p)
-            page.project = self._project
+    def _create_central_widget(self):
+        """ Create the central widget. """
 
-    def _name_changed(self, name):
-        """ Invoked when the project's name changes. """
+        tabs = QTabWidget()
 
-        title = os.path.basename(name) if name != '' else "Unnamed"
-        self.setWindowTitle(title + '[*]')
+        application_page = ApplicationPage()
+        tabs.addTab(application_page, application_page.label)
 
-        self._save_action.setEnabled(name != '')
+        qmake_page = QMakePage()
+        tabs.addTab(qmake_page, qmake_page.label)
+
+        standard_library_page = StandardLibraryPage()
+        tabs.addTab(standard_library_page, standard_library_page.label)
+
+        other_packages_page = OtherPackagesPage()
+        tabs.addTab(other_packages_page, other_packages_page.label)
+
+        other_extension_modules_page = OtherExtensionModulesPage()
+        tabs.addTab(other_extension_modules_page,
+                other_extension_modules_page.label)
+
+        sysroot_page = SysrootPage()
+        tabs.addTab(sysroot_page, sysroot_page.label)
+
+        self.setCentralWidget(tabs)
 
     def _create_menus(self):
         """ Create the menus. """
@@ -124,43 +134,49 @@ class ProjectGUI(QMainWindow):
         help_menu.addAction("About pyqtdeploy...", self._about)
         help_menu.addAction(QWhatsThis.createAction(help_menu))
 
-    def _create_central_widget(self):
-        """ Create the central widget. """
+    def _current_project_done(self):
+        """ Return True if the user has finished with any current project. """
 
-        tabs = QTabWidget()
+        if self._project.modified:
+            msg_box = QMessageBox(QMessageBox.Question, "Save",
+                    "The project has been modified.",
+                    QMessageBox.Save|QMessageBox.Discard|QMessageBox.Cancel,
+                    parent=self)
 
-        application_page = ApplicationPage()
-        tabs.addTab(application_page, application_page.label)
+            msg_box.setDefaultButton(QMessageBox.Save)
+            msg_box.setInformativeText("Do you want to save your changes?")
 
-        qmake_page = QMakePage()
-        tabs.addTab(qmake_page, qmake_page.label)
+            ans = msg_box.exec()
 
-        pyqt_page = PyQtPage()
-        tabs.addTab(pyqt_page, pyqt_page.label)
+            if ans == QMessageBox.Cancel:
+                return False
 
-        standard_library_page = StandardLibraryPage()
-        tabs.addTab(standard_library_page, standard_library_page.label)
+            if ans == QMessageBox.Save:
+                return self._save_project() if self._project.name != "" else self._save_as_project()
 
-        other_packages_page = OtherPackagesPage()
-        tabs.addTab(other_packages_page, other_packages_page.label)
+        return True
 
-        other_extension_modules_page = OtherExtensionModulesPage()
-        tabs.addTab(other_extension_modules_page,
-                other_extension_modules_page.label)
+    @staticmethod
+    def _load_project(filename, parent=None):
+        """ Create a project from the given file.  Return None if there was an
+        error.
+        """
 
-        sysroot_page = SysrootPage()
-        tabs.addTab(sysroot_page, sysroot_page.label)
+        try:
+            project = Project.load(filename)
+        except UserException as e:
+            handle_user_exception(e, "Open", parent)
+            project = None
 
-        self.setCentralWidget(tabs)
+        return project
 
-    def _about(self):
-        """ Tell the user about the application. """
+    def _name_changed(self, name):
+        """ Invoked when the project's name changes. """
 
-        QMessageBox.about(self, "About pyqtdeploy",
-"""This is pyqtdeploy v%s
+        title = os.path.basename(name) if name != '' else "Unnamed"
+        self.setWindowTitle(title + '[*]')
 
-pyqtdeploy is a tool for deploying PyQt applications written using Python v3.5 or later to desktop and mobile devices.
-""" % PYQTDEPLOY_RELEASE)
+        self._save_action.setEnabled(name != '')
 
     def _new_project(self):
         """ Create a new, unnamed project. """
@@ -209,41 +225,21 @@ pyqtdeploy is a tool for deploying PyQt applications written using Python v3.5 o
 
         return True
 
-    @staticmethod
-    def _load_project(filename, parent=None):
-        """ Create a project from the given file.  Return None if there was an
-        error.
-        """
+    def _set_project(self, project):
+        """ Set the GUI's project. """
 
-        try:
-            project = Project.load(filename)
-        except UserException as e:
-            handle_user_exception(e, "Open", parent)
-            project = None
+        self._project = project
 
-        return project
+        self._project.modified_changed.connect(self.setWindowModified)
+        self._project.name_changed.connect(self._name_changed)
 
-    def _current_project_done(self):
-        """ Return True if the user has finished with any current project. """
+        self._name_changed(self._project.name)
 
-        if self._project.modified:
-            msg_box = QMessageBox(QMessageBox.Question, "Save",
-                    "The project has been modified.",
-                    QMessageBox.Save|QMessageBox.Discard|QMessageBox.Cancel,
-                    parent=self)
+        tabs = self.centralWidget()
 
-            msg_box.setDefaultButton(QMessageBox.Save)
-            msg_box.setInformativeText("Do you want to save your changes?")
-
-            ans = msg_box.exec()
-
-            if ans == QMessageBox.Cancel:
-                return False
-
-            if ans == QMessageBox.Save:
-                return self._save_project() if self._project.name != "" else self._save_as_project()
-
-        return True
+        for p in range(tabs.count()):
+            page = tabs.widget(p)
+            page.project = self._project
 
     def _load_settings(self):
         """ Load the user specific settings. """
