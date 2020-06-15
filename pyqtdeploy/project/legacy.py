@@ -26,7 +26,6 @@
 
 from xml.etree.ElementTree import Element, ElementTree, SubElement
 
-from ..metadata import supported_python_versions
 from ..platforms import Platform
 from ..user_exception import UserException
 from ..version_number import VersionNumber
@@ -76,33 +75,13 @@ def load_xml(project, file_path):
         raise UserException(
                 "The project's format is version {0} but only version {1} is supported.".format(version, _LAST_VERSION))
 
-    # This was added in version 7.
-    project.using_default_locations = _get_bool(root, 'usingdefaultlocations',
-            'Project', default=False)
-
     # The Python specific configuration.
     python = root.find('Python')
     _assert(python is not None, "Missing 'Python' tag.")
 
-    project.python_host_interpreter = python.get('hostinterpreter', '')
-
     # This was added in version 5.
     project.python_use_platform = _replace_scopes(
             python.get('platformpython', '')).split()
-
-    project.python_source_dir = python.get('sourcedir', '')
-    project.python_target_include_dir = python.get('targetincludedir', '')
-    project.python_target_library = python.get('targetlibrary', '')
-    project.python_target_stdlib_dir = python.get('targetstdlibdir', '')
-
-    major = _get_int(python, 'major', 'Python')
-    minor = _get_int(python, 'minor', 'Python')
-    patch = _get_int(python, 'patch', 'Python', default=0)
-    project.python_target_version = VersionNumber(major, minor, patch)
-    if project.python_target_version not in supported_python_versions:
-        raise UserException(
-                "Python v{0} is not supported.".format(
-                        project.python_target_version))
 
     # The application specific configuration.
     application = root.find('Application')

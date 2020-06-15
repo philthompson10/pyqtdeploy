@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,11 +24,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QFileDialog,
-        QGridLayout, QGroupBox, QHBoxLayout, QLineEdit, QRadioButton, QWidget)
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QCheckBox, QFileDialog, QGridLayout, QGroupBox,
+        QLineEdit, QWidget)
 
-from ..metadata import supported_python_versions
 from .better_form import BetterForm
 from .filename_editor import FilenameEditor
 from .package_editor import PackageEditor
@@ -39,12 +38,6 @@ class ApplicationPage(QWidget):
 
     # The page's label.
     label = "Application Source"
-
-    # Emitted when the user changes the PyQt version.
-    pyqt_version_changed = pyqtSignal(bool)
-
-    # Emitted when the user changes the Python target version.
-    python_target_version_changed = pyqtSignal()
 
     @property
     def project(self):
@@ -109,21 +102,6 @@ class ApplicationPage(QWidget):
 
         options_layout = BetterForm()
 
-        self._py_version_edit = QComboBox(
-                whatsThis="Select the target Python version.")
-        for version_nr in supported_python_versions:
-            self._py_version_edit.addItem("v{}".format(version_nr))
-        self._py_version_edit.currentIndexChanged.connect(
-                self._py_version_changed)
-        options_layout.addRow("Target Python version", self._py_version_edit)
-
-        self._pyqt_version_edit = QComboBox(
-                whatsThis="Select the PyQt version.")
-        self._pyqt_version_edit.addItems(["PyQt4", "PyQt5"])
-        self._pyqt_version_edit.currentIndexChanged.connect(
-                self._pyqt_version_changed)
-        options_layout.addRow("Target PyQt version", self._pyqt_version_edit)
-
         self._console_edit = QCheckBox("Use console (Windows)",
                 whatsThis="Enable console output for Windows applications. "
                         "Console output will be enabled automatically if no "
@@ -160,16 +138,6 @@ class ApplicationPage(QWidget):
         self._sys_path_edit.setText(project.sys_path)
         self._package_edit.configure(project.application_package, project)
 
-        blocked = self._py_version_edit.blockSignals(True)
-        self._py_version_edit.setCurrentIndex(
-                supported_python_versions.index(project.python_target_version))
-        self._py_version_edit.blockSignals(blocked)
-
-        blocked = self._pyqt_version_edit.blockSignals(True)
-        self._pyqt_version_edit.setCurrentIndex(
-                1 if project.application_is_pyqt5 else 0)
-        self._pyqt_version_edit.blockSignals(blocked)
-
         blocked = self._console_edit.blockSignals(True)
         self._console_edit.setCheckState(
                 Qt.Checked if project.application_is_console else Qt.Unchecked)
@@ -179,23 +147,6 @@ class ApplicationPage(QWidget):
         self._bundle_edit.setCheckState(
                 Qt.Checked if project.application_is_bundle else Qt.Unchecked)
         self._bundle_edit.blockSignals(blocked)
-
-    def _py_version_changed(self, idx):
-        """ Invoked when the user changes the Python version number. """
-
-        self.project.python_target_version = supported_python_versions[idx]
-        self.project.modified = True
-
-        self.python_target_version_changed.emit()
-
-    def _pyqt_version_changed(self, idx):
-        """ Invoked when the user changes the PyQt version number. """
-
-        pyqt5 = (idx == 1)
-        self.project.application_is_pyqt5 = pyqt5
-        self.project.modified = True
-
-        self.pyqt_version_changed.emit(pyqt5)
 
     def _console_changed(self, state):
         """ Invoked when the user changes the console state. """

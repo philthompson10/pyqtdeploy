@@ -29,10 +29,10 @@ import toml
 
 from PyQt5.QtCore import QDir, QFileInfo, QObject, pyqtSignal
 
-from ..metadata import get_python_metadata, supported_python_versions
-from ..platforms import Platform
+from ..metadata import get_python_metadata
+from ..platforms import Architecture, Platform
+from ..sysroot import Sysroot, SysrootSpecification
 from ..user_exception import UserException
-from ..version_number import VersionNumber
 
 from .project_parts import (ExternalLibrary, ExtensionModule, QrcDirectory,
         QrcFile, QrcPackage)
@@ -105,24 +105,14 @@ class Project(QObject):
         self.other_packages = []
         self.pyqt_modules = []
         self.python_use_platform = ['win']
-        self.python_target_version = supported_python_versions[0]
         self.qmake_configuration = ''
         self.standard_library = []
         self.sys_path = ''
+        self.sysroot = None
+        self.sysroot_dir = ''
+        self.sysroot_toml = ''
 
-        self.set_default_locations()
-
-    def set_default_locations(self):
-        """ Set the various locations to their default values. """
-
-        self.python_host_interpreter = '$SYSROOT/host/bin/python'
-
-        self.python_source_dir = '$SYSROOT/src/Python-$PDY_PY_MAJOR.$PDY_PY_MINOR.$PDY_PY_MICRO'
-        self.python_target_include_dir = '$SYSROOT/include/python$PDY_PY_MAJOR.$PDY_PY_MINOR'
-        self.python_target_library = '$SYSROOT/lib/libpython$PDY_PY_MAJOR.$PDY_PY_MINOR.a'
-        self.python_target_stdlib_dir = '$SYSROOT/lib/python$PDY_PY_MAJOR.$PDY_PY_MINOR'
-
-        self.using_default_locations = True
+        self._sysroots = []
 
     def path_to_user(self, path):
         """ Convert a file name to one that is relative to the project name if
@@ -172,18 +162,7 @@ class Project(QObject):
     def expandvars(self, path):
         """ Call os.path.expandvars() after expanding some internal values. """
 
-        major = str(self.python_target_version.major)
-        minor = str(self.python_target_version.minor)
-        patch = str(self.python_target_version.patch)
-
-        path = path.replace('$PDY_PY_MAJOR', major)
-        path = path.replace('${PDY_PY_MAJOR}', major)
-
-        path = path.replace('$PDY_PY_MINOR', minor)
-        path = path.replace('${PDY_PY_MINOR}', minor)
-
-        path = path.replace('$PDY_PY_MICRO', patch)
-        path = path.replace('${PDY_PY_MICRO}', patch)
+        # TODO: no longer any internal values.
 
         return os.path.expandvars(path)
 
@@ -209,6 +188,7 @@ class Project(QObject):
         """
 
         # Work out the dependencies.
+        # TODO
         metadata = get_python_metadata(self.python_target_version)
         all_modules = {name: _DepState(module)
                 for name, module in metadata.items()}
@@ -304,16 +284,36 @@ class Project(QObject):
         project._name = fi
         loader(project, file_path)
 
-        # Check the target Python version is supported.
-        if project.python_target_version not in supported_python_versions:
-            raise UserException(
-                    "Python v{0} is not supported.".format(
-                            project.python_target_version))
+        # Create a non-verified sysroot for each supported target architecture.
+        host = Architecture.architecture()
+        specification = SysrootSpecification(project.sysroot_toml, file_path)
 
-        # If the default locations are being used then use the current defaults
-        # instead of those (possibly out of date) in the project file.
-        if project.using_default_locations:
-            project.set_default_locations()
+        self._sysroots = []
+        self._target_py_version = None
+        for target in Architecture.all_architectures():
+            sysroot = Sysroot(specification, host, target)
+
+            # Make sure the same version of Python is specified for each one.
+            # For the moment ignore targets that don't specify the Python
+            # component.
+            python = sysroot.get_component('Python', required=False)
+            if python is not None:
+                python.resolve_version()
+
+                if self._target_py_version is None:
+                    self._target_py_version = python.version
+                elif self._target_py_version != python.version:
+                    raise UserException(
+                            "The sysroot specification file defines more than "
+                            "one version of Python.")
+
+            self._sysroots.append(sysroot)
+
+        # Make sure at least one target specified the Python component.
+        if self._target_py_component is None:
+            raise UserException(
+                    "The sysroot specification file does not define a "
+                    "'Python' component.")
 
         return project
 
@@ -406,26 +406,15 @@ class Project(QObject):
             raise UserException(
                     "The project's format is version {0} but only version {1} is supported.".format(version, cls.version))
 
+        project.sysroot_toml = root.get('sysroot', '')
+        project.sysroot_dir = root.get('sysroot_dir', '')
         project.pyqt_modules = cls._get_list(root, 'pyqt_modules')
         project.standard_library = cls._get_list(root, 'standard_library')
-        project.using_default_locations = root.get('using_default_locations',
-                True)
 
         # The Python configuration.
         python = cls._get_dict(root, 'Python')
 
-        major = python.get('major', 0)
-        minor = python.get('minor', 0)
-        patch = python.get('patch', 0)
-        project.python_target_version = VersionNumber(major, minor, patch)
-
         project.python_use_platform = cls._get_list(python, 'platform_python')
-        project.python_host_interpreter = python.get('host_interpreter', '')
-        project.python_source_dir = python.get('source_dir', '')
-        project.python_target_include_dir = python.get('target_include_dir',
-                '')
-        project.python_target_library = python.get('target_library', '')
-        project.python_target_stdlib_dir = python.get('target_stdlib_dir', '')
 
         # The application specific configuration.
         application = cls._get_dict(root, 'Application')
@@ -492,24 +481,15 @@ class Project(QObject):
 
         root = {
             'version': self.version,
+            'sysroot': self.sysroot_toml,
+            'sysroot_dir': self.sysroot_dir,
             'pyqt_modules': self.pyqt_modules,
-            'standard_library': self.standard_library,
-            'using_default_locations': self.using_default_locations
+            'standard_library': self.standard_library
         }
 
         python = {
-            'platform_python': self.python_use_platform,
-            'major': self.python_target_version.major,
-            'minor': self.python_target_version.minor,
-            'patch': self.python_target_version.patch
+            'platform_python': self.python_use_platform
         }
-
-        if not self.using_default_locations:
-            python['host_interpreter'] = self.python_host_interpreter
-            python['source_dir'] = self.python_source_dir
-            python['target_include_dir'] = self.python_target_include_dir
-            python['target_library'] = self.python_target_library
-            python['target_stdlib_dir'] = self.python_target_stdlib_dir
 
         root['Python'] = python
 

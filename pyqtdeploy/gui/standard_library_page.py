@@ -124,6 +124,8 @@ class StandardLibraryPage(QSplitter):
         project = self.project
         editor = self._stdlib_edit
 
+        # TODO
+        return
         metadata = get_python_metadata(project.python_target_version)
 
         blocked = editor.blockSignals(True)

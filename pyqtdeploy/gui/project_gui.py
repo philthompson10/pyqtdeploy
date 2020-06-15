@@ -37,12 +37,12 @@ from ..version import PYQTDEPLOY_RELEASE
 
 from .application_page import ApplicationPage
 from .exception_handlers import handle_user_exception
-from .locations_page import LocationsPage
 from .other_extension_modules_page import OtherExtensionModulesPage
 from .other_packages_page import OtherPackagesPage
 from .pyqt_page import PyQtPage
 from .qmake_page import QMakePage
 from .standard_library_page import StandardLibraryPage
+from .sysroot_page import SysrootPage
 
 
 class ProjectGUI(QMainWindow):
@@ -148,14 +148,8 @@ class ProjectGUI(QMainWindow):
         tabs.addTab(other_extension_modules_page,
                 other_extension_modules_page.label)
 
-        locations_page = LocationsPage()
-        tabs.addTab(locations_page, locations_page.label)
-
-        application_page.pyqt_version_changed.connect(
-                pyqt_page.set_pyqt_version)
-
-        application_page.python_target_version_changed.connect(
-                standard_library_page.python_target_version_changed)
+        sysroot_page = SysrootPage()
+        tabs.addTab(sysroot_page, sysroot_page.label)
 
         self.setCentralWidget(tabs)
 
@@ -165,7 +159,7 @@ class ProjectGUI(QMainWindow):
         QMessageBox.about(self, "About pyqtdeploy",
 """This is pyqtdeploy v%s
 
-pyqtdeploy is a tool for deploying PyQt4 and PyQt5 applications written using Python v2.7 or later or Python v3.3 or later to desktop and mobile devices.
+pyqtdeploy is a tool for deploying PyQt applications written using Python v3.5 or later to desktop and mobile devices.
 """ % PYQTDEPLOY_RELEASE)
 
     def _new_project(self):
