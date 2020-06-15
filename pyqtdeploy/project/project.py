@@ -83,18 +83,22 @@ class Project(QObject):
             self._name = QFileInfo(value)
             self.name_changed.emit(value)
 
+    # Emitted when the version number of Python being targeted changes.
+    python_target_version_changed = pyqtSignal()
+
     def __init__(self, name=''):
         """ Initialise the project. """
 
         super().__init__()
 
-        # Initialise the project meta-data.
         self._modified = False
         self._name = QFileInfo(name) if name != '' else None
+        self._sysroots = []
+
+        self.python_target_version = None
 
         # Initialise the project data.
         self.application_name = ''
-        self.application_is_pyqt5 = True
         self.application_is_console = False
         self.application_is_bundle = True
         self.application_package = QrcPackage()
@@ -112,10 +116,8 @@ class Project(QObject):
         self.sysroot_dir = ''
         self.sysroot_toml = ''
 
-        self._sysroots = []
-
     def path_to_user(self, path):
-        """ Convert a file name to one that is relative to the project name if
+        """ Convert a file name to one that is relative to the project file if
         possible and uses native separators.
         """
 
@@ -169,7 +171,7 @@ class Project(QObject):
     def _fileinfo_from_user(self, user_path):
         """ Convert the name of a file or directory specified by the user to a
         QFileInfo instance.  A user path may be relative to the name of the
-        project and may contain environment variables.
+        project file and may contain environment variables.
         """
 
         fi = QFileInfo(self.expandvars(user_path.strip()))
@@ -283,13 +285,23 @@ class Project(QObject):
         project = cls()
         project._name = fi
         loader(project, file_path)
+        project.load_sysroot()
 
-        # Create a non-verified sysroot for each supported target architecture.
+        return project
+
+    def load_sysroot(self):
+        """ Load the project's sysroot specification file. """
+
+        # Get the pathname of the project file.
+        file_path = QDir.toNativeSeparators(self._name.canonicalFilePath())
+
+        # Create a non-verified sysroot for each supported target architecture
+        # that defines a Python component.
         host = Architecture.architecture()
-        specification = SysrootSpecification(project.sysroot_toml, file_path)
+        specification = SysrootSpecification(self.sysroot_toml, file_path)
 
         self._sysroots = []
-        self._target_py_version = None
+        self.python_target_version = None
         for target in Architecture.all_architectures():
             sysroot = Sysroot(specification, host, target)
 
@@ -300,22 +312,22 @@ class Project(QObject):
             if python is not None:
                 python.resolve_version()
 
-                if self._target_py_version is None:
-                    self._target_py_version = python.version
-                elif self._target_py_version != python.version:
+                if self.python_target_version is None:
+                    self.python_target_version = python.version
+                elif self.python_target_version != python.version:
                     raise UserException(
                             "The sysroot specification file defines more than "
                             "one version of Python.")
 
-            self._sysroots.append(sysroot)
+                self._sysroots.append(sysroot)
 
         # Make sure at least one target specified the Python component.
-        if self._target_py_component is None:
+        if len(self._sysroots) == 0:
             raise UserException(
                     "The sysroot specification file does not define a "
-                    "'Python' component.")
+                    "'Python' component for any target architecture.")
 
-        return project
+        self.python_target_version_changed.emit()
 
     def save(self):
         """ Save the project.  Raise a UserException if there was an error. """
@@ -420,7 +432,6 @@ class Project(QObject):
         application = cls._get_dict(root, 'Application')
 
         project.application_entry_point = application.get('entry_point', '')
-        project.application_is_pyqt5 = application.get('is_pyqt5', True)
         project.application_is_console = application.get('is_console', False)
         project.application_is_bundle = application.get('is_bundle', False)
         project.application_name = application.get('name', '')
@@ -495,7 +506,6 @@ class Project(QObject):
 
         application = {
             'entry_point': self.application_entry_point,
-            'is_pyqt5': self.application_is_pyqt5,
             'is_console': self.application_is_console,
             'is_bundle': self.application_is_bundle,
             'name': self.application_name,

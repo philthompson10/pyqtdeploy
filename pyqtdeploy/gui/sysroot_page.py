@@ -87,11 +87,17 @@ class SysrootPage(QWidget):
     def _toml_changed(self, value):
         """ Invoked when the user edits the specification file name. """
 
-        self.project.sysroot_toml = value
-        self.project.modified = True
+        project = self.project
+
+        project.sysroot_toml = value
+        project.modified = True
+
+        project.load_sysroot()
 
     def _dir_changed(self, value):
         """ Invoked when the user edits the sysroot directory name. """
 
-        self.project.sysroot_dir = value
-        self.project.modified = True
+        project = self.project
+
+        project.sysroot_dir = value
+        project.modified = True

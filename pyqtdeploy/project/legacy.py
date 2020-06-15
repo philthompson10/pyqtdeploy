@@ -88,8 +88,6 @@ def load_xml(project, file_path):
     _assert(application is not None, "Missing 'Application' tag.")
 
     project.application_entry_point = application.get('entrypoint', '')
-    project.application_is_pyqt5 = _get_bool(application, 'ispyqt5',
-            'Application')
     project.application_is_console = _get_bool(application, 'isconsole',
             'Application')
 
