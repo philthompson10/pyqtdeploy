@@ -98,8 +98,9 @@ pyqtdeploy is a tool for deploying PyQt applications written using Python v3.5 o
         qmake_page = QMakePage()
         tabs.addTab(qmake_page, qmake_page.label)
 
-        standard_library_page = StandardLibraryPage()
-        tabs.addTab(standard_library_page, standard_library_page.label)
+        self._standard_library_page = StandardLibraryPage()
+        tabs.addTab(self._standard_library_page,
+                self._standard_library_page.label)
 
         other_packages_page = OtherPackagesPage()
         tabs.addTab(other_packages_page, other_packages_page.label)
@@ -196,6 +197,13 @@ pyqtdeploy is a tool for deploying PyQt applications written using Python v3.5 o
                 if project is not None:
                     self._set_project(project)
 
+    def _python_target_version_changed(self):
+        """ Invoked when the version of Python being targeted changes. """
+
+        tabs = self.centralWidget()
+        tabs.setTabEnabled(tabs.indexOf(self._standard_library_page),
+                self._project.python_target_version is not None)
+
     def _save_project(self):
         """ Save the project and return True if it was saved. """
 
@@ -231,9 +239,13 @@ pyqtdeploy is a tool for deploying PyQt applications written using Python v3.5 o
         self._project = project
 
         self._project.modified_changed.connect(self.setWindowModified)
-        self._project.name_changed.connect(self._name_changed)
 
+        self._project.name_changed.connect(self._name_changed)
         self._name_changed(self._project.name)
+
+        self._project.python_target_version_changed.connect(
+                self._python_target_version_changed)
+        self._python_target_version_changed()
 
         tabs = self.centralWidget()
 

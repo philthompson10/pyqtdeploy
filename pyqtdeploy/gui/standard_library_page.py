@@ -84,10 +84,12 @@ class StandardLibraryPage(QWidget):
         """ Update the page using the current project. """
 
         project = self.project
+
+        if project.python_target_version is None:
+            return
+
         editor = self._stdlib_edit
 
-        # TODO
-        return
         metadata = get_python_metadata(project.python_target_version)
 
         blocked = editor.blockSignals(True)

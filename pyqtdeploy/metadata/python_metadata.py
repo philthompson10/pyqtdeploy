@@ -51,7 +51,7 @@ class StdlibModule:
     """ Encapsulate the meta-data for a module in the standard library. """
 
     def __init__(self, internal, target, deps, hidden_deps, core, builtin,
-            defines, xlib, modules, source, libs, includepath, pyd, dlls):
+            defines, xdep, modules, source, libs, includepath, pyd, dlls):
         """ Initialise the object. """
 
         # Set if the module is internal.
@@ -83,8 +83,8 @@ class StdlibModule:
         # The sequence of (possibly scoped) DEFINES to add to the .pro file.
         self.defines = (defines, ) if isinstance(defines, str) else defines
 
-        # The internal identifier of a required external library.
-        self.xlib = xlib
+        # The name of a required external component.
+        self.xdep = xdep
 
         # The sequence of modules or sub-packages if this is a package,
         # otherwise None.
@@ -115,7 +115,7 @@ class VersionedModule:
 
     def __init__(self, min_version=None, version=None, max_version=None,
             internal=False, target='', deps=(), hidden_deps=(), core=False,
-            builtin=False, defines=None, xlib=None, modules=None, source=None,
+            builtin=False, defines=None, xdep=None, modules=None, source=None,
             libs=None, includepath=None, pyd=None, dlls=None):
         """ Initialise the object. """
 
@@ -134,7 +134,7 @@ class VersionedModule:
         self.max_version = max_version
 
         self.module = StdlibModule(internal, target, deps, hidden_deps, core,
-                builtin, defines, xlib, modules, source, libs, includepath,
+                builtin, defines, xdep, modules, source, libs, includepath,
                 pyd, dlls)
 
 
@@ -143,14 +143,14 @@ class ExtensionModule(VersionedModule):
 
     def __init__(self, source, libs=None, includepath=None, min_version=None,
             version=None, max_version=None, internal=False, target='', deps=(),
-            hidden_deps=(), core=False, defines=None, xlib=None, pyd=None,
+            hidden_deps=(), core=False, defines=None, xdep=None, pyd=None,
             dlls=None):
         """ Initialise the object. """
 
         super().__init__(min_version=min_version, version=version,
                 max_version=max_version, internal=internal, target=target,
                 deps=deps, hidden_deps=hidden_deps, core=core, defines=defines,
-                xlib=xlib, source=source, libs=libs, includepath=includepath,
+                xdep=xdep, source=source, libs=libs, includepath=includepath,
                 pyd=pyd, dlls=dlls)
 
 
@@ -1976,7 +1976,7 @@ _metadata = {
                         'sre_constants', 'sre_parse'))),
 
     'readline':
-        ExtensionModule(target='!win', source='readline.c', xlib='readline'),
+        ExtensionModule(target='!win', source='readline.c', xdep='readline'),
 
     'reprlib':
         PythonModule(deps=('itertools', '_thread')),
@@ -2512,7 +2512,7 @@ _metadata = {
                         'zlib/uncompr.c', 'zlib/zutil.c'),
                 includepath='zlib'),
         ExtensionModule(min_version=(3, 7),
-                source='zlibmodule.c', xlib='zlib')),
+                source='zlibmodule.c', xdep='zlib')),
 
     # These are internal modules.
 
@@ -2871,7 +2871,7 @@ _metadata = {
         PythonModule(internal=True, deps='_locale'),
 
     '_bz2':
-        ExtensionModule(internal=True, source='_bz2module.c', xlib='bz2',
+        ExtensionModule(internal=True, source='_bz2module.c', xdep='bz2',
                 pyd='_bz2.pyd'),
 
     '_codecs':
@@ -2993,11 +2993,11 @@ _metadata = {
 
     '_curses':
         ExtensionModule(internal=True, target='!win',
-                source='_cursesmodule.c', xlib='curses'),
+                source='_cursesmodule.c', xdep='curses'),
 
     '_curses_panel':
         ExtensionModule(internal=True, target='!win',
-                source='_curses_panel.c', xlib='panel'),
+                source='_curses_panel.c', xdep='panel'),
 
     '_datetime': (
         ExtensionModule(max_version=(3, 5, 1), internal=True,
@@ -3007,7 +3007,7 @@ _metadata = {
 
     '_dbm':
         ExtensionModule(internal=True, source='_dbmmodule.c',
-                defines='HAVE_NDBM_H', xlib='ndbm'),
+                defines='HAVE_NDBM_H', xdep='ndbm'),
 
     'distutils.config':
         PythonModule(
@@ -3106,13 +3106,13 @@ _metadata = {
         CoreExtensionModule(internal=True),
 
     '_gdbm':
-        ExtensionModule(internal=True, source='_gdbmmodule.c', xlib='gdbm'),
+        ExtensionModule(internal=True, source='_gdbmmodule.c', xdep='gdbm'),
 
     'genericpath':
         PythonModule(internal=True, deps=('os', 'stat')),
 
     '_hashlib':
-        ExtensionModule(internal=True, source='_hashopenssl.c', xlib='ssl',
+        ExtensionModule(internal=True, source='_hashopenssl.c', xdep='ssl',
                 pyd='_hashlib.pyd'),
 
     '_heapq':
@@ -3150,7 +3150,7 @@ _metadata = {
         ExtensionModule(internal=True, source=('_lsprof.c', 'rotatingtree.c')),
 
     '_lzma':
-        ExtensionModule(internal=True, source='_lzmamodule.c', xlib='lzma',
+        ExtensionModule(internal=True, source='_lzmamodule.c', xdep='lzma',
                 pyd='_lzma.pyd'),
 
     '_markupbase':
@@ -3465,7 +3465,7 @@ _metadata = {
                         '_sqlite/util.c'),
                 defines=('MODULE_NAME=\\\\\\"sqlite3\\\\\\"',
                         'SQLITE_OMIT_LOAD_EXTENSION'),
-                includepath='_sqlite', xlib='sqlite3', pyd='_sqlite3.pyd',
+                includepath='_sqlite', xdep='sqlite3', pyd='_sqlite3.pyd',
                 dlls='sqlite3.dll'),
 
     'sqlite3.dbapi2':
@@ -3487,7 +3487,7 @@ _metadata = {
         PythonModule(internal=True, deps=('sre_constants', 'warnings')),
 
     '_ssl':
-        ExtensionModule(internal=True, source='_ssl.c', xlib='ssl',
+        ExtensionModule(internal=True, source='_ssl.c', xdep='OpenSSL',
                 pyd='_ssl.pyd'),
 
     '_stat':
@@ -3568,31 +3568,19 @@ _metadata = {
 }
 
 
-# Meta-data is read-only so we cache and re-use it if possible.
-_metadata_cache = {}
-
-
-def get_python_metadata(version_nr):
+def get_python_metadata(version):
     """ Return the dict of StdlibModule instances for a particular version of
     Python.  It is assumed that the version is valid.
     """
 
-    # Use the cached value if there is one.
-    key = str(version_nr)
-
-    try:
-        return _metadata_cache[key]
-    except KeyError:
-        pass
-
-    _metadata_cache[key] = version_metadata = {}
+    version_metadata = {}
 
     for name, versions in _metadata.items():
         if not isinstance(versions, tuple):
             versions = (versions, )
 
         for versioned_module in versions:
-            if versioned_module.min_version <= version_nr <= versioned_module.max_version:
+            if versioned_module.min_version <= version <= versioned_module.max_version:
                 version_metadata[name] = versioned_module.module
                 break
 

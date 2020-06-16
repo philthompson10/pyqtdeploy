@@ -145,6 +145,28 @@ class Project(QObject):
 
         return path
 
+    def get_component_availability(self, name):
+        """ Return 0 if a component isn't available for any target
+        architecture, 1 if it is available for at least one target architecture
+        and 2 if it is available for all target architectures.
+        """
+
+        nr_targets = 0
+
+        for sysroot in self._sysroots:
+            for component in sysroot.components:
+                if component.name == name:
+                    nr_targets += 1
+                    break
+
+        if nr_targets == 0:
+            return 0
+
+        if nr_targets == len(self._sysroots):
+            return 2
+
+        return 1
+
     def get_executable_basename(self):
         """ Return the basename of the application executable (i.e. with no
         path or extension.
@@ -220,8 +242,8 @@ class Project(QObject):
 
             required_modules[name] = explicit
 
-            if dep_state.module.xlib is not None:
-                required_libraries.add(dep_state.module.xlib)
+            if dep_state.module.xdep is not None:
+                required_libraries.add(dep_state.module.xdep)
 
         return required_modules, required_libraries
 
@@ -302,24 +324,24 @@ class Project(QObject):
 
         self._sysroots = []
         self.python_target_version = None
-        for target in Architecture.all_architectures():
+        for target in Architecture.all_architectures:
             sysroot = Sysroot(specification, host, target)
 
             # Make sure the same version of Python is specified for each one.
             # For the moment ignore targets that don't specify the Python
             # component.
-            python = sysroot.get_component('Python', required=False)
-            if python is not None:
-                python.resolve_version()
+            for python in sysroot.components:
+                if python.name == 'Python':
+                    python.resolve_version()
 
-                if self.python_target_version is None:
-                    self.python_target_version = python.version
-                elif self.python_target_version != python.version:
-                    raise UserException(
-                            "The sysroot specification file defines more than "
-                            "one version of Python.")
+                    if self.python_target_version is None:
+                        self.python_target_version = python.version
+                    elif self.python_target_version != python.version:
+                        raise UserException(
+                                "The sysroot specification file defines more "
+                                "than one version of Python.")
 
-                self._sysroots.append(sysroot)
+                    self._sysroots.append(sysroot)
 
         # Make sure at least one target specified the Python component.
         if len(self._sysroots) == 0:
