@@ -78,6 +78,68 @@ class VersionNumber:
 
         return self.suffix == suffix
 
+    def __ge__(self, other):
+        """ Return True if this version number is greater than or equal to
+        another.
+        """
+
+        other = self._resolve_other(other)
+        if other is None:
+            return NotImplemented
+
+        major, minor, patch, suffix = other
+
+        if self.major < major:
+            return False
+
+        if minor is None:
+            return True
+
+        if self.minor < minor:
+            return False
+
+        if patch is None:
+            return True
+
+        if self.patch < patch:
+            return False
+
+        if suffix is None:
+            return True
+
+        return self.suffix >= other.suffix
+
+    def __le__(self, other):
+        """ Return True if this version number is less than or equal to
+        another.
+        """
+
+        other = self._resolve_other(other)
+        if other is None:
+            return NotImplemented
+
+        major, minor, patch, suffix = other
+
+        if self.major > major:
+            return False
+
+        if minor is None:
+            return True
+
+        if self.minor > minor:
+            return False
+
+        if patch is None:
+            return True
+
+        if self.patch > patch:
+            return False
+
+        if suffix is None:
+            return True
+
+        return self.suffix <= other.suffix
+
     def __lt__(self, other):
         """ Return True if this version number is less than another. """
 
@@ -106,35 +168,6 @@ class VersionNumber:
             return True
 
         return self.suffix < other.suffix
-
-    def __ge__(self, other):
-        """ Return True if this version number is less than another. """
-
-        other = self._resolve_other(other)
-        if other is None:
-            return NotImplemented
-
-        major, minor, patch, suffix = other
-
-        if self.major < major:
-            return False
-
-        if minor is None:
-            return True
-
-        if self.minor < minor:
-            return False
-
-        if patch is None:
-            return True
-
-        if self.patch < patch:
-            return False
-
-        if suffix is None:
-            return True
-
-        return self.suffix >= other.suffix
 
     @classmethod
     def parse_version_number(cls, version_str):
