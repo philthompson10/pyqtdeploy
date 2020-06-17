@@ -27,7 +27,16 @@
 from ..version_number import VersionNumber
 
 
-__all__ = ['ExtensionModule', 'get_python_metadata']
+__all__ = ['ExtensionModule', 'external_components', 'get_module_availability',
+        'get_python_metadata']
+
+
+# These are the external components, refered to by well known names, that the
+# Python standard library can depend on.  Note that these are not dependent on
+# the particular version of Python as they will never be referenced if they are
+# not relevant for a particular version.
+external_components = ('bzip2', 'curses', 'gdbm', 'LZMA', 'ndbm', 'OpenSSL',
+        'panel', 'Readline', 'SQLite', 'zlib')
 
 
 class StdlibModule:
@@ -1959,7 +1968,7 @@ _metadata = {
                         'sre_constants', 'sre_parse'))),
 
     'readline':
-        ExtensionModule(target='!win', source='readline.c', xdep='readline'),
+        ExtensionModule(target='!win', source='readline.c', xdep='Readline'),
 
     'reprlib':
         PythonModule(deps=('itertools', '_thread')),
@@ -2854,7 +2863,7 @@ _metadata = {
         PythonModule(internal=True, deps='_locale'),
 
     '_bz2':
-        ExtensionModule(internal=True, source='_bz2module.c', xdep='bz2',
+        ExtensionModule(internal=True, source='_bz2module.c', xdep='bzip2',
                 pyd='_bz2.pyd'),
 
     '_codecs':
@@ -3095,7 +3104,7 @@ _metadata = {
         PythonModule(internal=True, deps=('os', 'stat')),
 
     '_hashlib':
-        ExtensionModule(internal=True, source='_hashopenssl.c', xdep='ssl',
+        ExtensionModule(internal=True, source='_hashopenssl.c', xdep='OpenSSL',
                 pyd='_hashlib.pyd'),
 
     '_heapq':
@@ -3133,7 +3142,7 @@ _metadata = {
         ExtensionModule(internal=True, source=('_lsprof.c', 'rotatingtree.c')),
 
     '_lzma':
-        ExtensionModule(internal=True, source='_lzmamodule.c', xdep='lzma',
+        ExtensionModule(internal=True, source='_lzmamodule.c', xdep='LZMA',
                 pyd='_lzma.pyd'),
 
     '_markupbase':
@@ -3448,7 +3457,7 @@ _metadata = {
                         '_sqlite/util.c'),
                 defines=('MODULE_NAME=\\\\\\"sqlite3\\\\\\"',
                         'SQLITE_OMIT_LOAD_EXTENSION'),
-                includepath='_sqlite', xdep='sqlite3', pyd='_sqlite3.pyd',
+                includepath='_sqlite', xdep='SQLite', pyd='_sqlite3.pyd',
                 dlls='sqlite3.dll'),
 
     'sqlite3.dbapi2':
@@ -3549,6 +3558,61 @@ _metadata = {
     'xml.sax._exceptions':
         PythonModule(internal=True, deps='xml.sax'),
 }
+
+
+def get_module_availability(python_metadata, external_components_availability):
+    """ Return a map of the availability of each Python module.  The key is the
+    module name and the value is the availability (a value between 0 and 2).
+    """
+
+    module_availability = {}
+
+    for name in python_metadata.keys():
+        _get_a_modules_availability(name, module_availability, python_metadata,
+                external_components_availability)
+
+    return module_availability
+
+
+def _get_a_modules_availability(name, module_availability, python_metadata,
+        external_components_availability):
+    """ Return the availability of a particular module. """
+
+    availability = module_availability.get(name)
+    if availability is None:
+        module = python_metadata[name]
+
+        availability = external_components_availability.get(module.xdep, 2)
+
+        # Modules can have circular dependencies so set this now to prevent
+        # infinite recursion.
+        module_availability[name] = availability
+
+        for dep in module.deps:
+            if dep[0] in '?!':
+                dep = dep[1:]
+
+            dep_availability = _get_a_modules_availability(dep,
+                    module_availability, python_metadata,
+                    external_components_availability)
+
+            if availability > dep_availability:
+                availability = dep_availability
+
+        for dep in module.hidden_deps:
+            if dep[0] in '?!':
+                dep = dep[1:]
+
+            dep_availability = _get_a_modules_availability(dep,
+                    module_availability, python_metadata,
+                    external_components_availability)
+
+            if availability > dep_availability:
+                availability = dep_availability
+
+        module_availability[name] = availability
+
+    return availability
 
 
 def get_python_metadata(version):

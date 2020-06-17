@@ -28,7 +28,7 @@ from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import (QTreeWidget, QTreeWidgetItem,
         QTreeWidgetItemIterator, QVBoxLayout, QWidget)
 
-from ..metadata import get_python_metadata
+from ..metadata import get_module_availability, get_python_metadata
 
 
 class StandardLibraryPage(QWidget):
@@ -91,6 +91,8 @@ class StandardLibraryPage(QWidget):
         editor = self._stdlib_edit
 
         metadata = get_python_metadata(project.python_target_version)
+        module_availability = get_module_availability(metadata,
+                project.external_components_availability)
 
         blocked = editor.blockSignals(True)
 
@@ -100,6 +102,16 @@ class StandardLibraryPage(QWidget):
             itm = QTreeWidgetItem(parent, name.split('.')[-1:])
             itm.setFlags(Qt.ItemIsEnabled|Qt.ItemIsUserCheckable)
             itm._name = name
+
+            # Change the appearence of the item according to its availability.
+            availability = module_availability[name]
+
+            if availability == 0:
+                itm.setDisabled(True)
+            elif availability == 1:
+                font = itm.font()
+                font.setItalics(True)
+                itm.setFont(font)
 
             # Handle any sub-modules.
             if module.modules is not None:

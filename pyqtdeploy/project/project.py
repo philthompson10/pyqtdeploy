@@ -29,7 +29,7 @@ import toml
 
 from PyQt5.QtCore import QDir, QFileInfo, QObject, pyqtSignal
 
-from ..metadata import get_python_metadata
+from ..metadata import external_components, get_python_metadata
 from ..platforms import Architecture, Platform
 from ..sysroot import Sysroot, SysrootSpecification
 from ..user_exception import UserException
@@ -93,6 +93,8 @@ class Project(QObject):
 
         self._modified = False
         self._name = QFileInfo(name) if name != '' else None
+
+        self.external_components_availability = {}
         self._sysroots = []
 
         self.python_target_version = None
@@ -144,28 +146,6 @@ class Project(QObject):
             path = fi.absoluteFilePath()
 
         return path
-
-    def get_component_availability(self, name):
-        """ Return 0 if a component isn't available for any target
-        architecture, 1 if it is available for at least one target architecture
-        and 2 if it is available for all target architectures.
-        """
-
-        nr_targets = 0
-
-        for sysroot in self._sysroots:
-            for component in sysroot.components:
-                if component.name == name:
-                    nr_targets += 1
-                    break
-
-        if nr_targets == 0:
-            return 0
-
-        if nr_targets == len(self._sysroots):
-            return 2
-
-        return 1
 
     def get_executable_basename(self):
         """ Return the basename of the application executable (i.e. with no
@@ -324,19 +304,20 @@ class Project(QObject):
 
         self._sysroots = []
         self.python_target_version = None
+
         for target in Architecture.all_architectures:
             sysroot = Sysroot(specification, host, target)
 
             # Make sure the same version of Python is specified for each one.
             # For the moment ignore targets that don't specify the Python
             # component.
-            for python in sysroot.components:
-                if python.name == 'Python':
-                    python.resolve_version()
+            for component in sysroot.components:
+                if component.name == 'Python':
+                    component.resolve_version()
 
                     if self.python_target_version is None:
-                        self.python_target_version = python.version
-                    elif self.python_target_version != python.version:
+                        self.python_target_version = component.version
+                    elif self.python_target_version != component.version:
                         raise UserException(
                                 "The sysroot specification file defines more "
                                 "than one version of Python.")
@@ -348,6 +329,29 @@ class Project(QObject):
             raise UserException(
                     "The sysroot specification file does not define a "
                     "'Python' component for any target architecture.")
+
+        # The availability is 0 if a component isn't available in any sysroot,
+        # 1 if it is available for at least one sysroot architecture and 2 if
+        # it is available for all sysroots.
+        self.external_components_availability = {}
+
+        for name in external_components:
+            nr_sysroots = 0
+
+            for sysroot in self._sysroots:
+                for component in sysroot.components:
+                    if component.name == name:
+                        nr_sysroots += 1
+                        break
+
+            if nr_sysroots == 0:
+                availability = 0
+            elif nr_sysroots == len(self._sysroots):
+                availability = 2
+            else:
+                availability = 1
+
+            self.external_components_availability[name] = availability
 
         self.python_target_version_changed.emit()
 
