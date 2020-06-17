@@ -27,24 +27,7 @@
 from ..version_number import VersionNumber
 
 
-__all__ = ['ExtensionModule', 'get_python_metadata', 'get_targeted_value',
-        'supported_python_versions']
-
-
-# The latest supported version in each minor branch.
-_supported_branches = (
-    (3, 7, 7),
-    (3, 6, 10),
-    (3, 5, 9))
-
-
-# All supported versions.
-def _get_supported_versions():
-    for major, minor, patch in _supported_branches:
-        for p in range(patch, -1, -1):
-            yield VersionNumber(major, minor, p)
-
-supported_python_versions = tuple(_get_supported_versions())
+__all__ = ['ExtensionModule', 'get_python_metadata']
 
 
 class StdlibModule:
@@ -3585,22 +3568,6 @@ def get_python_metadata(version):
                 break
 
     return version_metadata
-
-
-def get_targeted_value(value, target):
-    """ Given a value that may be scoped by one or more targets, the unscoped
-    value is returned if it is being targeted by the given architecture.  If it
-    isn't then None is returned.
-    """
-
-    parts = value.split('#', maxsplit=1)
-    if len(parts) == 2:
-        scope, value = parts
-
-        if not target.is_targeted(scope):
-            value = None
-
-    return value
 
 
 if __name__ == '__main__':
