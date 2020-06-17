@@ -36,8 +36,7 @@ from PyQt5.QtCore import (QByteArray, QCoreApplication, QDir, QFile,
 
 from ..file_utilities import (create_file, get_embedded_dir,
         get_embedded_file_for_version, read_embedded_file)
-from ..metadata import (external_libraries_metadata, get_python_metadata,
-        get_targeted_value, pyqt4_metadata, pyqt5_metadata)
+from ..metadata import (get_python_metadata, pyqt4_metadata, pyqt5_metadata)
 from ..project import QrcDirectory
 from ..platforms import Architecture, Platform
 from ..user_exception import UserException
@@ -968,7 +967,16 @@ exists($$PDY_DLL) {
         value isn't valid for the target.
         """
 
-        return get_targeted_value(scoped_value, self._target)
+        parts = scoped_value.split('#', maxsplit=1)
+        if len(parts) == 2:
+            scope, value = parts
+
+            if not self._target.is_targeted(scope):
+                value = None
+        else:
+            value = scoped_value
+
+        return value
 
     def _get_pyqt_module_metadata(self, module_name):
         """ Get the meta-data for a PyQt module. """
