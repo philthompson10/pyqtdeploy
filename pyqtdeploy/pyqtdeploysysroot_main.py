@@ -48,6 +48,13 @@ def main():
     parser.add_argument('--options',
             help="show the options available for the components",
             action='store_true')
+    parser.add_argument('--python',
+            help="the python executable when using an existing Python "
+                    "installation",
+            metavar="FILE"),
+    parser.add_argument('--qmake',
+            help="the qmake executable when using an existing Qt installation",
+            metavar="FILE"),
     parser.add_argument('--source-dir',
             help="a directory containing the source archives",
             metavar="DIR", dest='source_dirs', action='append')
@@ -77,7 +84,8 @@ def main():
         host = Architecture.architecture()
         target = Architecture.architecture(args.target)
         sysroot = Sysroot(specification, host, target,
-                message_handler=message_handler)
+                message_handler=message_handler, python=args.python,
+                qmake=args.qmake)
 
         if args.options:
             sysroot.show_options(args.component)

@@ -44,36 +44,22 @@ class PythonComponent(SourceComponent):
         options = super().get_options()
 
         options.append(
-                ComponentOption('build_host_from_source', type=bool,
-                        help="Build the host Python from source code rather "
-                                "than use an existing installation."))
-
-        options.append(
-                ComponentOption('build_target_from_source', type=bool,
-                        help="Build the target Python from source code rather "
-                                "than use an existing installation."))
-
-        options.append(
                 ComponentOption('dynamic_loading', type=bool,
                         help="Set to enable support for the dynamic loading "
                                 "of extension modules when building from "
                                 "source."))
 
         options.append(
-                ComponentOption('host_installation_bin_dir',
-                        help="The pathname of the directory containing the "
-                                "existing host Python interpreter "
-                                "installation. If it is not specified on "
-                                "Windows then the value found in the registry "
-                                "is used. On other platforms it is assumed to "
-                                "be on PATH."))
+                ComponentOption('install_host_from_source', type=bool,
+                        help="Install the host Python from a source package "
+                                "rather than an existing installation."))
 
         return options
 
     def install(self):
         """ Install for the host and target. """
 
-        # Build the host installation.
+        # Install the host installation.
         if self.build_host_from_source:
             interpreter = self._build_host_from_source(sysroot)
         else:
@@ -111,14 +97,27 @@ class PythonComponent(SourceComponent):
         if self.version < (3, 5) or self.version >= (3, 8):
             self.error("v{0} is not supported".format(self.version))
 
-        if self.host_platform_name == 'win':
-            if self.build_host_from_source:
+        if self.install_host_from_source:
+            if self.host_platform_name == 'win':
                 self.error(
-                        "building the host Python from source on Windows is not supported")
+                        "installing the host Python from a source package on "
+                        "Windows is not supported")
         else:
-            if not self.build_target_from_source:
+            # Check that the host installation is the right version.
+            host_version_str = self.run(self.host_python, '-c',
+                    'import sys; print(sys.version.split()[0])', capture=True)
+
+            host_version = self.parse_version_number(host_version_str)
+
+            if self.version != host_version:
                 self.error(
-                        "using an existing Python installation for the target is not supported on {0}".format(self.target_platform_name))
+                        "v{0} is specified but the host installation is "
+                                "v{1}".format(self.version, host_version))
+
+        if not self.install_from_source and self.host_platform_name != 'win':
+            self.error(
+                    "using an existing Python installation for the target is "
+                    "not supported on {0}".format(self.target_platform_name))
 
         if self.target_platform_name == 'android':
             if self.version < (3, 6):
@@ -130,7 +129,7 @@ class PythonComponent(SourceComponent):
                 self.error("Android API level 21 or greater is required")
 
         # Check the OpenSSL support.
-        if self.build_target_from_source:
+        if self.install_from_source:
             openssl = self.get_component('OpenSSL', required=False)
             if openssl is None:
                 self._has_openssl = False

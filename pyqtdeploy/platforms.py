@@ -733,7 +733,10 @@ class Windows(Platform):
     def exe(self, name):
         """ Convert a generic executable name to a host-specific version. """
 
-        return name + '.exe'
+        if not name.endswith('.exe'):
+            name += '.exe'
+
+        return name
 
     @property
     def make(self):

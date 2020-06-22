@@ -306,29 +306,39 @@ class Project(QObject):
         self.python_target_version = None
 
         for target in Architecture.all_architectures:
+            have_python = have_qt = False
             sysroot = Sysroot(specification, host, target)
 
             # Make sure the same version of Python is specified for each one.
-            # For the moment ignore targets that don't specify the Python
-            # component.
+            # For the moment ignore targets that don't specify Python and Qt
+            # components.
             for component in sysroot.components:
                 if component.name == 'Python':
-                    component.resolve_version()
-
-                    if self.python_target_version is None:
-                        self.python_target_version = component.version
-                    elif self.python_target_version != component.version:
+                    if have_python:
                         raise UserException(
                                 "The sysroot specification file defines more "
                                 "than one version of Python.")
 
-                    self._sysroots.append(sysroot)
+                    have_python = True
 
-        # Make sure at least one target specified the Python component.
+                    self.python_target_version = component.version
+
+                elif component.name == 'Qt':
+                    if have_qt:
+                        raise UserException(
+                                "The sysroot specification file defines more "
+                                "than one version of Qt.")
+
+                    have_qt = True
+
+            if have_python and have_qt:
+                self._sysroots.append(sysroot)
+
+        # Make sure at least one target specified Python and Qt components.
         if len(self._sysroots) == 0:
             raise UserException(
-                    "The sysroot specification file does not define a "
-                    "'Python' component for any target architecture.")
+                    "The sysroot specification file does not define 'Python' "
+                    "and 'Qt' components for any target architecture.")
 
         # The availability is 0 if a component isn't available in any sysroot,
         # 1 if it is available for at least one sysroot architecture and 2 if

@@ -72,15 +72,13 @@ class ComponentBase(ABC):
         self.name = name
         self._sysroot = sysroot
 
-        self.use_native_version = False
-
         # Configure the component.
         for option in self.get_options():
             value = configuration.get(option.name)
 
             if value is None:
                 if option.required:
-                    self._parse_error(
+                    self.error(
                             "'{0}' has not been specified".format(option.name))
 
                 # Create a default value.
@@ -89,12 +87,12 @@ class ComponentBase(ABC):
                 else:
                     value = option.default
             elif not isinstance(value, option.type):
-                self._parse_error(
+                self.error(
                         "value of '{0}' has an unexpected type".format(
                                 option.name))
             elif option.values:
                 if value not in option.values:
-                    self._parse_error(
+                    self.error(
                             "'{0}' must have be one of these values: {1}".format(option.name, ','.join(option.values)))
 
             setattr(self, option.name, value)
@@ -106,8 +104,9 @@ class ComponentBase(ABC):
 
         unused = configuration.keys()
         if unused:
-            self._parse_error(
-                    "unknown option(s): {0}".format(', '.join(unused)))
+            self.error("unknown option(s): {0}".format(', '.join(unused)))
+
+        self.version = self.parse_version_number(self.version)
 
     @property
     def android_api(self):
@@ -132,30 +131,19 @@ class ComponentBase(ABC):
     def error(self, message):
         """ Issue an error message.  This method will not return. """
 
-        self._sysroot.error("{0}: {1}".format(self.name, message))
+        self._sysroot.error(message, component=self)
 
     def find_exe(self, name, required=True):
         """ Return the absolute pathname of an executable located on PATH. """
 
-        host_exe = self.host_exe(name)
-
-        for d in os.environ.get('PATH', '').split(os.pathsep):
-            exe_path = os.path.join(d, host_exe)
-
-            if os.access(exe_path, os.X_OK):
-                return exe_path
-
-        if required:
-            self.error("'{0}' must be installed on PATH".format(name))
-
-        return None
+        return self._sysroot.find_exe(name, required=required, component=self)
 
     def get_options(self):
         """ Return a list of ComponentOption objects that define the components
         configurable options.
         """
 
-        return [ComponentOption('version',
+        return [ComponentOption('version', required=True,
                 help="The version number of the component.")]
 
     def get_component(self, name, required=True):
@@ -174,39 +162,13 @@ class ComponentBase(ABC):
 
         return None
 
-    def get_implied_version(self):
-        """ Return the VersionNumber object corresponding to the implied
-        version number of the component.  This will never be called if the
-        version number was specified explicitly.
-        """
-
-        # See if a native version (ie. one supplied by the target operating
-        # system) is to be used.
-        version = self.get_native_version()
-        if version is not None:
-            self.use_native_version = True
-            return version
-
-        self.error("the version number has not been set")
-
-    def get_native_version(self):
-        """ Return the VersionNumber object corresponding to the version number
-        of the component provided by the target operating system.
-        """
-
-        # This default implementation does not support native versions.
-        return None
-
     def get_version_from_file(self, identifier, filename):
         """ Return the stripped line from a file containing an identifier
-        (typically a pre-processor macro defining a version number).  None is
-        returned if the file doesn't exist or doesn't contain the identifier.
+        (typically a pre-processor macro defining a version number).
         """
 
         self.verbose(
                 "Determining installed version from '{0}'".format(filename))
-
-        version_line = None
 
         if os.path.isfile(filename):
             with open(filename) as f:
@@ -214,13 +176,17 @@ class ComponentBase(ABC):
                     if identifier in line:
                         version_line = line.strip()
                         break
+                else:
+                    self.error(
+                            "Unable to find '{0}' in {1}.".format(identifier,
+                                    filename))
 
         return version_line
 
     def host_exe(self, name):
         """ Convert a generic executable name to a host-specific version. """
 
-        return self._sysroot.host.platform.exe(name)
+        return self._sysroot.host_exe(name)
 
     @property
     def host_platform_name(self):
@@ -228,17 +194,30 @@ class ComponentBase(ABC):
 
         return self._sysroot.host.platform.name
 
+    @property
+    def host_python(self):
+        """ The full pathname of the host Python executable. """
+
+        return self._sysroot.host_python
+
+    @property
+    def host_qmake(self):
+        """ The full pathname of the host qmake executable. """
+
+        return self._sysroot.host_qmake
+
     @abstractmethod
     def install(self):
         """ Install the component. """
 
-    def parse_version_number(self, version_str):
-        """ Parse a version number of the component returning a VersionNumber
-        object.  UserException is raised if it couldn't be parsed.
+    @staticmethod
+    def parse_version_number(version_str):
+        """ Return the VersionNumber object corresponding to a version number
+        as a string.  UserException is raised if it couldn't be parsed.
 
-        The version number format supported by the default implementation is
-        M[.m[.p]][suffix] where M is the int major version, m is the int minor
-        version, p is the int patch version and suffix is a str suffix.
+        The version number format is M[.m[.p]][suffix] where M is the int major
+        version, m is the int minor version, p is the int patch version and
+        suffix is a str suffix.
         """
 
         from ..version_number import VersionNumber
@@ -250,15 +229,10 @@ class ComponentBase(ABC):
 
         self._sysroot.progress("{0}: {1}".format(self.name, message))
 
-    def resolve_version(self):
-        """ Make sure the version attribute is a VersionNumber object. """
+    def run(self, *args, capture=False):
+        """ Run a command, optionally capturing stdout. """
 
-        if isinstance(self.version, str):
-            if self.version != '':
-                # Use an explicitly specified version number.
-                self.version = self.parse_version_number(self.version)
-            else:
-                self.version = self.get_implied_version()
+        return self._sysroot.run(*args, capture=capture)
 
     @property
     def target_platform_name(self):
@@ -300,47 +274,11 @@ class ComponentBase(ABC):
                 "the '{0}' attribute is only supported for Apple targets".format(
                         attr_name))
 
-    def _parse_error(self, message):
-        """ Raise an exception for by an error in the specification file. """
-
-        raise UserException(
-                "{0}: Component '{1}': {2}".format(self.specification_file,
-                        self.name, message))
-
 
 class SourceComponent(ComponentBase):
-    """ The base class for the implemenation of component plugins that install
-    from a source package.
+    """ The base class for the implemenation of component plugins that can be
+    installed from a source package.
     """
-
-    _ARCHIVE_EXTENSIONS = ('.tar.bz2', '.tar.gz', '.tar.xz', 'tgz', '.zip')
-
-    def get_implied_version(self):
-        """ Return the VersionNumber object corresponding to the version number
-        implied by the component source.
-        """
-
-        # If 'source' hasn't been specified then use the super-class
-        # implementation.
-        if self.source == '':
-            return super().get_implied_version()
-
-        # Get the basename without any standard source archive extensions.
-        name = os.path.basename(self.source)
-
-        for ext in self._ARCHIVE_EXTENSIONS:
-            if name.endswith(ext):
-                name = name[:-len(ext)]
-                break
-
-        for version_str in name.split('-'):
-            try:
-                return self.parse_version_number(version_str)
-            except UserException:
-                pass
-
-        self.error(
-                "unable to extract a version number from '{0}'".format(name))
 
     def get_options(self):
         """ Return a list of ComponentOption objects that define the components
@@ -350,7 +288,8 @@ class SourceComponent(ComponentBase):
         options = super().get_options()
 
         options.append(
-                ComponentOption('source',
-                        help="The archive containing the source code."))
+                ComponentOption('install_from_source', type=bool, default=True,
+                        help="Install from a source package rather an "
+                                "existing installation."))
 
         return options

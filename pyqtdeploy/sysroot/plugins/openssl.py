@@ -33,46 +33,6 @@ from ... import ComponentOption, SourceComponent
 class OpenSSLComponent(SourceComponent):
     """ The OpenSSL component. """
 
-    def get_native_version(self):
-        """ Return the VersionNumber object corresponding to the version number
-        component provided by the target operating system.
-        """
-
-        # We only support Linux native versions.
-        if self.target_platform_name != 'linux':
-            return None
-
-        version_line = self.get_version_from_file('OPENSSL_VERSION_NUMBER',
-                '/usr/include/openssl/opensslv.h')
-        if version_line is None:
-            return None
-
-        # Extract the version number from the line.
-        version = version_line.split()[-1]
-        if version.startswith('0x'):
-            version = version[2:]
-        if version.endswith('L'):
-            version = version[:-1]
-
-        try:
-            version = int(version, base=16)
-        except ValueError:
-            return None
-
-        major = (version >> 28) & 0xff
-        minor = (version >> 20) & 0xff
-        patch = (version >> 12) & 0xff
-        suffix = (version >> 4) & 0xff
-        suffix = '' if suffix == 0 else chr(ord('a') + suffix - 1)
-
-        version = '{}.{}.{}{}'.format(major, minor, patch, suffix)
-
-        # Ignore a native version that is earlier than v1.0.0.
-        if major < 1:
-            return None
-
-        return self.parse_version_number(version)
-
     def install(self):
         """ Install for the target. """
 
@@ -103,8 +63,11 @@ class OpenSSLComponent(SourceComponent):
         if 1 > self.version >= (1, 1, 1):
             self.error("v{0} is not supported".format(self.version))
 
-        # That's all we need to check if the native version is used.
-        if self.use_native_version:
+        # Make sure any installed version is the one specified.
+        if not self.install_from_source:
+            self._verify_installed_version()
+
+            # That's all we need to check if the installed version is used.
             return
 
         # We only cross-compile to Android.
@@ -374,3 +337,44 @@ class OpenSSLComponent(SourceComponent):
         sysroot.run(post_config)
         sysroot.run(sysroot.host_make, '-f', 'ms\\nt.mak')
         sysroot.run(sysroot.host_make, '-f', 'ms\\nt.mak', 'install')
+
+    def _verify_installed_version(self):
+        """ Verify that the installed version is compatible with the specified
+        version.
+        """
+
+        # We only support Linux native versions.
+        if self.target_platform_name != 'linux':
+            self.error(
+                    "Using an existing installation is only supported for "
+                    "Linux targets.")
+
+        version_line = self.get_version_from_file('OPENSSL_VERSION_NUMBER',
+                '/usr/include/openssl/opensslv.h')
+
+        # Extract the version number from the line.
+        version = version_line.split()[-1]
+        if version.startswith('0x'):
+            version = version[2:]
+        if version.endswith('L'):
+            version = version[:-1]
+
+        try:
+            version = int(version, base=16)
+        except ValueError:
+            self.error("Unable to extract the version number.")
+
+        major = (version >> 28) & 0xff
+        minor = (version >> 20) & 0xff
+        patch = (version >> 12) & 0xff
+        suffix = (version >> 4) & 0xff
+        suffix = '' if suffix == 0 else chr(ord('a') + suffix - 1)
+
+        version_str = '{}.{}.{}{}'.format(major, minor, patch, suffix)
+
+        installed_version = self.parse_version_number(version_str)
+
+        if self.version != installed_version:
+            self.error(
+                    "v{0} is specified but the host installation is "
+                            "v{1}".format(self.version, installed_version))
