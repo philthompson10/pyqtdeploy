@@ -58,27 +58,88 @@ def android_only(f):
 class Sysroot:
     """ Encapsulate a target-specific system root directory. """
 
-    def __init__(self, specification, host, target, message_handler=None):
+    def __init__(self, specification, host, target, message_handler=None,
+            python=None, qmake=None):
         """ Initialise the object. """
 
         self._specification = specification
         self.host = host
         self.target = target
         self._message_handler = message_handler
+        self._host_python = python
+        self._host_qmake = qmake
 
         self._building_for_target = True
         self._python_component = None
+        self._qt_component = None
 
         self.components = specification.create_components_for_target(target,
                 self)
 
     @staticmethod
-    def error(message, detail='', exception=None):
+    def error(message, detail='', exception=None, component=None):
         """ Raise an exception that will report an error is a user friendly
         manner.
         """
 
+        if component is not None:
+            message = "{0}: {1}".format(component.name, message)
+
         raise UserException(message, detail=detail) from exception
+
+    def find_exe(self, name, required=True, component=None):
+        """ Return the absolute pathname of an executable located on PATH. """
+
+        host_exe = self.host_exe(name)
+
+        for d in os.environ.get('PATH', '').split(os.pathsep):
+            exe_path = os.path.join(d, host_exe)
+
+            if os.access(exe_path, os.X_OK):
+                return exe_path
+
+        if required:
+            self.error("'{0}' could not be found on PATH".format(name),
+                    component=component)
+
+        return None
+
+    def host_exe(self, name):
+        """ Convert a generic executable name to a host-specific version. """
+
+        return self.host.platform.exe(name)
+
+    @property
+    def host_python(self):
+        """ The full pathname of the host Python executable. """
+
+        if self._host_python is None:
+            # TODO: the name of the Python3 interpreter is platform-specific.
+            # TODO: what about using the registry on Windows?
+            self._host_python = self.find_exe('python3', required=True)
+
+        return self._host_python
+
+    @host_python.setter
+    def host_python(self, value):
+        """ Set the name of the host Python executable. """
+
+        self._host_python = self.host_exe(os.path.abspath(value)) if value else None
+
+    @property
+    def host_qmake(self):
+        """ The full pathname of the host qmake executable. """
+
+        if self._host_qmake is None:
+            self._host_qmake = self.find_exe('qmake', required=True)
+
+        return self._host_qmake
+
+    @host_qmake.setter
+    def host_qmake(self, value):
+        """ Set the name of the host qmake executable. """
+
+        self._host_qmake = self.host_exe(os.path.abspath(value)) if value else None
 
     def install_components(self, sysroot_dir, component_names, source_dirs,
             no_clean):
@@ -162,10 +223,6 @@ class Sysroot:
                         self.target.name))
         self.target.verify_as_target(self._message_handler)
 
-        # Resolve all version numbers.
-        for component in self.components:
-            component.resolve_version()
-
         # Verify the components.
         for component in self.components:
             self.progress(
@@ -176,9 +233,14 @@ class Sysroot:
 
             if component.name == 'Python':
                 self._python_component = component
+            elif component.name == 'Qt':
+                self._qt_component = component
 
         if self._python_component is None:
             self.error("the 'Python' component has not been specified")
+
+        if self._qt_component is None:
+            self.error("the 'Qt' component has not been specified")
 
     def warning(self, message):
         """ Issue a warning message. """
@@ -522,31 +584,6 @@ class Sysroot:
         self._check_python_component()
 
         return os.path.join(self.host_bin_dir, self.host_exe('pip'))
-
-    @property
-    def host_python(self):
-        """ The pathname of the host Python interpreter. """
-
-        self._check_python_component()
-
-        return os.path.join(self.host_bin_dir, self.host_exe('python'))
-
-    @property
-    def host_qmake(self):
-        """ The name of the host qmake executable. """
-
-        if self._host_qmake is None:
-            self._missing_component('qt5')
-
-        return self._host_qmake
-
-    @host_qmake.setter
-    def host_qmake(self, qmake):
-        """ Set the name of the host qmake executable.  This should only be
-        used by the Qt component plugin.
-        """
-
-        self._host_qmake = self.host_exe(qmake)
 
     @property
     def host_sip(self):

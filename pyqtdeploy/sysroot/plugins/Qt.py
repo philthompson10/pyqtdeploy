@@ -1,0 +1,272 @@
+# Copyright (c) 2020, Riverbank Computing Limited
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+
+import os
+import sys
+
+from ... import ComponentOption, SourceComponent
+
+
+class QtComponent(SourceComponent):
+    """ The Qt component. """
+
+    def get_options(self):
+        """ Return a list of ComponentOption objects that define the components
+        configurable options.
+        """
+
+        options = super().get_options()
+
+        options.append(
+                ComponentOption('configure_options', type=list,
+                        help="The additional options to be passed to "
+                                "'configure' when building from source."))
+
+        options.append(
+                ComponentOption('disabled_features', type=list,
+                        help="The features that are disabled when building "
+                                "from source."))
+
+        options.append(
+                ComponentOption('edition', values=['commercial', 'opensource'],
+                        help="The Qt edition being used when building from "
+                                "source."))
+
+        options.append(
+                ComponentOption('qt_dir',
+                        help="The pathname of the directory containing an "
+                                "existing Qt installation to use. If it is "
+                                "not specified then the installation will be "
+                                "built from source."))
+
+        options.append(
+                ComponentOption('ssl',
+                        values=['openssl-linked', 'openssl-runtime',
+                                'securetransport'],
+                        help="Enable SSL support."))
+
+        options.append(
+                ComponentOption('skip', type=list,
+                        help="The Qt modules to skip when building from "
+                                "source."))
+
+        options.append(
+                ComponentOption('static_msvc_runtime', type=bool,
+                        help="Set if the MSVC runtime should be statically "
+                                "linked."))
+
+        return options
+
+    def install(self):
+        """ Install for the target. """
+
+        if self.source != '':
+            self._build_from_source()
+            self._target_qt_dir = os.path.join(sysroot.sysroot_dir, 'qt')
+        else:
+            # TODO: used to sysroot.find_file()
+            self._target_qt_dir = self.qt_dir
+
+        sysroot.host_qmake = os.path.join(self._target_qt_dir, 'bin', 'qmake')
+
+        # TODO - review the need for these.
+        # Create a symbolic link to qmake in a standard place in sysroot so
+        # that it can be referred to in cross-target build scripts.
+        sysroot.make_symlink(sysroot.host_qmake,
+                os.path.join(sysroot.host_bin_dir, sysroot.host_exe('qmake')))
+
+        # Do the same for androiddeployqt if it exists.
+        androiddeployqt = sysroot.host_exe('androiddeployqt')
+        androiddeployqt_path = os.path.join(self._target_qt_dir, 'bin',
+                androiddeployqt)
+
+        if os.path.isfile(androiddeployqt_path):
+            sysroot.make_symlink(androiddeployqt_path,
+                    os.path.join(sysroot.host_bin_dir, androiddeployqt))
+
+    def verify(self):
+        """ Verify the component. """
+
+        # Do some basic version checks.
+        if self.version < (5, 12):
+            self.error("Qt v5.12 or later is required")
+
+        if self.version >= 6:
+            self.error("Qt v6 is not supported")
+
+        # Make sure any installed version is the one specified.
+        if not self.install_from_source:
+            self._verify_installed_version()
+
+        # If we are linking against OpenSSL then get its version number.
+        if self.ssl == 'openssl-linked':
+            openssl = self.get_component('OpenSSL')
+            self._openssl_version = openssl.version
+        else:
+            self._openssl_version = None
+
+        # Android-specific checks.
+        if self.target_platform_name == 'android':
+            # It's possible that earlier versions will work but we haven't
+            # tested any.
+            if sysroot.android_sdk_version < (26, 1, 1):
+                self.warning(
+                        "versions of the SDK earlier than v26.1.1 are untested")
+
+            if sysroot.android_ndk_version < 19:
+                self.warning(
+                        "versions of the NDK earlier than r19 are untested")
+
+            if self._openssl_version is not None:
+                # The standard Qt build for Android uses OpenSSL v1.0.* so we
+                # must use the same.
+                # TODO: Check if Qt v5.13 is built against OpenSSL v1.1.*.
+                if self._openssl_version >= (1, 1):
+                    self.error("OpenSSL v1.0.* is required for Android")
+
+        # Additional checks for when we are installing from source.
+        if self.install_from_source:
+            # We don't support cross-compiling Qt.
+            if self.host_platform_name != self.target_platform_name:
+                self.error("cross compiling Qt is not supported")
+
+            if not self.edition:
+                self.error(
+                        "the 'edition' option must be specified when building "
+                        "from source")
+
+            # Make sure we have a Python v2.7 installation.
+            if self.host_platform_name == 'win':
+                self._py_27 = self.get_python_install_path(2, 7)
+
+    def _build_from_source(self, sysroot):
+        """ Build Qt from source. """
+
+        archive = sysroot.find_file(self.source)
+        sysroot.unpack_archive(archive)
+
+        if sys.platform == 'win32':
+            configure = 'configure.bat'
+
+            dx_setenv = os.path.expandvars(
+                    '%DXSDK_DIR%\\Utilities\\bin\\dx_setenv.cmd')
+
+            if os.path.exists(dx_setenv):
+                sysroot.run(dx_setenv)
+
+            original_path = os.environ['PATH']
+            new_path = [original_path]
+
+            new_path.insert(0, os.path.abspath('gnuwin32\\bin'))
+            new_path.insert(0, self._py_27)
+
+            os.environ['PATH'] = ';'.join(new_path)
+        else:
+            configure = './configure'
+            original_path = None
+
+        args = [configure, '-prefix', self._target_qt_dir, '-' + self.edition,
+                '-confirm-license', '-static', '-release', '-nomake',
+                'examples', '-nomake', 'tools',
+                '-I', sysroot.target_include_dir,
+                '-L', sysroot.target_lib_dir]
+
+        if sys.platform == 'win32' and self.static_msvc_runtime:
+            args.append('-static-runtime')
+
+        if self.ssl:
+            args.append('-ssl')
+
+            if self.ssl == 'securetransport':
+                args.append('-securetransport')
+
+            elif self.ssl == 'openssl-linked':
+                args.append('-openssl-linked')
+
+                if sys.platform == 'win32':
+                    if self._openssl_version >= (1, 1):
+                        openssl_libs = '-llibssl -llibcrypto'
+                    else:
+                        openssl_libs = '-lssleay32 -llibeay32'
+
+                    args.append('OPENSSL_LIBS=' + openssl_libs + ' -lws2_32 -lgdi32 -ladvapi32 -lcrypt32 -luser32')
+
+            elif self.ssl == 'openssl-runtime':
+                args.append('-openssl-runtime')
+
+        else:
+            args.append('-no-ssl')
+
+        if self.configure_options:
+            args.extend(self.configure_options)
+
+        xcb_enabled = True
+        if self.disabled_features:
+            for feature in self.disabled_features:
+                args.append('-no-feature-' + feature)
+
+                if feature == 'xcb':
+                    xcb_enabled = False
+
+        if self.skip:
+            for module in self.skip:
+                args.append('-skip')
+                args.append(module)
+
+        if sys.platform == 'win32':
+            # These cause compilation failures (although maybe only with static
+            # builds).
+            args.append('-skip')
+            args.append('qtimageformats')
+        elif sys.platform == 'linux' and xcb_enabled:
+            args.append('-qt-xcb')
+
+        sysroot.run(*args)
+        sysroot.run(sysroot.host_make)
+        sysroot.run(sysroot.host_make, 'install')
+
+        if original_path is not None:
+            os.environ['PATH'] = original_path
+
+    def _verify_installed_version(self):
+        """ Verify that the installed version is compatible with the specified
+        version.
+        """
+
+        for line in self.run(self.host_qmake, '-query', capture=True).split():
+            parts = line.split(':')
+            if len(parts) == 2 and parts[0] == 'QT_VERSION':
+                host_version = self.parse_version_number(parts[1])
+                break
+        else:
+            self.error(
+                    "unable to determine Qt version number from {0}".format(
+                            self.host_qmake))
+
+        if self.version != host_version:
+            self.error(
+                    "v{0} is specified but the host installation is "
+                    "v{1}".format(self.version, host_version))

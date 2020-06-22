@@ -46,37 +46,6 @@ class zlibComponent(SourceComponent):
 
         return options
 
-    def get_native_version(self):
-        """ Return the VersionNumber object corresponding to the version number
-        component provided by the target operating system.
-        """
-
-        # We support native versions for everything except Windows.
-        if self.target_platform_name == 'android':
-            # TODO: should android_sdk_system include the 'sysroot' directory
-            # itself? Is the value set in platform.py correct or should it be
-            # ndk_root + sysroot?
-            root_dir = self.android_ndk_sysroot
-        elif self.target_platform_name in ('ios', 'macos'):
-            root_dir = self.apple_sdk
-        elif self.target_platform_name == 'linux':
-            root_dir = ''
-        else:
-            return None
-
-        version_file = root_dir + '/usr/include/zlib.h'
-        version_line = self.get_version_from_file('ZLIB_VERSION', version_file)
-        if version_line is None:
-            return None
-
-        version = version_line.split()[-1]
-        if version.startswith('"'):
-            version = version[1:]
-        if version.endswith('"'):
-            version = version[:-1]
-
-        return self.parse_version_number(version)
-
     def install(self):
         """ Install for the target. """
 
@@ -134,3 +103,46 @@ class zlibComponent(SourceComponent):
 
             if sysroot.target_platform_name == 'ios':
                 del os.environ['CFLAGS']
+
+    def verify(self):
+        """ Verify the component. """
+
+        # Make sure any installed version is the one specified.
+        if not self.install_from_source:
+            self._verify_installed_version()
+
+    def _verify_installed_version(self):
+        """ Verify that the installed version is compatible with the specified
+        version.
+        """
+
+        # We support native versions for everything except Windows.
+        if self.target_platform_name == 'android':
+            # TODO: should android_sdk_system include the 'sysroot' directory
+            # itself? Is the value set in platform.py correct or should it be
+            # ndk_root + sysroot?
+            root_dir = self.android_ndk_sysroot
+        elif self.target_platform_name in ('ios', 'macos'):
+            root_dir = self.apple_sdk
+        elif self.target_platform_name == 'linux':
+            root_dir = ''
+        else:
+            self.error(
+                    "Using an existing installation is not supported for "
+                    "Windows targets.")
+
+        version_file = root_dir + '/usr/include/zlib.h'
+        version_line = self.get_version_from_file('ZLIB_VERSION', version_file)
+
+        version_str = version_line.split()[-1]
+        if version_str.startswith('"'):
+            version_str = version_str[1:]
+        if version_str.endswith('"'):
+            version_str = version_str[:-1]
+
+        installed_version = self.parse_version_number(version_str)
+
+        if self.version != installed_version:
+            self.error(
+                    "v{0} is specified but the host installation is "
+                            "v{1}".format(self.version, installed_version))
