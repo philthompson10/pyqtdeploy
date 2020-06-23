@@ -106,7 +106,9 @@ class ComponentBase(ABC):
         if unused:
             self.error("unknown option(s): {0}".format(', '.join(unused)))
 
-        self.version = self.parse_version_number(self.version)
+        # Allow the version number to be defined by an environment variable.
+        self.version = self.parse_version_number(
+                os.path.expandvars(self.version))
 
     @property
     def android_api(self):

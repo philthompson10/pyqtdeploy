@@ -51,10 +51,10 @@ def main():
     parser.add_argument('--python',
             help="the python executable when using an existing Python "
                     "installation",
-            metavar="FILE"),
+            metavar="FILE")
     parser.add_argument('--qmake',
             help="the qmake executable when using an existing Qt installation",
-            metavar="FILE"),
+            metavar="FILE")
     parser.add_argument('--source-dir',
             help="a directory containing the source archives",
             metavar="DIR", dest='source_dirs', action='append')

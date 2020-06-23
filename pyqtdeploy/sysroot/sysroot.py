@@ -514,6 +514,8 @@ class Sysroot:
         returned.
         """
 
+        # TODO: this method probably goes.
+
         # Convert the name to a normalised absolute pathname.
         name = os.path.expandvars(name)
 

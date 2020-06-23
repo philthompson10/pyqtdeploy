@@ -133,8 +133,7 @@ class Builder:
             if project.python_host_interpreter != '':
                 # Note that we assume a relative filename is on PATH rather
                 # than being relative to the project file.
-                interpreter = project.expandvars(
-                        project.python_host_interpreter)
+                interpreter = project.python_host_interpreter
             elif self._host.platform.name == 'win':
                 interpreter = get_py_install_path(python_target_version,
                         self._target) + 'python'

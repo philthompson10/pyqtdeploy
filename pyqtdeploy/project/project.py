@@ -163,20 +163,14 @@ class Project(QObject):
 
         return self._fileinfo_from_user(name).completeBaseName()
 
-    def expandvars(self, path):
-        """ Call os.path.expandvars() after expanding some internal values. """
-
-        # TODO: no longer any internal values.
-
-        return os.path.expandvars(path)
-
     def _fileinfo_from_user(self, user_path):
         """ Convert the name of a file or directory specified by the user to a
         QFileInfo instance.  A user path may be relative to the name of the
         project file and may contain environment variables.
         """
 
-        fi = QFileInfo(self.expandvars(user_path.strip()))
+        # TODO: review need to allow environment variables.
+        fi = QFileInfo(os.path.expandvars(user_path.strip()))
 
         if fi.isRelative() and self._name is not None:
             fi = QFileInfo(self._name.canonicalPath() + '/' + fi.filePath())
