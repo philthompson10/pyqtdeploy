@@ -37,7 +37,7 @@ def default_target():
 
 
 def find_tests(test, target):
-    """ Return the list of test files for a target. """
+    """ Return a 2-tuple of test files and expected results for a target. """
 
     tests = []
 
@@ -53,17 +53,17 @@ def find_tests(test, target):
             raise UserException("'{0}' does not exist".format(test))
 
     if os.path.isfile(test):
-        tests.append(test)
+        tests.append((test, False))
     else:
         for dirpath, _, filenames in os.walk(test):
-            # See if there is a file describing the tests to ignore for a
-            # particular platform.
-            ignore = {}
+            # See if there is a file describing the tests expected to fail for
+            # a particular platform.
+            expected_fails = {}
 
-            ignore_file = os.path.join(dirpath, 'Ignore')
-            if os.path.isfile(ignore_file):
-                with open(ignore_file) as ig_f:
-                    for line in ig_f:
+            expected_fails_file = os.path.join(dirpath, 'ExpectedFails')
+            if os.path.isfile(expected_fails_file):
+                with open(expected_fails_file) as ef_f:
+                    for line in ef_f:
                         line = line.strip()
 
                         # Ignore comments.
@@ -79,13 +79,12 @@ def find_tests(test, target):
                         if test_file == '':
                             continue
 
-                        ignore[test_file] = parts[1].strip().split()
+                        expected_fails[test_file] = parts[1].strip().split()
 
             for fn in filenames:
-                if target in ignore.get(fn, []):
-                    continue
-
-                tests.append(os.path.join(dirpath, fn))
+                tests.append(
+                        (os.path.join(dirpath, fn),
+                                expected_fails.get(fn, False)))
 
     return sorted(tests)
 
@@ -93,10 +92,11 @@ def find_tests(test, target):
 class TestCase:
     """ Encapsulate a test for a particular target. """
 
-    def __init__(self, test, target):
+    def __init__(self, test, expected_fail, target):
         """ Initialise the object. """
 
         self.test = test
+        self.expected_fail = expected_fail
         self.target = target
 
     @staticmethod
@@ -106,7 +106,7 @@ class TestCase:
         if verbose:
             print("Running: '{}'".format(' '.join(args)))
 
-        failed = False
+        error = False
 
         try:
             with subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True) as process:
@@ -125,22 +125,25 @@ class TestCase:
 
                     retcode = process.wait()
                     if retcode != 0:
-                        print("Returned exit code {}".format(retcode))
-                        failed = True
+                        if expected_fail:
+                            print(failure_message + " as expected")
+                        else:
+                            print("Returned exit code {}".format(retcode))
+                            error = True
 
                 except Exception as e:
                     print(process.stderr.read().rstrip())
                     process.kill()
-                    failed = True
+                    error = True
 
         except Exception as e:
             print(str(e))
-            failed = True
+            error = True
 
-        if failed:
+        if error:
             raise UserException(failure_message)
 
-    def run(self, source_dirs, no_clean, verbose):
+    def run(self, source_dirs, python, qmake, no_clean, verbose):
         """ Re-implemented to run a test. """
 
         raise NotImplementedError
@@ -150,9 +153,9 @@ class SysrootTest(TestCase):
     """ Encapsulate a pyqtdeploy-sysroot test for a particular target. """
 
     # The filename exyension of pyqtdeploy-sysroot tests.
-    test_extension = '.json'
+    test_extension = '.toml'
 
-    def run(self, source_dirs, no_clean, verbose):
+    def run(self, source_dirs, python, qmake, no_clean, verbose):
         """ Run a pyqtdeploy-sysroot test. """
 
         print("Building sysroot from {}".format(self.test))
@@ -174,6 +177,14 @@ class SysrootTest(TestCase):
         for s in source_dirs:
             args.extend(['--source-dir', s])
 
+        if python is not None:
+            args.append('--python')
+            args.append(python)
+
+        if qmake is not None:
+            args.append('--qmake')
+            args.append(qmake)
+
         args.extend(['--target', self.target])
         args.extend(['--sysroot', sysroot])
         args.append(self.test)
@@ -181,16 +192,17 @@ class SysrootTest(TestCase):
         self.call(args, verbose,
                 "Build of sysroot from {} failed".format(self.test))
 
-        print("Build of sysroot from {} successful".format(self.test))
+        if not self.expected_fail:
+            print("Build of sysroot from {} successful".format(self.test))
 
 
 class StdlibTest(TestCase):
     """ Encapsulate a pyqtdeploy-build test for a particular target. """
 
     # The filename exyension of pyqtdeploy-build tests.
-    test_extension = '.pdy'
+    test_extension = '.pdt'
 
-    def run(self, source_dirs, no_clean, verbose):
+    def run(self, source_dirs, python, qmake, no_clean, verbose):
         """ Run a pyqtdeploy-build test. """
 
         print("Building application from {}".format(self.test))
@@ -228,7 +240,39 @@ class StdlibTest(TestCase):
         if not no_clean:
             shutil.rmtree(build_dir)
 
-        print("Build of application from {} successful".format(self.test))
+        if not self.expected_fail:
+            print("Build of application from {} successful".format(self.test))
+
+
+def run_command(*args):
+    """ Run a command and return the output. """
+
+    error = None
+    stdout = []
+
+    try:
+        with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True) as process:
+            try:
+                while process.poll() is None:
+                    line = process.stdout.readline()
+                    if not line:
+                        continue
+
+                    stdout.append(line)
+
+                if process.returncode != 0:
+                    error = "returned exit code {}".format(process.returncode)
+
+            except Exception as e:
+                process.kill()
+    except Exception as e:
+        error = str(e)
+
+    if error:
+        raise UserException(
+                "Execution of '{0}' failed: {1}".format(args[0], error))
+
+    return ''.join(stdout).strip()
 
 
 if __name__ == '__main__':
@@ -241,32 +285,64 @@ if __name__ == '__main__':
     parser.add_argument('--no-clean',
             help="do not remove the temporary build directories",
             action='store_true')
+    parser.add_argument('--python',
+            help="the python executable when using an existing Python "
+                    "installation",
+            metavar="FILE")
+    parser.add_argument('--qmake',
+            help="the qmake executable when using an existing Qt installation",
+            metavar="FILE")
     parser.add_argument('--show', help="show the tests that would be run",
             action='store_true')
     parser.add_argument('--source-dir',
             help="a directory containing the source archives",
             metavar='DIR', dest='source_dirs', action='append')
     parser.add_argument('--test',
-            help="a test directory, JSON specification file or project file")
+            help="a test directory, TOML specification file or project file")
     parser.add_argument('--target', help="the target platform")
     parser.add_argument('--verbose', help="enable verbose progress messages",
             action='store_true')
 
     args = parser.parse_args()
 
-    if args.source_dirs:
-        source_dirs = [os.path.abspath(s) for s in args.source_dirs]
-    else:
-        source_dirs = None
+    # Convert to absolute paths.
+    python = os.path.abspath(args.python) if args.python else 'python'
+    qmake = os.path.abspath(args.qmake) if args.qmake else None
+    source_dirs = [os.path.abspath(s) for s in args.source_dirs] if args.source_dirs else None
 
     # Anchor everything from the directory containing this script.
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
+    # TODO: probably remove this when downloading source packages is supported.
     if not source_dirs:
         source_dirs = [os.path.join('..', 'demo', 'src')]
 
-    # Run the tests.
     try:
+        # Determine the version numbers of any existing Python and Qt
+        # installations.
+        python_version = run_command(python, '-c',
+                'import sys; print(sys.version.split()[0])')
+
+        os.environ['PYTHON_VERSION'] = python_version
+        if args.verbose:
+            print("Existing Python installation is v{0}".format(python_version))
+
+        if qmake is not None:
+            for line in run_command(qmake, '-query').split():
+                parts = line.split(':')
+                if len(parts) == 2 and parts[0] == 'QT_VERSION':
+                    qt_version = parts[1]
+                    break
+            else:
+                raise UserException(
+                        "unable to determine Qt version number from {0}".format(
+                                qmake))
+
+            os.environ['QT_VERSION'] = qt_version
+            if args.verbose:
+                print("Existing Qt installation is v{0}".format(qt_version))
+
+        # Run the tests.
         if args.target:
             target = args.target
         else:
@@ -275,21 +351,21 @@ if __name__ == '__main__':
         tests = find_tests(args.test, target)
 
         # Any sysroot tests must be run first.
-        for test in tests:
+        for test, expected_fail in tests:
             if test.endswith(SysrootTest.test_extension):
                 if args.show:
-                    print(test)
+                    print(test + " (expected to fail)" if expected_fail else '')
                 else:
-                    SysrootTest(test, target).run(source_dirs, args.no_clean,
-                            args.verbose)
+                    SysrootTest(test, expected_fail, target).run(source_dirs,
+                            python, qmake, args.no_clean, args.verbose)
 
-        for test in tests:
+        for test, expected_fail in tests:
             if test.endswith(StdlibTest.test_extension):
                 if args.show:
-                    print(test)
+                    print(test + " (expected to fail)" if expected_fail else '')
                 else:
-                    StdlibTest(test, target).run(source_dirs, args.no_clean,
-                            args.verbose)
+                    StdlibTest(test, expected_fail, target).run(source_dirs,
+                            args.no_clean, args.verbose)
 
     except UserException as e:
         print(e)
