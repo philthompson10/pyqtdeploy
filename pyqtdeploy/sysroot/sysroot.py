@@ -193,8 +193,7 @@ class Sysroot:
         else:
             components = self._components
             self.create_dir(self.sysroot_dir, empty=True)
-            # TODO
-            #os.makedirs(self.host_bin_dir)
+            os.makedirs(self.host_dir)
             os.makedirs(self.target_include_dir)
             os.makedirs(self.target_lib_dir)
             os.makedirs(self.target_src_dir)
@@ -543,12 +542,6 @@ class Sysroot:
         """ The name of the host architecture. """
 
         return self.host.arch_name
-
-    @property
-    def host_bin_dir(self):
-        """ The directory containing the host binaries. """
-
-        return os.path.join(self.host_dir, 'bin')
 
     @property
     def host_dir(self):

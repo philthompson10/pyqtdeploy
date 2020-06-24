@@ -1,0 +1,10 @@
+# Build a host Python v3.7 from source, and a target Python from the same
+# source version.
+
+[Python]
+version = "3.7.7"
+
+
+[Qt]
+version = "$QT_VERSION"
+install_from_source = false

@@ -126,12 +126,23 @@ class ComponentBase(ABC):
     def apple_sdk(self):
         """ The Apple SDK to use. """
 
-        arch = self._sysroot.target if self._sysroot.building_for_target else self._sysroot.host
+        return self._sysroot.apple_sdk
 
-        try:
-            return arch.platform.apple_sdk
-        except AttributeError:
-            self._apple_only('apple_sdk')
+    @property
+    def building_for_target(self):
+        """ This is set if building (ie. compiling and linking) for the target
+        architecture.  Otherwise build for the host.  The default is True.
+        """
+
+        return self._sysroot.building_for_target
+
+    @building_for_target.setter
+    def building_for_target(self, value):
+        """ Set to build (ie. compile and link) for the target architecture.
+        Otherwise build for the host.
+        """
+
+        self._sysroot.building_for_target = value
 
     def copy_file(self, src, dst, macros=None):
         """ Copy a file while expanding an optional dict of macros. """
@@ -221,6 +232,12 @@ class ComponentBase(ABC):
                                     filename))
 
         return version_line
+
+    @property
+    def host_dir(self):
+        """ The directory containing any host installations. """
+
+        return self._sysroot.host_dir
 
     def host_exe(self, name):
         """ Convert a generic executable name to a host-specific version. """

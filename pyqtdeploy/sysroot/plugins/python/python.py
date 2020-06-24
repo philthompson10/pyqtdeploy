@@ -51,6 +51,7 @@ class PythonComponent(SourceComponent):
 
         options.append(
                 ComponentOption('install_host_from_source', type=bool,
+                        default=True,
                         help="Install the host Python from a source package "
                                 "rather than an existing installation."))
 
@@ -244,16 +245,23 @@ build_time_vars = {
 ''')
         scd.close()
 
+    def _get_archive(self):
+        """ Return the pathname of the Python source archive. """
+
+        return self.get_archive('Python-{}.tgz'.format(self.version),
+                url='https://www.python.org/ftp/python/{}/'.format(
+                        self.version))
+
     def _install_host_from_source(self):
         """ Install the host Python from source. """
 
-        sysroot.building_for_target = False
+        self.building_for_target = False
 
         # Unpack the source.
-        archive = sysroot.find_file(self.source)
-        sysroot.unpack_archive(archive)
+        archive = self._get_archive()
+        self.unpack_archive(archive)
 
-        sysroot.run('./configure', '--prefix', sysroot.host_dir,
+        self.run('./configure', '--prefix', self.host_dir,
                 '--with-ensurepip=no')
 
         # For reasons not fully understood, the presence of this environment
@@ -270,8 +278,7 @@ build_time_vars = {
 
         self.building_for_target = True
 
-        # TODO: host_bin_dir?
-        self.host_python = os.path.join(sysroot.host_bin_dir,
+        self.host_python = os.path.join(self.host_dir, 'bin',
                 'python{}.{}'.format(self.version.major, self.version.minor))
 
     def _install_target_from_source(self):
@@ -279,9 +286,7 @@ build_time_vars = {
 
         # Unpack the source for any separately compiled internal extension
         # modules.
-        archive = self.get_archive('Python-{}.tgz'.format(self.version),
-                url='https://www.python.org/ftp/python/{}/'.format(
-                        self.version))
+        archive = self._get_archive()
 
         old_wd = os.getcwd()
         os.chdir(self.target_src_dir)
