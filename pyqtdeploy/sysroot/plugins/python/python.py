@@ -30,7 +30,7 @@ import sys
 
 from .... import ComponentOption, SourceComponent
 
-from .configure_python import configure_python
+from .pyconfig import generate_pyconfig_h
 
 
 class PythonComponent(SourceComponent):
@@ -131,6 +131,119 @@ class PythonComponent(SourceComponent):
             if self.android_api < 21:
                 self.error("Android API level 21 or greater is required")
 
+    def _configure_python(self):
+        """ Configure a Python source directory for a particular target. """
+
+        self.progress(
+                "Configuring Python v{0} for {1}".format(self.version,
+                        self.target_arch_name))
+
+        py_src_dir = os.getcwd()
+
+        configurations_dir = os.path.join(os.path.dirname(__file__),
+                'configurations')
+
+        # Copy the modules config.c file.
+        config_c_src_file = 'config_py{0}.c'.format(self.version.major)
+        config_c_dst_file = os.path.join(py_src_dir, 'Modules', 'config.c')
+
+        self.progress("Installing {0}".format(config_c_dst_file))
+
+        self.copy_file(os.path.join(configurations_dir, config_c_src_file),
+                config_c_dst_file)
+
+        # Generate the pyconfig.h file.  We follow the Python approach of a
+        # static version for Windows and a dynamically created version for
+        # other platforms.
+        pyconfig_h_dst_file = os.path.join(py_src_dir, 'pyconfig.h')
+
+        if self.target_platform_name == 'win':
+            self.progress("Installing {0}".format(pyconfig_h_dst_file))
+
+            # Find the pyconfig.h file appropriate for this version of Python.
+            pyconfig_dir = os.path.join(configurations_dir, 'pyconfig')
+            pyconfig = None
+            pyconfig_version = None
+
+            for fn in os.listdir(pyconfig_dir):
+                version = fn.split('-')[-1]
+                if version.endswith('.h'):
+                    version = version[:-2]
+
+                try:
+                    version = self.parse_version_number(version)
+                except UserException:
+                    continue
+
+                if version > self.version:
+                    # This is for a later version so we can ignore it.
+                    continue
+
+                if pyconfig is None or pyconfig_version < version:
+                    # This is a better candidate than any we have so far.
+                    pyconfig = fn
+                    pyconfig_version = version
+
+            assert pyconfig is not None
+
+            self.copy_file(os.path.join(pyconfig_dir, pyconfig),
+                    pyconfig_h_dst_file, macros={
+                        '@PY_DYNAMIC_LOADING@': '#define' if self.dynamic_loading else '#undef'})
+
+            # Rename these otherwise MSVC confuses them with the ones we want
+            # to use.
+            pc_src_dir = os.path.join(py_src_dir, 'PC')
+
+            for name in ('config.c', 'pyconfig.h'):
+                try:
+                    os.rename(os.path.join(pc_src_dir, name),
+                            os.path.join(pc_src_dir, name + '.orig'))
+                except FileNotFoundError:
+                    pass
+        else:
+            self.progress("Generating {0}".format(pyconfig_h_dst_file))
+
+            generate_pyconfig_h(pyconfig_h_dst_file, self)
+
+        # Copy the python.pro file.
+        python_pro_dst_file = os.path.join(py_src_dir, 'python.pro')
+
+        self.progress("Installing {0}".format(python_pro_dst_file))
+
+        self.copy_file(os.path.join(configurations_dir, 'python.pro'),
+                python_pro_dst_file, macros={
+                    '@PY_MAJOR_VERSION@': str(self.version.major),
+                    '@PY_MINOR_VERSION@': str(self.version.minor),
+                    '@PY_PATCH_VERSION@': str(self.version.patch),
+                    '@PY_DYNAMIC_LOADING@': 'enabled' if self.dynamic_loading else 'disabled'})
+
+    def _create_sysconfigdata(self):
+        """ Create the _sysconfigdata module. """
+
+        # The names must match those used in python.pro.  On macOS and Linux
+        # they are chosen to match those used by a default build.  On Android
+        # and iOS they are chosen to be unique so that they can have separate
+        # entries in the Python meta-data.
+        scd_names = {
+            'android':  'linux_android',
+            'ios':      'darwin_ios',
+            'macos':    'darwin_darwin',
+            'linux':    'linux_x86_64-linux-gnu',
+        }
+
+        scd_path = os.path.join(self.target_lib_dir,
+                'python{}.{}'.format(self.version.major, self.version.minor),
+                '_sysconfigdata_m_{}.py'.format(
+                        scd_names[self.target_platform_name]))
+
+        scd = self.create_file(scd_path)
+        scd.write('''# Automatically generated.
+
+build_time_vars = {
+}
+''')
+        scd.close()
+
     def _install_host_from_source(self):
         """ Install the host Python from source. """
 
@@ -149,13 +262,13 @@ class PythonComponent(SourceComponent):
         if launcher is not None:
             del os.environ['__PYVENV_LAUNCHER__']
 
-        sysroot.run(sysroot.host_make)
-        sysroot.run(sysroot.host_make, 'install')
+        self.run(self.host_make)
+        self.run(self.host_make, 'install')
 
         if launcher is not None:
             os.environ['__PYVENV_LAUNCHER__'] = launcher
 
-        sysroot.building_for_target = True
+        self.building_for_target = True
 
         # TODO: host_bin_dir?
         self.host_python = os.path.join(sysroot.host_bin_dir,
@@ -166,7 +279,7 @@ class PythonComponent(SourceComponent):
 
         # Unpack the source for any separately compiled internal extension
         # modules.
-        archive = self.get_source_archive('Python-{}.tgz'.format(self.version),
+        archive = self.get_archive('Python-{}.tgz'.format(self.version),
                 url='https://www.python.org/ftp/python/{}/'.format(
                         self.version))
 
@@ -181,7 +294,7 @@ class PythonComponent(SourceComponent):
         self._patch_source_for_target()
 
         # Configure for the target.
-        configure_python(self.dynamic_loading)
+        self._configure_python()
 
         # Do the build.
         self.run(self.host_qmake, 'SYSROOT=' + self.sysroot_dir)
@@ -194,39 +307,14 @@ class PythonComponent(SourceComponent):
         if self.target_platform_name != 'win':
             self._create_sysconfigdata()
 
-    def _create_sysconfigdata(self):
-        """ Create the _sysconfigdata module. """
-
-        # The names must match those used in python.pro.  On macOS and Linux
-        # they are chosen to match those used by a default build.  On Android
-        # and iOS they are chosen to be unique so that they can have separate
-        # entries in the Python meta-data.
-        scd_names = {
-            'android':  'linux_android',
-            'ios':      'darwin_ios',
-            'macos':    'darwin_darwin',
-            'linux':    'linux_x86_64-linux-gnu',
-        }
-
-        scd_name = '_sysconfigdata_m_{0}.py'.format(
-                scd_names[self.target_platform_name])
-        # TODO
-        scd_path = os.path.join(sysroot.target_py_stdlib_dir, scd_name)
-        scd = sysroot.create_file(scd_path)
-        scd.write('''# Automatically generated.
-
-build_time_vars = {
-}
-''')
-        scd.close()
-
     def _install_target_from_existing_windows_version(self, sysroot):
         """ Install the target Python from an existing installation on Windows.
         """ 
 
         install_path = sysroot.get_python_install_path()
 
-        major, minor = self._major_minor(sysroot)
+        major = self.version.major
+        minor = self.version.minor
 
         # The interpreter library.
         lib_name = 'python{0}{1}.lib'.format(major, minor)
@@ -266,28 +354,25 @@ build_time_vars = {
         sysroot.copy_dir(install_path + 'include',
                 os.path.join(sysroot.target_include_dir, py_subdir))
 
-    def _patch_source_for_target(self, sysroot):
+    def _patch_source_for_target(self):
         """ Patch the source code as necessary for the target. """
 
-        if sysroot.target_platform_name == 'ios':
-           self._patch_source(sysroot,
-                os.path.join('Modules', 'posixmodule.c'),
+        if self.target_platform_name == 'ios':
+           self._patch_source(os.path.join('Modules', 'posixmodule.c'),
                 self._patch_for_ios_system)
 
-        elif sysroot.target_platform_name == 'win':
-           self._patch_source(sysroot,
-                os.path.join('Modules', '_io', '_iomodule.c'),
+        elif self.target_platform_name == 'win':
+           self._patch_source(os.path.join('Modules', '_io', '_iomodule.c'),
                 self._patch_for_win_iomodule)
 
-           self._patch_source(sysroot,
+           self._patch_source(
                 os.path.join('Modules', 'expat', 'loadlibrary.c'),
                 self._patch_for_win_loadlibrary)
 
-           self._patch_source(sysroot,
-                os.path.join('Modules', '_winapi.c'),
+           self._patch_source(os.path.join('Modules', '_winapi.c'),
                 self._patch_for_win_winapi)
 
-    def _patch_source(self, sysroot, source, patcher):
+    def _patch_source(self, source, patcher):
         """ Invoke a patcher callable to patch a source file. """
 
         # Ignore if the source file doesn't exist.
@@ -297,8 +382,8 @@ build_time_vars = {
         orig = source + '.orig'
         os.rename(source, orig)
 
-        orig_file = sysroot.open_file(orig)
-        patch_file = sysroot.create_file(source)
+        orig_file = self.open_file(orig)
+        patch_file = self.create_file(source)
 
         patcher(orig_file, patch_file)
 
@@ -351,18 +436,3 @@ build_time_vars = {
 
         for line in orig_file:
             patch_file.write(line.replace('OverlappedType', 'OverlappedType_'))
-
-    @staticmethod
-    def _major_minor(sysroot):
-        """ Return the Python major.minor as a tuple. """
-
-        return (sysroot.target_py_version.major,
-                sysroot.target_py_version.minor)
-
-    @classmethod
-    def _major_minor_as_string(cls, sysroot):
-        """ Return the Python major.minor as a string. """
-
-        major, minor = cls._major_minor(sysroot)
-
-        return str(major) + '.' + str(minor)
