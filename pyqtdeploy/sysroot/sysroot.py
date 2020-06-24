@@ -155,6 +155,8 @@ class Sysroot:
         """ The full pathname of the host qmake executable. """
 
         if self._host_qmake is None:
+            # This will only be the case during the verification of an
+            # installed version of Qt.
             self._host_qmake = self.find_exe('qmake')
 
         return self._host_qmake
@@ -198,7 +200,7 @@ class Sysroot:
             os.makedirs(self.target_src_dir)
 
         # Create a new build directory.
-        build_dir = os.path.join(sysroot_dir, 'build')
+        build_dir = os.path.join(self.sysroot_dir, 'build')
         self.create_dir(build_dir, empty=True)
         cwd = os.getcwd()
 
