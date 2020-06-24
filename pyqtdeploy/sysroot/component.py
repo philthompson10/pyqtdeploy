@@ -26,7 +26,10 @@
 
 from abc import ABC, abstractmethod
 import os
+import shutil
 
+from ..file_utilities import (create_file as fu_create_file,
+        open_file as fu_open_file)
 from ..user_exception import UserException
 
 
@@ -130,10 +133,51 @@ class ComponentBase(ABC):
         except AttributeError:
             self._apple_only('apple_sdk')
 
-    def error(self, message):
+    def copy_file(self, src, dst, macros=None):
+        """ Copy a file while expanding an optional dict of macros. """
+
+        self.verbose("Copying {0} to {1}".format(src, os.path.abspath(dst)))
+
+        if macros is None:
+            try:
+                shutil.copy(src, dst)
+            except Exception as e:
+                self.error("unable to copy {0}".format(src), detail=str(e))
+        else:
+            try:
+                with open(src) as f:
+                    contents = f.read()
+            except Exception as e:
+                self.error("unable to open {0} for reading".format(src),
+                        detail=str(e))
+
+            for key, value in macros.items():
+                contents = contents.replace(key, value)
+
+            try:
+                with open(dst, 'w') as f:
+                    f.write(contents)
+            except Exception as e:
+                self.error("unable to create {0} for writing".format(dst),
+                        detail=str(e))
+
+    def create_dir(self, name, empty=False):
+        """ Ensure a directory exists and optionally delete its contents. """
+
+        self._sysroot.create_dir(name, empty=empty, component=self)
+
+    @staticmethod
+    def create_file(name):
+        """ Create a text file and return the file object.  A UserException is
+        raised if there was an error.
+        """
+
+        return fu_create_file(name)
+
+    def error(self, message, detail=''):
         """ Issue an error message.  This method will not return. """
 
-        self._sysroot.error(message, component=self)
+        self._sysroot.error(message, detail=detail, component=self)
 
     def find_exe(self, name, required=True):
         """ Return the absolute pathname of an executable located on PATH. """
@@ -184,6 +228,12 @@ class ComponentBase(ABC):
         return self._sysroot.host_exe(name)
 
     @property
+    def host_make(self):
+        """ The name of the host make executable. """
+
+        return self._sysroot.host_make
+
+    @property
     def host_platform_name(self):
         """ The name of the host platform. """
 
@@ -212,6 +262,14 @@ class ComponentBase(ABC):
         """ Install the component. """
 
     @staticmethod
+    def open_file(name):
+        """ Open an existing text file and return the file object.  A
+        UserException is raised if there was an error.
+        """
+
+        return fu_open_file(name)
+
+    @staticmethod
     def parse_version_number(version_str):
         """ Return the VersionNumber object corresponding to a version number
         as a string.  UserException is raised if it couldn't be parsed.
@@ -236,10 +294,34 @@ class ComponentBase(ABC):
         return self._sysroot.run(*args, capture=capture)
 
     @property
+    def sysroot_dir(self):
+        """ The name of the sysroot directory. """
+
+        return self._sysroot.sysroot_dir
+
+    @property
+    def target_arch_name(self):
+        """ The name of the target architecture. """
+
+        return self._sysroot.target.name
+
+    @property
+    def target_lib_dir(self):
+        """ The name of the directory containing target libraries. """
+
+        return self._sysroot.target_lib_dir
+
+    @property
     def target_platform_name(self):
         """ The name of the target platform. """
 
         return self._sysroot.target.platform.name
+
+    @property
+    def target_src_dir(self):
+        """ The name of the directory containing target sources. """
+
+        return self._sysroot.target_src_dir
 
     def verify(self):
         """ Verify the component.  This will be called after the options have
@@ -249,7 +331,7 @@ class ComponentBase(ABC):
     def verbose(self, message):
         """ Issue a verbose progress message. """
 
-        self._sysroot.verbose("{0}: {1}".format(self.name, message))
+        self._sysroot.verbose(message, component=self)
 
     def verify_host_tools(self, tools):
         """ Verify that a sequence of host tools is available. """
@@ -281,21 +363,7 @@ class SourceComponent(ComponentBase):
     installed from a source package.
     """
 
-    def get_options(self):
-        """ Return a list of ComponentOption objects that define the components
-        configurable options.
-        """
-
-        options = super().get_options()
-
-        options.append(
-                ComponentOption('install_from_source', type=bool, default=True,
-                        help="Install from a source package rather an "
-                                "existing installation."))
-
-        return options
-
-    def get_source_archive(self, archive_name, url=None):
+    def get_archive(self, archive_name, url=None):
         """ Return the pathname of a local copy of a source archive.  The
         source directories specified by the --source-dir command line option
         are searched first.  If the archive was not found then it is downloaded
@@ -327,10 +395,9 @@ class SourceComponent(ComponentBase):
             return archive
 
         # Download the archive into the cache.
-        from shutil import copyfileobj
         from urllib.request import urlopen
 
-        os.makedirs(cache_dir, exist_ok=True)
+        self.create_dir(cache_dir)
 
         archive_url = url + archive_name
 
@@ -338,9 +405,73 @@ class SourceComponent(ComponentBase):
 
         try:
             with urlopen(archive_url) as response, open(archive, 'wb') as f:
-                copyfileobj(response, f)
+                shutil.copyfileobj(response, f)
         except Exception as e:
-            self._sysroot.error("unable to download '{0}'".format(archive_url),
-                    detail=str(e), component=self)
+            self.error("unable to download '{0}'".format(archive_url),
+                    detail=str(e))
 
         self.verbose("Downloaded '{0}'".format(archive_url))
+
+        return archive
+
+    def get_options(self):
+        """ Return a list of ComponentOption objects that define the components
+        configurable options.
+        """
+
+        options = super().get_options()
+
+        options.append(
+                ComponentOption('install_from_source', type=bool, default=True,
+                        help="Install from a source package rather an "
+                                "existing installation."))
+
+        return options
+
+    def unpack_archive(self, archive, chdir=True):
+        """ An archive is unpacked in the current directory.  If requested its
+        top level directory becomes the current directory.
+        """
+
+        # Windows has a problem extracting the Qt source archive (probably the
+        # long pathnames).  As a work around we copy it to the current
+        # directory and extract it from there.
+        self.copy_file(archive, '.')
+        archive_name = os.path.basename(archive)
+
+        # Unpack the archive.
+        self.verbose("Unpacking '{}'".format(archive_name))
+
+        try:
+            shutil.unpack_archive(archive_name)
+        except Exception as e:
+            self.error("unable to unpack {0}".format(archive_name),
+                    detail=str(e))
+
+        # Assume that the name of the extracted directory is the same as the
+        # archive without the extension.
+        archive_root = None
+        for _, extensions, _ in shutil.get_unpack_formats():
+            for ext in extensions:
+                if archive_name.endswith(ext):
+                    archive_root = archive_name[:-len(ext)]
+                    break
+
+            if archive_root:
+                break
+        else:
+            # This should never happen if we have got this far.
+            self.error("'{0}' has an unknown extension".format(archive))
+
+        # Validate the assumption by checking the expected directory exists.
+        if not os.path.isdir(archive_root):
+            self.error(
+                    "unpacking {0} did not create a directory called '{1}' as "
+                            "expected".format(archive_name, archive_root))
+
+        # Delete the copied archive.
+        os.remove(archive_name)
+
+        # Change to the extracted directory if required.
+        if chdir:
+            os.chdir(archive_root)

@@ -30,10 +30,9 @@ import shutil
 import sys
 
 from ..file_utilities import (copy_embedded_file as fu_copy_embedded_file,
-        create_file as fu_create_file, extract_version as fu_extract_version,
+        extract_version as fu_extract_version,
         get_embedded_dir as fu_get_embedded_dir,
-        get_embedded_file_for_version as fu_get_embedded_file_for_version,
-        open_file as fu_open_file)
+        get_embedded_file_for_version as fu_get_embedded_file_for_version)
 from ..platforms import Architecture, Platform
 from ..user_exception import UserException
 from ..version_number import VersionNumber
@@ -183,18 +182,20 @@ class Sysroot:
             self.source_dirs = [
                     os.path.dirname(self._specification.specification_file)]
 
+        self.sysroot_dir = os.path.abspath(sysroot_dir)
+
         self.target.configure()
 
         if component_names:
             components = self._components_from_names(component_names)
         else:
             components = self._components
-            self.create_dir(sysroot_dir, empty=True)
+            self.create_dir(self.sysroot_dir, empty=True)
             # TODO
             #os.makedirs(self.host_bin_dir)
-            #os.makedirs(self.target_include_dir)
-            #os.makedirs(self.target_lib_dir)
-            #os.makedirs(self.target_src_dir)
+            os.makedirs(self.target_include_dir)
+            os.makedirs(self.target_lib_dir)
+            os.makedirs(self.target_src_dir)
 
         # Create a new build directory.
         build_dir = os.path.join(sysroot_dir, 'build')
@@ -443,16 +444,6 @@ class Sysroot:
 
         self._building_for_target = value
 
-    def copy_file(self, src, dst):
-        """ Copy a file. """
-
-        self.verbose("Copying {0} to {1}".format(src, os.path.abspath(dst)))
-
-        try:
-            shutil.copy(src, dst)
-        except Exception as e:
-            self.error("unable to copy {0}".format(src), detail=str(e))
-
     def copy_dir(self, src, dst, ignore=None):
         """ Copy a directory and its contents optionally ignoring a sequence of
         patterns.  If the destination directory already exists its contents
@@ -474,15 +465,7 @@ class Sysroot:
             self.error("unable to copy directory {0}".format(src),
                     detail=str(e))
 
-    @staticmethod
-    def create_file(name):
-        """ Create a text file and return the file object.  A UserException is
-        raised if there was an error.
-        """
-
-        return fu_create_file(name)
-
-    def create_dir(self, name, empty=False):
+    def create_dir(self, name, empty=False, component=None):
         """ Ensure a directory exists and optionally delete its contents. """
 
         if empty:
@@ -490,15 +473,16 @@ class Sysroot:
 
         if os.path.exists(name):
             if not os.path.isdir(name):
-                self.error("{0} exists but is not a directory".format(name))
+                self.error("{0} exists but is not a directory".format(name),
+                        component=component)
         else:
-            self.verbose("Creating {0}".format(name))
+            self.verbose("Creating {0}".format(name), component=component)
 
             try:
                 os.makedirs(name, exist_ok=True)
             except Exception as e:
                 self.error("unable to create directory {0}".format(name),
-                        detail=str(e))
+                        detail=str(e), component=component)
 
     def delete_dir(self, name):
         """ Delete a directory and its contents. """
@@ -618,14 +602,6 @@ class Sysroot:
             self.verbose("Linking {0} to {1}".format(src, dst))
             os.symlink(src, dst)
 
-    @staticmethod
-    def open_file(name):
-        """ Open an existing text file and return the file object.  A
-        UserException is raised if there was an error.
-        """
-
-        return fu_open_file(name)
-
     def pip_install(self, package):
         """ Use pip to install a package in the sysroot site-packages
         directory.
@@ -649,12 +625,6 @@ class Sysroot:
         assert self._message_handler is not None
         return Platform.run(*args, message_handler=self._message_handler,
                 capture=capture)
-
-    @property
-    def target_arch_name(self):
-        """ The name of the target architecture. """
-
-        return self.target.name
 
     @property
     def target_include_dir(self):
@@ -726,60 +696,11 @@ class Sysroot:
 
         return os.path.join(self.sysroot_dir, 'src')
 
-    def unpack_archive(self, archive, chdir=True):
-        """ An archive is unpacked in the current directory.  If requested its
-        top level directory becomes the current directory.  The name of the
-        directory (not it's pathname) is returned.
-        """
-
-        # Windows has a problem extracting the Qt source archive (probably the
-        # long pathnames).  As a work around we copy it to the current
-        # directory and extract it from there.
-        self.copy_file(archive, '.')
-        archive_name = os.path.basename(archive)
-
-        # Unpack the archive.
-        self.verbose("Unpacking '{}'".format(archive_name))
-
-        try:
-            shutil.unpack_archive(archive_name)
-        except Exception as e:
-            self.error("unable to unpack {0}".format(archive_name),
-                    detail=str(e))
-
-        # Assume that the name of the extracted directory is the same as the
-        # archive without the extension.
-        archive_root = None
-        for _, extensions, _ in shutil.get_unpack_formats():
-            for ext in extensions:
-                if archive_name.endswith(ext):
-                    archive_root = archive_name[:-len(ext)]
-                    break
-
-            if archive_root:
-                break
-        else:
-            # This should never happen if we have got this far.
-            self.error("'{0}' has an unknown extension".format(archive))
-
-        # Validate the assumption by checking the expected directory exists.
-        if not os.path.isdir(archive_root):
-            self.error(
-                    "unpacking {0} did not create a directory called '{1}' as expected".format(archive_name, archive_root))
-
-        # Delete the copied archive.
-        os.remove(archive_name)
-
-        # Change to the extracted directory if required.
-        if chdir:
-            os.chdir(archive_root)
-
-        # Return the directory name which the component plugin will often use
-        # to extract version information.
-        return archive_root
-
-    def verbose(self, message):
+    def verbose(self, message, component=None):
         """ Issue a verbose progress message. """
+
+        if component is not None:
+            message = "{0}: {1}".format(component.name, message)
 
         assert self._message_handler is not None
         self._message_handler.verbose_message(message)

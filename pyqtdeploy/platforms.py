@@ -39,6 +39,9 @@ class Platform:
     # The list of all platforms.
     all_platforms = []
 
+    # The name of the make executable.
+    make = 'make'
+    
     def __init__(self, full_name, name, archs):
         """ Initialise the object. """
 
@@ -723,6 +726,9 @@ class Windows_x86_64(WindowsArchitecture):
 
 class Windows(Platform):
     """ Encapsulate the Windows platform. """
+
+    # The name of the make executable.
+    make = 'nmake'
     
     def __init__(self):
         """ Initialise the object. """
@@ -737,11 +743,5 @@ class Windows(Platform):
             name += '.exe'
 
         return name
-
-    @property
-    def make(self):
-        """ The name of the make executable including any required path. """
-
-        return 'nmake'
 
 Windows()

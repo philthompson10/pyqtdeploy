@@ -36,14 +36,14 @@ class Config:
         self._api = api
         self._targets = targets
 
-    def value(self, sysroot):
+    def value(self, component):
         """ Get the value for a target architecture.  A value of None means the
         configuration value is omitted.
         """
 
         # Convert the target architecture and platform to valid Python names.
-        arch_name = sysroot.target_arch_name.replace('-', '_')
-        plat_name = sysroot.target_platform_name
+        arch_name = component.target_arch_name.replace('-', '_')
+        plat_name = component.target_platform_name
 
         # Try the architecture.
         try:
@@ -58,7 +58,7 @@ class Config:
 
         # Return None if the targetted Android version is earlier than the one
         # for which the value is defined.
-        if plat_name == 'android' and sysroot.android_api < self._api:
+        if plat_name == 'android' and component.android_api < self._api:
             return None
 
         return value
@@ -1629,21 +1629,22 @@ pyconfig = (
 )
 
 
-def generate_pyconfig_h(pyconfig_h_name, dynamic_loading, sysroot):
+def generate_pyconfig_h(pyconfig_h_name, component):
     """ Create the pyconfig.h file for a specific target variant. """
 
-    pyconfig_h = sysroot.create_file(pyconfig_h_name)
+    pyconfig_h = component.create_file(pyconfig_h_name)
 
     pyconfig_h.write('''#ifndef Py_PYCONFIG_H
 #define Py_PYCONFIG_H
 
 ''')
 
-    if sysroot.target_platform_name == 'android':
+    if component.target_platform_name == 'android':
         pyconfig_h.write(
-                '#define ANDROID_API_LEVEL {0}\n'.format(sysroot.android_api))
+                '#define ANDROID_API_LEVEL {0}\n'.format(
+                        component.android_api))
 
-    if dynamic_loading:
+    if component.dynamic_loading:
         pyconfig_h.write('#define HAVE_DYNAMIC_LOADING 1\n')
 
     py_major = 0
@@ -1658,7 +1659,7 @@ def generate_pyconfig_h(pyconfig_h_name, dynamic_loading, sysroot):
                 pyconfig_h.write(
                         '#if PY_MAJOR_VERSION == {0}\n'.format(py_major))
 
-        value = config.value(sysroot)
+        value = config.value(component)
 
         if value is None:
             # We provide an commented out #define to make it easier to modify

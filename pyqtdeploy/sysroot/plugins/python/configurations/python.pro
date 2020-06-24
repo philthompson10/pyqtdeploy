@@ -260,7 +260,7 @@ MODULE_SOURCES = \
     Modules/_operator.c \
     Modules/_stat.c \
     Modules/_tracemalloc.c \
-    Modules/hashtable.c
+    Modules/hashtable.c \
     Modules/mmapmodule.c \
     Modules/timemodule.c
 
