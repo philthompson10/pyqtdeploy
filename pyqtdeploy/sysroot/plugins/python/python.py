@@ -90,27 +90,17 @@ class PythonComponent(SourceComponent):
 
             host_version = self.parse_version_number(host_version_str)
 
-            if self.version != host_version:
+            # The patch version shouldn't matter.
+            if self.version.major != host_version.major or self.version.minor != host_version.minor:
                 self.error(
                         "v{0} is specified but the host installation is "
                                 "v{1}".format(self.version, host_version))
 
-        if not self.install_from_source and self.host_platform_name != 'win':
-            self.error(
-                    "using an existing Python installation for the target is "
-                    "not supported on {0}".format(self.target_platform_name))
-
-        if self.target_platform_name == 'android':
-            if self.version < (3, 6):
-                self.error(
-                        "v{0} is not supported on Android".format(
-                                self.version))
-
-            if self.android_api < 21:
-                self.error("Android API level 21 or greater is required")
-
-        # Check the OpenSSL support.
         if self.install_from_source:
+            # Make sure qmake is available.
+            self.host_qmake
+
+            # Check the OpenSSL support.
             openssl = self.get_component('OpenSSL', required=False)
             if openssl is None:
                 self._has_openssl = False
@@ -124,9 +114,22 @@ class PythonComponent(SourceComponent):
                                     self.version))
 
                 self._has_openssl = True
-        else:
-            # The standard Python builds support OpenSSL.
+        elif self.host_platform_name != 'win':
+            self.error(
+                    "using an existing Python installation for the target is "
+                    "not supported on {0}".format(self.target_platform_name))
+
+            # A standard Python builds support OpenSSL.
             self._has_openssl = True
+
+        if self.target_platform_name == 'android':
+            if self.version < (3, 6):
+                self.error(
+                        "v{0} is not supported on Android".format(
+                                self.version))
+
+            if self.android_api < 21:
+                self.error("Android API level 21 or greater is required")
 
     def _install_host_from_source(self):
         """ Install the host Python from source. """
@@ -158,38 +161,40 @@ class PythonComponent(SourceComponent):
         self.host_python = os.path.join(sysroot.host_bin_dir,
                 'python{}.{}'.format(self.version.major, self.version.minor))
 
-    def _build_target_from_source(self, sysroot):
-        """ Build the target Python from source. """
+    def _install_target_from_source(self):
+        """ Install the target Python from source. """
 
         # Unpack the source for any separately compiled internal extension
         # modules.
-        archive = sysroot.find_file(self.source)
+        archive = self.get_source_archive('Python-{}.tgz'.format(self.version),
+                url='https://www.python.org/ftp/python/{}/'.format(
+                        self.version))
 
         old_wd = os.getcwd()
-        os.chdir(sysroot.target_src_dir)
-        sysroot.unpack_archive(archive)
-        self._patch_source_for_target(sysroot)
+        os.chdir(self.target_src_dir)
+        self.unpack_archive(archive)
+        self._patch_source_for_target()
         os.chdir(old_wd)
 
         # Unpack the source to build from.
-        sysroot.unpack_archive(archive)
-        self._patch_source_for_target(sysroot)
+        self.unpack_archive(archive)
+        self._patch_source_for_target()
 
         # Configure for the target.
-        configure_python(self.dynamic_loading, sysroot)
+        configure_python(self.dynamic_loading)
 
         # Do the build.
-        sysroot.run(sysroot.host_qmake, 'SYSROOT=' + sysroot.sysroot_dir)
-        sysroot.run(sysroot.host_make)
-        sysroot.run(sysroot.host_make, 'install')
+        self.run(self.host_qmake, 'SYSROOT=' + self.sysroot_dir)
+        self.run(self.host_make)
+        self.run(self.host_make, 'install')
 
         # Create a platform-specific dummy _sysconfigdata module.  This allows
         # the sysconfig module to work.  If necessary we can populate it with
         # genuinely useful information if people ask for it.
-        if sysroot.target_platform_name != 'win':
-            self._create_sysconfigdata(sysroot)
+        if self.target_platform_name != 'win':
+            self._create_sysconfigdata()
 
-    def _create_sysconfigdata(self, sysroot):
+    def _create_sysconfigdata(self):
         """ Create the _sysconfigdata module. """
 
         # The names must match those used in python.pro.  On macOS and Linux
@@ -204,7 +209,8 @@ class PythonComponent(SourceComponent):
         }
 
         scd_name = '_sysconfigdata_m_{0}.py'.format(
-                scd_names[sysroot.target_platform_name])
+                scd_names[self.target_platform_name])
+        # TODO
         scd_path = os.path.join(sysroot.target_py_stdlib_dir, scd_name)
         scd = sysroot.create_file(scd_path)
         scd.write('''# Automatically generated.
