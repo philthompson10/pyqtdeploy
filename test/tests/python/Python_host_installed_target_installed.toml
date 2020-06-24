@@ -4,7 +4,6 @@
 [Python]
 version = "$PYTHON_VERSION"
 install_from_source = false
-install_host_from_source = false
 
 
 [Qt]

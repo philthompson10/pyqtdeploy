@@ -161,7 +161,10 @@ class SysrootTest(TestCase):
         print("Building sysroot from {}".format(self.test))
 
         # The name of the sysroot directory to be built.
-        test_name = os.path.basename(self.test).split('.')[0]
+        test_name = os.path.basename(self.test)
+        if test_name.endswith(self.test_extension):
+            test_name = test_name[:-len(self.test_extension)]
+
         sysroot = os.path.join('sysroot',
                 '{0}-{1}'.format(self.target, test_name))
 
@@ -178,12 +181,10 @@ class SysrootTest(TestCase):
             args.extend(['--source-dir', s])
 
         if python is not None:
-            args.append('--python')
-            args.append(python)
+            args.extend(['--python', python])
 
         if qmake is not None:
-            args.append('--qmake')
-            args.append(qmake)
+            args.extend(['--qmake', qmake])
 
         args.extend(['--target', self.target])
         args.extend(['--sysroot', sysroot])
@@ -308,14 +309,10 @@ if __name__ == '__main__':
     # Convert to absolute paths.
     python = os.path.abspath(args.python) if args.python else 'python'
     qmake = os.path.abspath(args.qmake) if args.qmake else None
-    source_dirs = [os.path.abspath(s) for s in args.source_dirs] if args.source_dirs else None
+    source_dirs = [os.path.abspath(s) for s in args.source_dirs] if args.source_dirs else []
 
     # Anchor everything from the directory containing this script.
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-    # TODO: probably remove this when downloading source packages is supported.
-    if not source_dirs:
-        source_dirs = [os.path.join('..', 'demo', 'src')]
 
     try:
         # Determine the version numbers of any existing Python and Qt
