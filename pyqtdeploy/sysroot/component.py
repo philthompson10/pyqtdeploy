@@ -257,6 +257,12 @@ class ComponentBase(ABC):
 
         return self._sysroot.host_qmake
 
+    @host_qmake.setter
+    def host_qmake(self, value):
+        """ Set the full pathname of the host qmake executable. """
+
+        self._sysroot.host_qmake = value
+
     @abstractmethod
     def install(self):
         """ Install the component. """

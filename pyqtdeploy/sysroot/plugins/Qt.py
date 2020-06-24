@@ -83,42 +83,21 @@ class QtComponent(SourceComponent):
     def install(self):
         """ Install for the target. """
 
-        if self.source != '':
-            self._build_from_source()
-            self._target_qt_dir = os.path.join(sysroot.sysroot_dir, 'qt')
-        else:
-            # TODO: used to sysroot.find_file()
-            self._target_qt_dir = self.qt_dir
-
-        sysroot.host_qmake = os.path.join(self._target_qt_dir, 'bin', 'qmake')
-
-        # TODO - review the need for these.
-        # Create a symbolic link to qmake in a standard place in sysroot so
-        # that it can be referred to in cross-target build scripts.
-        sysroot.make_symlink(sysroot.host_qmake,
-                os.path.join(sysroot.host_bin_dir, sysroot.host_exe('qmake')))
-
-        # Do the same for androiddeployqt if it exists.
-        androiddeployqt = sysroot.host_exe('androiddeployqt')
-        androiddeployqt_path = os.path.join(self._target_qt_dir, 'bin',
-                androiddeployqt)
-
-        if os.path.isfile(androiddeployqt_path):
-            sysroot.make_symlink(androiddeployqt_path,
-                    os.path.join(sysroot.host_bin_dir, androiddeployqt))
+        if self.install_from_source:
+            self._install_from_source()
 
     def verify(self):
         """ Verify the component. """
 
         # Do some basic version checks.
+        if self.version >= 6:
+            self.error("Qt v6 is not supported")
+
         if self.version < (5, 12):
             self.error("Qt v5.12 or later is required")
 
         if self.version >= (5, 13):
-            self.warning("Qt v5.13 an later is untested")
-
-        if self.version >= 6:
-            self.error("Qt v6 is not supported")
+            self.warning("Qt v5.13 and later is untested")
 
         # Make sure any installed version is the one specified.
         if not self.install_from_source:
@@ -172,8 +151,8 @@ class QtComponent(SourceComponent):
             if self.host_platform_name == 'win':
                 self._py_27 = self.get_python_install_path(2, 7)
 
-    def _build_from_source(self, sysroot):
-        """ Build Qt from source. """
+    def _install_from_source(self):
+        """ Install Qt from source. """
 
         archive = sysroot.find_file(self.source)
         sysroot.unpack_archive(archive)
@@ -198,7 +177,9 @@ class QtComponent(SourceComponent):
             configure = './configure'
             original_path = None
 
-        args = [configure, '-prefix', self._target_qt_dir, '-' + self.edition,
+        target_qt_dir = os.path.dirname(os.path.dirname(self.host_qmake))
+
+        args = [configure, '-prefix', target_qt_dir, '-' + self.edition,
                 '-confirm-license', '-static', '-release', '-nomake',
                 'examples', '-nomake', 'tools',
                 '-I', sysroot.target_include_dir,
@@ -260,6 +241,9 @@ class QtComponent(SourceComponent):
 
         if original_path is not None:
             os.environ['PATH'] = original_path
+
+        # TODO
+        self.host_qmake = os.path.join(self._target_qt_dir, 'bin', 'qmake')
 
     def _verify_installed_version(self):
         """ Verify that the installed version is compatible with the specified
