@@ -73,7 +73,7 @@ class Sysroot:
         self._python_component = None
         self._qt_component = None
 
-        self.components = specification.create_components_for_target(target,
+        self._components = specification.create_components_for_target(target,
                 self)
 
     @staticmethod
@@ -104,6 +104,24 @@ class Sysroot:
 
         return None
 
+    def get_component(self, name, required=True, component=None):
+        """ Return the component object for the given name or None if the
+        component hasn't been specified.  If it has not been specified and it
+        is required then raise an exception.
+        """
+
+        for comp in self._components:
+            if comp.name == name:
+                return comp
+
+        if required:
+            self.error(
+                    "'{0}' must be specified as a component of the "
+                            "sysroot".format(name),
+                    component=component)
+
+        return None
+
     def host_exe(self, name):
         """ Convert a generic executable name to a host-specific version. """
 
@@ -114,9 +132,16 @@ class Sysroot:
         """ The full pathname of the host Python executable. """
 
         if self._host_python is None:
-            # TODO: the name of the Python3 interpreter is platform-specific.
-            # TODO: what about using the registry on Windows?
-            self._host_python = self.find_exe('python3', required=True)
+            # This will only be the case during the verification of an
+            # installed version of Python.
+            major = self._python_component.version.major
+            minor = self._python_component.version.minor
+
+            if self.host.platform.name == 'win':
+                self._host_python = self.get_python_install_path(major, minor)
+            else:
+                self._host_python = self.find_exe(
+                        'python{}.{}'.format(major, minor))
 
         return self._host_python
 
@@ -164,22 +189,23 @@ class Sysroot:
             components = self._components_from_names(component_names)
         else:
             components = self.components
-            self.create_dir(self.sysroot_dir, empty=True)
-            os.makedirs(self.host_bin_dir)
-            os.makedirs(self.target_include_dir)
-            os.makedirs(self.target_lib_dir)
-            os.makedirs(self.target_src_dir)
+            self.create_dir(sysroot_dir, empty=True)
+            # TODO
+            #os.makedirs(self.host_bin_dir)
+            #os.makedirs(self.target_include_dir)
+            #os.makedirs(self.target_lib_dir)
+            #os.makedirs(self.target_src_dir)
 
         # Create a new build directory.
-        self.create_dir(self._build_dir, empty=True)
+        build_dir = os.path.join(sysroot_dir, 'build')
+        self.create_dir(build_dir, empty=True)
         cwd = os.getcwd()
 
         # Install the components.
         for component in components:
-            if not component.use_native_version:
-                self.progress("Installing {0}...".format(component.name))
-                os.chdir(self._build_dir)
-                component.install()
+            self.progress("Installing {0}...".format(component.name))
+            os.chdir(build_dir)
+            component.install()
 
         # Remove the build directory if requested.
         os.chdir(cwd)
@@ -188,7 +214,7 @@ class Sysroot:
             # This can fail on Windows (complaining about non-empty
             # directories).  Therefore we just warn that we couldn't do it.
             try:
-                self.delete_dir(self._build_dir)
+                self.delete_dir(build_dir)
             except UserException as e:
                 self.verbose("Warning: " + e.text)
 
@@ -224,7 +250,7 @@ class Sysroot:
         self.target.verify_as_target(self._message_handler)
 
         # Verify the components.
-        for component in self.components:
+        for component in self._components:
             self.progress(
                     "Verifying {0} v{1}...".format(component.name,
                             component.version))
@@ -242,8 +268,11 @@ class Sysroot:
         if self._qt_component is None:
             self.error("the 'Qt' component has not been specified")
 
-    def warning(self, message):
+    def warning(self, message, component=None):
         """ Issue a warning message. """
+
+        if component is not None:
+            message = "{0}: {1}".format(component.name, message)
 
         assert self._message_handler is not None
         self._message_handler.warning(message)
@@ -545,6 +574,8 @@ class Sysroot:
         installation directory for an existing installation.  It must not be
         called on a non-Windows platform.
         """
+        # TODO: review if this is still called outside the class and if the
+        # arguments are optional or not.
 
         from ..windows import get_py_install_path
 

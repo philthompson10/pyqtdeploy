@@ -33,16 +33,14 @@ class MessageHandler:
     messages.  This base implementation issues messages to the console.
     """
 
-    def __init__(self, quiet, verbose, warnings_are_errors):
+    def __init__(self, quiet, verbose):
         """ Initialise the object.  quiet is set if all progress messages
         should be disabled.  verbose is set if verbose progress messages should
-        be enabled.  warnings_are_errors is set if warning messages should be
-        treated as errors.  Messages do not have trailing newlines.
+        be enabled.  Messages do not have trailing newlines.
         """
 
         self.quiet = quiet
         self.verbose = verbose
-        self._warnings_are_errors = warnings_are_errors
 
     @classmethod
     def error(cls, message):
@@ -79,11 +77,6 @@ class MessageHandler:
             self.progress_message(message)
 
     def warning(self, message):
-        """ Handle a warning message.  This is raised as an exception if
-        warnings are treated as errors.
-        """
+        """ Handle a warning message. """
 
-        if self._warnings_are_errors:
-            raise UserException(message)
-
-        self.verbose_message(message)
+        self.progress_message("WARNING: " + message)
