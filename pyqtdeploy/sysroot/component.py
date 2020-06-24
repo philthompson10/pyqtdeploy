@@ -199,7 +199,7 @@ class ComponentBase(ABC):
     def host_python(self, value):
         """ Set the full pathname of the host Python executable. """
 
-        return self._sysroot.host_python = value
+        self._sysroot.host_python = value
 
     @property
     def host_qmake(self):
@@ -228,7 +228,7 @@ class ComponentBase(ABC):
     def progress(self, message):
         """ Issue a progress message. """
 
-        self._sysroot.progress("{0}: {1}".format(self.name, message))
+        self._sysroot.progress(message, component=self)
 
     def run(self, *args, capture=False):
         """ Run a command, optionally capturing stdout. """
@@ -294,3 +294,53 @@ class SourceComponent(ComponentBase):
                                 "existing installation."))
 
         return options
+
+    def get_source_archive(self, archive_name, url=None):
+        """ Return the pathname of a local copy of a source archive.  The
+        source directories specified by the --source-dir command line option
+        are searched first.  If the archive was not found then it is downloaded
+        from the optional URL.
+        """
+
+        # Search any source directories.
+        for source_dir in self._sysroot.source_dirs:
+            self.verbose(
+                    "Looking for '{0}' in {1}".format(archive_name,
+                            source_dir))
+
+            archive = os.path.join(source_dir, archive_name)
+            if os.path.isfile(archive):
+                self.verbose(
+                        "Found '{0}' in {1}".format(archive_name, source_dir))
+                return archive
+
+        if url is None:
+            self.error("unable to find '{0}'".format(archive))
+
+        # Search the URL cache.
+        cache_dir = os.path.join(os.path.expanduser('~'), '.pyqtdeploy',
+                'cache')
+
+        archive = os.path.join(cache_dir, archive_name)
+        if os.path.isfile(archive):
+            self.verbose("Found '{0}' in download cache".format(archive_name))
+            return archive
+
+        # Download the archive into the cache.
+        from shutil import copyfileobj
+        from urllib.request import urlopen
+
+        os.makedirs(cache_dir, exist_ok=True)
+
+        archive_url = url + archive_name
+
+        self.progress("Downloading '{0}'".format(archive_url))
+
+        try:
+            with urlopen(archive_url) as response, open(archive, 'wb') as f:
+                copyfileobj(response, f)
+        except Exception as e:
+            self._sysroot.error("unable to download '{0}'".format(archive_url),
+                    detail=str(e), component=self)
+
+        self.verbose("Downloaded '{0}'".format(archive_url))

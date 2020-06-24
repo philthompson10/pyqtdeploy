@@ -92,7 +92,7 @@ class Sysroot:
 
         host_exe = self.host_exe(name)
 
-        for d in os.environ.get('PATH', '').split(os.pathsep):
+        for d in os.get_exec_path():
             exe_path = os.path.join(d, host_exe)
 
             if os.access(exe_path, os.X_OK):
@@ -156,7 +156,7 @@ class Sysroot:
         """ The full pathname of the host qmake executable. """
 
         if self._host_qmake is None:
-            self._host_qmake = self.find_exe('qmake', required=True)
+            self._host_qmake = self.find_exe('qmake')
 
         return self._host_qmake
 
@@ -178,9 +178,9 @@ class Sysroot:
 
         # Normalise the list of source directories to search.
         if source_dirs:
-            self._source_dirs = [os.path.abspath(s) for s in source_dirs]
+            self.source_dirs = [os.path.abspath(s) for s in source_dirs]
         else:
-            self._source_dirs = [
+            self.source_dirs = [
                     os.path.dirname(self._specification.specification_file)]
 
         self.target.configure()
@@ -188,7 +188,7 @@ class Sysroot:
         if component_names:
             components = self._components_from_names(component_names)
         else:
-            components = self.components
+            components = self._components
             self.create_dir(sysroot_dir, empty=True)
             # TODO
             #os.makedirs(self.host_bin_dir)
@@ -227,7 +227,7 @@ class Sysroot:
         if component_names:
             components = self._components_from_names(component_names)
         else:
-            components = self.components
+            components = self._components
 
         assert self._message_handler is not None
         self._specification.show_options(components, self._message_handler)
@@ -283,7 +283,7 @@ class Sysroot:
         components = []
 
         for name in component_names:
-            for component in self.components:
+            for component in self._components:
                 if component.name == name:
                     components.append(component)
                     break
@@ -535,40 +535,6 @@ class Sysroot:
 
         return version_nr
 
-    def find_file(self, name, required=True):
-        """ Find a file (or directory).  If the name is relative then it is
-        relative to a directory specified by the --source-dir command line
-        option.  If this is not specified then the directory containing the
-        specification file is used.  The absolute pathname of the file is
-        returned.
-        """
-
-        # TODO: this method probably goes.
-
-        # Convert the name to a normalised absolute pathname.
-        name = os.path.expandvars(name)
-
-        if os.path.isabs(name):
-            targets = [name]
-        else:
-            targets = [os.path.join(s, name) for s in self._source_dirs]
-
-        # Check the name matches exactly one file.
-        for target in targets:
-            target = os.path.normpath(target)
-
-            self.verbose("Looking for '{0}'".format(target))
-
-            if os.path.isfile(target) or os.path.isdir(target):
-                self.verbose("Found '{0}'".format(target))
-                return target
-
-        if required:
-            self.error(
-                    "unable to find '{0}' could not be found".format(name))
-
-        return None
-
     def get_python_install_path(self, major=None, minor=None):
         """ Return the name of the directory containing the root of the Python
         installation directory for an existing installation.  It must not be
@@ -668,8 +634,11 @@ class Sysroot:
         self.run(self.host_pip, 'install', '--target',
                 self.target_sitepackages_dir, package)
 
-    def progress(self, message):
+    def progress(self, message, component=None):
         """ Issue a progress message. """
+
+        if component is not None:
+            message = "{0}: {1}".format(component.name, message)
 
         assert self._message_handler is not None
         self._message_handler.progress_message(message)
