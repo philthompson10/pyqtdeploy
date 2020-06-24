@@ -33,6 +33,10 @@ from ... import ComponentOption, SourceComponent
 class QtComponent(SourceComponent):
     """ The Qt component. """
 
+    # The list of components that, if specified, should be installed before
+    # this one.
+    preinstalls = ['OpenSSL', 'zlib']
+
     def get_options(self):
         """ Return a list of ComponentOption objects that define the components
         configurable options.
@@ -100,7 +104,10 @@ class QtComponent(SourceComponent):
             self.warning("Qt v5.13 and later is untested")
 
         # Make sure any installed version is the one specified.
-        if not self.install_from_source:
+        if self.install_from_source:
+            self.host_qmake = os.path.join(self.sysroot_dir, 'Qt', 'bin',
+                    'qmake')
+        else:
             self._verify_installed_version()
 
         # If we are linking against OpenSSL then get its version number.
@@ -241,9 +248,6 @@ class QtComponent(SourceComponent):
 
         if original_path is not None:
             os.environ['PATH'] = original_path
-
-        # TODO
-        self.host_qmake = os.path.join(self._target_qt_dir, 'bin', 'qmake')
 
     def _verify_installed_version(self):
         """ Verify that the installed version is compatible with the specified

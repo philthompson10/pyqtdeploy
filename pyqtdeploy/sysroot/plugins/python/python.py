@@ -36,6 +36,12 @@ from .pyconfig import generate_pyconfig_h
 class PythonComponent(SourceComponent):
     """ The host and target Python component. """
 
+    # The list of components that, if specified, should be installed before
+    # this one.  Note that we don't need to specify things like 'OpenSSL' as
+    # these are only used by this component when building the application and
+    # not the sysroot.
+    preinstalls = ['Qt']
+
     def get_options(self):
         """ Return a list of ComponentOption objects that define the components
         configurable options.
@@ -84,6 +90,10 @@ class PythonComponent(SourceComponent):
                 self.error(
                         "installing the host Python from a source package on "
                         "Windows is not supported")
+
+            self.host_python = os.path.join(self.host_dir, 'bin',
+                    'python{}.{}'.format(self.version.major,
+                            self.version.minor))
         else:
             # Check that the host installation is the right version.
             host_version_str = self.run(self.host_python, '-c',
@@ -98,8 +108,8 @@ class PythonComponent(SourceComponent):
                                 "v{1}".format(self.version, host_version))
 
         if self.install_from_source:
-            # Make sure qmake is available.
-            self.host_qmake
+            # Make Qt is specified.
+            self.get_component('Qt')
 
             # Check the OpenSSL support.
             openssl = self.get_component('OpenSSL', required=False)
@@ -277,9 +287,6 @@ build_time_vars = {
             os.environ['__PYVENV_LAUNCHER__'] = launcher
 
         self.building_for_target = True
-
-        self.host_python = os.path.join(self.host_dir, 'bin',
-                'python{}.{}'.format(self.version.major, self.version.minor))
 
     def _install_target_from_source(self):
         """ Install the target Python from source. """
