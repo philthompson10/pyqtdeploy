@@ -69,8 +69,17 @@ class ComponentOption:
 class ComponentBase(ABC):
     """ The base class for the implementation of a component plugin. """
 
+    # The list of components that, if specified, should be installed before
+    # this one.
+    preinstalls = []
+
+    # The installation status.
+    _IS_NOT_INSTALLED, _IS_IN_PROGRESS, _IS_INSTALLED = range(3)
+
     def __init__(self, name, configuration, sysroot):
         """ Initialise the component. """
+
+        self._install_status = self._IS_NOT_INSTALLED
 
         self.name = name
         self._sysroot = sysroot
@@ -184,6 +193,26 @@ class ComponentBase(ABC):
         """
 
         return fu_create_file(name)
+
+    def ensure_installed(self):
+        """ Ensure the component is installed. """
+
+        if self._install_status == self._IS_NOT_INSTALLED:
+            self._install_status = self._IS_IN_PROGRESS
+
+            # Make sure any optional pre-installs are done.
+            for preinstall in self.preinstalls:
+                component = self.get_component(preinstall, required=False)
+                if component is not None:
+                    component.ensure_installed()
+
+            self.progress("Installing component...")
+            self.install()
+
+            self._install_status = self._IS_INSTALLED
+
+        elif self._install_status == self._IS_IN_PROGRESS:
+            self.error("the component is part of a circular dependency")
 
     def error(self, message, detail=''):
         """ Issue an error message.  This method will not return. """

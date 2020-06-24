@@ -205,9 +205,8 @@ class Sysroot:
 
         # Install the components.
         for component in components:
-            self.progress("Installing {0}...".format(component.name))
             os.chdir(build_dir)
-            component.install()
+            component.ensure_installed()
 
         # Remove the build directory if requested.
         os.chdir(cwd)
