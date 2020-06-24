@@ -67,17 +67,13 @@ def main():
             action='store_true')
     parser.add_argument('--verbose', help="enable verbose progress messages",
             action='store_true')
-    parser.add_argument('--no-warnings-are-errors',
-            help="warnings are not treated as errors",
-            dest='warnings_are_errors', default=True, action='store_false')
     parser.add_argument('specification',
             help="TOML specification of the system image root directory")
 
     args = parser.parse_args()
 
     # Perform the required action.
-    message_handler = MessageHandler(args.quiet, args.verbose,
-            args.warnings_are_errors)
+    message_handler = MessageHandler(args.quiet, args.verbose)
 
     try:
         specification = SysrootSpecification(args.specification)

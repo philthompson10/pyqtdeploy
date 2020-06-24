@@ -292,40 +292,39 @@ class Project(QObject):
         file_path = QDir.toNativeSeparators(self._name.canonicalFilePath())
 
         # Create a non-verified sysroot for each supported target architecture
-        # that defines a Python component.
+        # that define Python and Qt components.
         host = Architecture.architecture()
         specification = SysrootSpecification(self.sysroot_toml, file_path)
 
         self._sysroots = []
         self.python_target_version = None
+        self.qt_target_version = None
 
         for target in Architecture.all_architectures:
-            have_python = have_qt = False
             sysroot = Sysroot(specification, host, target)
 
-            # Make sure the same version of Python is specified for each one.
-            # For the moment ignore targets that don't specify Python and Qt
-            # components.
-            for component in sysroot.components:
-                if component.name == 'Python':
-                    if have_python:
-                        raise UserException(
-                                "The sysroot specification file defines more "
-                                "than one version of Python.")
+            # Make sure the same version of Python and Qt is specified for each
+            # one.  For the moment ignore targets that don't specify Python and
+            # Qt components.
+            python = sysroot.get_component('Python', required=False)
+            if python is not None:
+                if self.python_target_version is None:
+                    self.python_target_version = python.version
+                elif self.python_target_version != python.version:
+                    raise UserException(
+                            "The sysroot specification file defines more than "
+                                    "one version of Python.")
 
-                    have_python = True
+            qt = sysroot.get_component('Qt', required=False)
+            if qt is not None:
+                if self.qt_target_version is None:
+                    self.qt_target_version = qt.version
+                elif self.qt_target_version != qt.version:
+                    raise UserException(
+                            "The sysroot specification file defines more than "
+                                    "one version of Qt.")
 
-                    self.python_target_version = component.version
-
-                elif component.name == 'Qt':
-                    if have_qt:
-                        raise UserException(
-                                "The sysroot specification file defines more "
-                                "than one version of Qt.")
-
-                    have_qt = True
-
-            if have_python and have_qt:
+            if python is not None and qt is not None:
                 self._sysroots.append(sysroot)
 
         # Make sure at least one target specified Python and Qt components.

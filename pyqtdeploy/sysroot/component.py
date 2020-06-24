@@ -154,15 +154,8 @@ class ComponentBase(ABC):
         is required then raise an exception.
         """
 
-        for component in self._sysroot.components:
-            if component.name == name:
-                return component
-
-        if required:
-            self.error(
-                    "'{0}' must be specified as a component of the sysroot".format(name))
-
-        return None
+        return self._sysroot.get_component(name, required=required,
+                component=self)
 
     def get_version_from_file(self, identifier, filename):
         """ Return the stripped line from a file containing an identifier
@@ -201,6 +194,12 @@ class ComponentBase(ABC):
         """ The full pathname of the host Python executable. """
 
         return self._sysroot.host_python
+
+    @host_python.setter
+    def host_python(self, value):
+        """ Set the full pathname of the host Python executable. """
+
+        return self._sysroot.host_python = value
 
     @property
     def host_qmake(self):
@@ -261,7 +260,7 @@ class ComponentBase(ABC):
     def warning(self, message):
         """ Issue a warning message. """
 
-        self._sysroot.warning("{0}: {1}".format(self.name, message))
+        self._sysroot.warning(message, component=self)
 
     def _android_only(self, attr_name):
         """ Issue an error message about an Android-only attribute. """

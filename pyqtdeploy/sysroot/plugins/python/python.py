@@ -60,42 +60,23 @@ class PythonComponent(SourceComponent):
         """ Install for the host and target. """
 
         # Install the host installation.
-        if self.build_host_from_source:
-            interpreter = self._build_host_from_source(sysroot)
+        if self.install_host_from_source:
+            interpreter = self._install_host_from_source()
+
+        # Install the target installation.
+        if self.install_from_source:
+            self._install_target_from_source()
         else:
-            if sys.platform == 'win32':
-                interpreter = self._install_host_from_existing_windows_version(
-                        sysroot)
-            else:
-                interpreter = self._install_host_from_existing_version(sysroot)
-
-        # Create symbolic links to the interpreter in a standard place in
-        # sysroot so that they can be referred to in cross-target .pdy files.
-        sysroot.make_symlink(interpreter, sysroot.host_python)
-
-        # Do the same for pip taking care of the fact that on Windows in a
-        # non-venv they are in different directories.
-        interpreter_dir, interpreter_name = os.path.split(interpreter)
-        pip_dir = interpreter_dir
-
-        if sys.platform == 'win32':
-            if os.path.basename(interpreter_dir) != 'Scripts':
-                pip_dir = os.path.join(interpreter_dir, 'Scripts')
-
-        pip_name = interpreter_name.replace('python', 'pip')
-        sysroot.make_symlink(os.path.join(pip_dir, pip_name), sysroot.host_pip)
-
-        # Build the target installation.
-        if self.build_target_from_source:
-            self._build_target_from_source(sysroot)
-        else:
-            self._install_target_from_existing_windows_version(sysroot)
+            self._install_target_from_existing_windows_version()
 
     def verify(self):
         """ Verify the component. """
 
-        if self.version < (3, 5) or self.version >= (3, 8):
-            self.error("v{0} is not supported".format(self.version))
+        if self.version < (3, 5):
+            self.error("versions earlier than v3.5 are not supported")
+
+        if self.version >= (3, 8):
+            self.error("v{0} is not yet supported".format(self.version))
 
         if self.install_host_from_source:
             if self.host_platform_name == 'win':
@@ -147,10 +128,8 @@ class PythonComponent(SourceComponent):
             # The standard Python builds support OpenSSL.
             self._has_openssl = True
 
-    def _build_host_from_source(self, sysroot):
-        """ Build the host Python from source and return the absolute pathname
-        of the interpreter.
-        """
+    def _install_host_from_source(self):
+        """ Install the host Python from source. """
 
         sysroot.building_for_target = False
 
@@ -175,40 +154,9 @@ class PythonComponent(SourceComponent):
 
         sysroot.building_for_target = True
 
-        return os.path.join(sysroot.host_bin_dir,
-                'python' + self._major_minor_as_string(sysroot))
-
-    def _install_host_from_existing_windows_version(self, sysroot):
-        """ Install the host Python from an existing installation on Windows
-        and return the absolute pathname of the interpreter.
-        """
-
-        if self.host_installation_bin_dir:
-            install_path = os.path.expanduser(self.host_installation_bin_dir) + '\\'
-        else:
-            install_path = sysroot.get_python_install_path()
-
-        # Copy the DLL.
-        major, minor = self._major_minor(sysroot)
-        dll = 'python' + str(major) + str(minor) + '.dll'
-        shutil.copyfile(os.path.join(install_path, dll),
-                os.path.join(sysroot.host_bin_dir, dll))
-
-        return install_path + 'python.exe'
-
-    def _install_host_from_existing_version(self, sysroot):
-        """ Install the host Python from an existing installation and return
-        the absolute pathname of the interpreter.
-        """
-
-        interpreter = 'python' + self._major_minor_as_string(sysroot)
-
-        if self.host_installation_bin_dir:
-            return os.path.join(
-                    os.path.expanduser(self.host_installation_bin_dir),
-                    interpreter)
-
-        return sysroot.find_exe(interpreter)
+        # TODO: host_bin_dir?
+        self.host_python = os.path.join(sysroot.host_bin_dir,
+                'python{}.{}'.format(self.version.major, self.version.minor))
 
     def _build_target_from_source(self, sysroot):
         """ Build the target Python from source. """

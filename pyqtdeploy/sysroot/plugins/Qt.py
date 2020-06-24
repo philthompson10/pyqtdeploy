@@ -114,6 +114,9 @@ class QtComponent(SourceComponent):
         if self.version < (5, 12):
             self.error("Qt v5.12 or later is required")
 
+        if self.version >= (5, 13):
+            self.warning("Qt v5.13 an later is untested")
+
         if self.version >= 6:
             self.error("Qt v6 is not supported")
 
@@ -130,15 +133,22 @@ class QtComponent(SourceComponent):
 
         # Android-specific checks.
         if self.target_platform_name == 'android':
-            # It's possible that earlier versions will work but we haven't
-            # tested any.
+            # Issue warnings about untested SDK and NDK versions.
             if sysroot.android_sdk_version < (26, 1, 1):
                 self.warning(
                         "versions of the SDK earlier than v26.1.1 are untested")
 
+            if sysroot.android_sdk_version > (26, 1, 1):
+                self.warning(
+                        "versions of the SDK later than v26.1.1 are untested")
+
             if sysroot.android_ndk_version < 19:
                 self.warning(
                         "versions of the NDK earlier than r19 are untested")
+
+            if sysroot.android_ndk_version > 19:
+                self.warning(
+                        "versions of the NDK later than r19 are untested")
 
             if self._openssl_version is not None:
                 # The standard Qt build for Android uses OpenSSL v1.0.* so we
