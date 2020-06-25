@@ -367,14 +367,11 @@ class OpenSSLComponent(SourceComponent):
         major = (version >> 28) & 0xff
         minor = (version >> 20) & 0xff
         patch = (version >> 12) & 0xff
-        suffix = (version >> 4) & 0xff
-        suffix = '' if suffix == 0 else chr(ord('a') + suffix - 1)
 
-        version_str = '{}.{}.{}{}'.format(major, minor, patch, suffix)
-
-        installed_version = self.parse_version_number(version_str)
-
-        if self.version != installed_version:
+        # Note that we ignore any suffix and only check the parts that affect
+        # binary compatibility.
+        if self.version != (major, minor, patch):
             self.error(
                     "v{0} is specified but the host installation is "
-                            "v{1}".format(self.version, installed_version))
+                            "v{1}.{2}.{3}".format(self.version, major, minor,
+                                    patch))

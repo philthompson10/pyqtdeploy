@@ -358,6 +358,12 @@ class ComponentBase(ABC):
         return self._sysroot.target.name
 
     @property
+    def target_include_dir(self):
+        """ The name of the directory containing target header files. """
+
+        return self._sysroot.target_include_dir
+
+    @property
     def target_lib_dir(self):
         """ The name of the directory containing target libraries. """
 
