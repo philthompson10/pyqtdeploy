@@ -49,40 +49,40 @@ class zlibComponent(SourceComponent):
     def install(self):
         """ Install for the target. """
 
-        archive = sysroot.find_file(self.source)
-        sysroot.unpack_archive(archive)
+        archive = self.get_archive('zlib-{}.tar.gz'.format(self.version),
+                url='https://zlib.net/')
+        self.unpack_archive(archive)
 
-        if sysroot.target_platform_name == 'win':
-            make_args = [sysroot.host_make, '-f', 'win32\\Makefile.msc',
+        if self.target_platform_name == 'win':
+            make_args = [self.host_make, '-f', 'win32\\Makefile.msc',
                     'zlib.lib']
 
             if self.static_msvc_runtime:
                 make_args.append('LOC=-MT')
 
-            sysroot.run(*make_args)
+            self.run(*make_args)
 
-            sysroot.copy_file('zconf.h', sysroot.target_include_dir)
-            sysroot.copy_file('zlib.h', sysroot.target_include_dir)
-            sysroot.copy_file('zlib.lib', sysroot.target_lib_dir)
+            self.copy_file('zconf.h', self.target_include_dir)
+            self.copy_file('zlib.h', self.target_include_dir)
+            self.copy_file('zlib.lib', self.target_lib_dir)
 
-        elif sysroot.target_platform_name == 'android':
+        elif self.target_platform_name == 'android':
             # Configure the environment.
-            original_path = sysroot.add_to_path(sysroot.android_toolchain_bin)
-            os.environ['CROSS_PREFIX'] = sysroot.android_toolchain_prefix
-            os.environ['CC'] = sysroot.android_toolchain_cc
+            original_path = self.add_to_path(self.android_toolchain_bin)
+            os.environ['CROSS_PREFIX'] = self.android_toolchain_prefix
+            os.environ['CC'] = self.android_toolchain_cc
 
-            cflags = sysroot.android_toolchain_cflags
+            cflags = self.android_toolchain_cflags
 
             # It isn't clear why this is needed, possibly a clang bug.
-            if sysroot.target_arch_name == 'android-32' and sysroot.android_ndk_version >= 16:
+            if self.target_arch_name == 'android-32' and self.android_ndk_version >= 16:
                 cflags.append('-fPIC')
 
             os.environ['CFLAGS'] = ' '.join(cflags)
 
-            sysroot.run('./configure', '--static',
-                    '--prefix=' + sysroot.sysroot_dir)
-            sysroot.run(sysroot.host_make,
-                    'AR=' + sysroot.android_toolchain_prefix + 'ar cqs',
+            self.run('./configure', '--static', '--prefix=' + self.sysroot_dir)
+            self.run(self.host_make,
+                    'AR=' + self.android_toolchain_prefix + 'ar cqs',
                     'install')
 
             del os.environ['CROSS_PREFIX']
@@ -91,17 +91,16 @@ class zlibComponent(SourceComponent):
             os.environ['PATH'] = original_path
 
         else:
-            if sysroot.target_platform_name == 'ios':
+            if self.target_platform_name == 'ios':
                 # Note that this doesn't create a library that can be used with
                 # an x86-based simulator.
-                os.environ['CFLAGS'] = '-fembed-bitcode -O3 -arch arm64 -isysroot ' + sysroot.apple_sdk
+                os.environ['CFLAGS'] = '-fembed-bitcode -O3 -arch arm64 -isysroot ' + self.apple_sdk
 
-            sysroot.run('./configure', '--static',
-                    '--prefix=' + sysroot.sysroot_dir)
-            sysroot.run(sysroot.host_make)
-            sysroot.run(sysroot.host_make, 'install')
+            self.run('./configure', '--static', '--prefix=' + self.sysroot_dir)
+            self.run(self.host_make)
+            self.run(self.host_make, 'install')
 
-            if sysroot.target_platform_name == 'ios':
+            if self.target_platform_name == 'ios':
                 del os.environ['CFLAGS']
 
     def verify(self):
