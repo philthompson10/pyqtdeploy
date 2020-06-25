@@ -76,6 +76,9 @@ class PythonComponent(SourceComponent):
         else:
             self._install_target_from_existing_windows_version()
 
+        self.host_python = os.path.join(self.host_dir, 'bin',
+                'python{}.{}'.format(self.version.major, self.version.minor))
+
     def verify(self):
         """ Verify the component. """
 
@@ -90,10 +93,6 @@ class PythonComponent(SourceComponent):
                 self.error(
                         "installing the host Python from a source package on "
                         "Windows is not supported")
-
-            self.host_python = os.path.join(self.host_dir, 'bin',
-                    'python{}.{}'.format(self.version.major,
-                            self.version.minor))
         else:
             # Check that the host installation is the right version.
             host_version_str = self.run(self.host_python, '-c',

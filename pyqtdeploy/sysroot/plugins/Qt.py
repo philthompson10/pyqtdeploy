@@ -60,13 +60,6 @@ class QtComponent(SourceComponent):
                                 "source."))
 
         options.append(
-                ComponentOption('qt_dir',
-                        help="The pathname of the directory containing an "
-                                "existing Qt installation to use. If it is "
-                                "not specified then the installation will be "
-                                "built from source."))
-
-        options.append(
                 ComponentOption('ssl',
                         values=['openssl-linked', 'openssl-runtime',
                                 'securetransport'],
@@ -104,10 +97,7 @@ class QtComponent(SourceComponent):
             self.warning("Qt v5.13 and later is untested")
 
         # Make sure any installed version is the one specified.
-        if self.install_from_source:
-            self.host_qmake = os.path.join(self.sysroot_dir, 'Qt', 'bin',
-                    'qmake')
-        else:
+        if not self.install_from_source:
             self._verify_installed_version()
 
         # If we are linking against OpenSSL then get its version number.
@@ -161,10 +151,13 @@ class QtComponent(SourceComponent):
     def _install_from_source(self):
         """ Install Qt from source. """
 
-        archive = sysroot.find_file(self.source)
-        sysroot.unpack_archive(archive)
+        archive = self.get_archive(
+                'qt-everywhere-src-{}.tar.xz'.format(self.version),
+                url='https://download.qt.io/archive/qt/{}.{}/{}/single/'.format(
+                        self.version.major, self.version.minor, self.version))
+        self.unpack_archive(archive)
 
-        if sys.platform == 'win32':
+        if self.host_platform_name == 'win':
             configure = 'configure.bat'
 
             dx_setenv = os.path.expandvars(
@@ -184,13 +177,13 @@ class QtComponent(SourceComponent):
             configure = './configure'
             original_path = None
 
-        target_qt_dir = os.path.dirname(os.path.dirname(self.host_qmake))
+        target_qt_dir = os.path.join(self.sysroot_dir, 'Qt')
 
         args = [configure, '-prefix', target_qt_dir, '-' + self.edition,
                 '-confirm-license', '-static', '-release', '-nomake',
                 'examples', '-nomake', 'tools',
-                '-I', sysroot.target_include_dir,
-                '-L', sysroot.target_lib_dir]
+                '-I', self.target_include_dir,
+                '-L', self.target_lib_dir]
 
         if sys.platform == 'win32' and self.static_msvc_runtime:
             args.append('-static-runtime')
@@ -242,12 +235,14 @@ class QtComponent(SourceComponent):
         elif sys.platform == 'linux' and xcb_enabled:
             args.append('-qt-xcb')
 
-        sysroot.run(*args)
-        sysroot.run(sysroot.host_make)
-        sysroot.run(sysroot.host_make, 'install')
+        self.run(*args)
+        self.run(self.host_make)
+        self.run(self.host_make, 'install')
 
         if original_path is not None:
             os.environ['PATH'] = original_path
+
+        self.host_qmake = os.path.join(target_qt_dir, 'bin', 'qmake')
 
     def _verify_installed_version(self):
         """ Verify that the installed version is compatible with the specified
