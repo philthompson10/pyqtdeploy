@@ -190,13 +190,16 @@ class Sysroot:
 
         if component_names:
             components = self._components_from_names(component_names)
+            empty_sysroot = False
         else:
             components = self._components
-            self.create_dir(self.sysroot_dir, empty=True)
-            os.makedirs(self.host_dir)
-            os.makedirs(self.target_include_dir)
-            os.makedirs(self.target_lib_dir)
-            os.makedirs(self.target_src_dir)
+            empty_sysroot = True
+
+        self.create_dir(self.sysroot_dir, empty=empty_sysroot)
+        os.makedirs(self.host_dir, exist_ok=True)
+        os.makedirs(self.target_include_dir, exist_ok=True)
+        os.makedirs(self.target_lib_dir, exist_ok=True)
+        os.makedirs(self.target_src_dir, exist_ok=True)
 
         # Create a new build directory.
         build_dir = os.path.join(self.sysroot_dir, 'build')
@@ -569,6 +572,7 @@ class Sysroot:
         sip = os.path.join(self.host_bin_dir, self.host_exe('sip'))
 
         if not os.path.exists(sip):
+            # TODO
             self._missing_component('sip')
 
         return sip
@@ -720,11 +724,6 @@ class Sysroot:
 
         return 'python{}.{}'.format(self._python_component.version.major,
                 self._python_component.version.minor)
-
-    def _missing_component(self, name):
-        """ Raise an exception about a missing component. """
-
-        self.error("the sysroot specification must contain an entry for '{0}' before anything that depends on it".format(name))
 
     def _run_error(self, args, e):
         """ Raise an exception about a sub-process error. """
