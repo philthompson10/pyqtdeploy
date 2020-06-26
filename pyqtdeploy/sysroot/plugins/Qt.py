@@ -144,13 +144,13 @@ class QtComponent(SourceComponent):
             if self._openssl is not None:
                 if self.version >= (5, 12, 4):
                     if self._openssl.version != (1, 1, 1):
-                        self.error("
-                                v{0} requires OpenSSL v1.1.1".format(
+                        self.error(
+                                "v{0} requires OpenSSL v1.1.1".format(
                                         self.version))
                 else:
                     if self._openssl.version != (1, 0, 2):
-                        self.error("
-                                v{0} requires OpenSSL v1.0.2".format(
+                        self.error(
+                                "v{0} requires OpenSSL v1.0.2".format(
                                         self.version))
 
         # Android-specific checks.

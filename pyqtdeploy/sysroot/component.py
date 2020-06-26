@@ -381,6 +381,19 @@ class ComponentBase(ABC):
 
         return self._sysroot.target_src_dir
 
+    @property
+    def target_py_include_dir(self):
+        """ The name of the directory containing target Python header files.
+        """
+
+        return self._sysroot.target_py_include_dir
+
+    @property
+    def target_sitepackages_dir(self):
+        """ The name of the target Python site-packages directory. """
+
+        return self._sysroot.target_sitepackages_dir
+
     def verify(self):
         """ Verify the component.  This will be called after the options have
         been parsed and the version number resolved.

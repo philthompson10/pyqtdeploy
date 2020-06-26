@@ -26,101 +26,119 @@
 
 import os
 
-from ... import ComponentBase, ComponentOption
+from ... import ComponentOption, SourceComponent
 
 
-class SIPComponent(ComponentBase):
+class SIPComponent(SourceComponent):
     """ The SIP component. """
 
-    # The component options.
-    options = [
-        ComponentOption('module_name',
-                help="The qualified name of the sip module."),
-        ComponentOption('source', required=True,
-                help="The archive containing the SIP source code."),
-    ]
+    # The list of components that, if specified, should be installed before
+    # this one.
+    preinstalls = ['Python', 'Qt']
 
-    def build(self, sysroot):
-        """ Build SIP for the target. """
+    def get_archive_name(self):
+        """ Return the filename of the source archive. """
 
-        archive = sysroot.find_file(self.source)
-        version_nr = sysroot.extract_version(archive)
+        return 'sip-{}.tar.gz'.format(self.version)
+
+    def get_archive_urls(self):
+        """ Return the list of URLs where the source archive might be
+        downloaded from.
+        """
+
+        return ['https://www.riverbankcomputing.com/static/Downloads/sip/{}/'.format(self.version)]
+
+    def get_options(self):
+        """ Return a list of ComponentOption objects that define the components
+        configurable options.
+        """
+
+        options = super().get_options()
+
+        options.append(
+                ComponentOption('module_name',
+                        help="The qualified name of the sip module."))
+
+        return options
+
+    def install(self):
+        """ Install for the target. """
+
+        archive = self.get_archive()
 
         build_generator = os.path.join(os.getcwd(), 'sip-generator')
         build_module = os.path.join(os.getcwd(), 'sip-module')
 
         os.mkdir(build_generator)
         os.chdir(build_generator)
-        self._build_code_generator(sysroot, archive, version_nr)
+        self._install_code_generator(archive)
 
         os.mkdir(build_module)
         os.chdir(build_module)
-        self._build_module(sysroot, archive, version_nr)
+        self._install_module(archive)
 
-    def configure(self, sysroot):
-        """ Complete the configuration of the component. """
-
-        version_nr = sysroot.verify_source(self.source)
+    def verify(self):
+        """ Verify the component. """
 
         # v4.19.9-12 have too many problems so it's easier to blacklist them.
-        if (4, 19, 9) <= version_nr <= (4, 19, 12):
-            sysroot.error("please use SIP v4.19.13 or later")
+        if (4, 19, 9) <= self.version <= (4, 19, 12):
+            self.error("please use SIP v4.19.13 or later")
 
         # v5 is not yet supported.
-        if version_nr >= 5:
-            sysroot.error("SIP v5 is not yet supported")
+        if self.version >= 5:
+            self.error("SIP v{0} is not yet supported".format(self.version))
 
-    def _build_code_generator(self, sysroot, archive, version_nr):
-        """ Build the code generator for the host. """
+    def _install_code_generator(self, archive):
+        """ Install the code generator for the host. """
 
-        sysroot.building_for_target = False
+        self.building_for_target = False
 
-        sysroot.unpack_archive(archive)
+        self.unpack_archive(archive)
 
-        args = [sysroot.host_python, 'configure.py', '--bindir',
-                sysroot.host_bin_dir]
+        args = [self.host_python, 'configure.py', '--bindir',
+                os.path.join(self.host_dir, 'bin')]
 
-        if version_nr >= (4, 19, 12):
+        if self.version >= (4, 19, 12):
             # From v4.19.12 sip.h is considered part of the tools.
-            args.extend(['--incdir', sysroot.target_py_include_dir,
+            args.extend(['--incdir', self.target_py_include_dir,
                     '--no-module'])
 
-        sysroot.run(*args)
+        self.run(*args)
         os.chdir('sipgen')
-        sysroot.run(sysroot.host_make)
-        sysroot.run(sysroot.host_make, 'install')
+        self.run(self.host_make)
+        self.run(self.host_make, 'install')
 
-        sysroot.building_for_target = True
+        self.building_for_target = True
 
-    def _build_module(self, sysroot, archive, version_nr):
-        """ Build the static module for the target. """
+    def _install_module(self, archive):
+        """ Install the static module for the target. """
 
-        sysroot.unpack_archive(archive)
+        self.unpack_archive(archive)
 
         # Create a configuration file.
         cfg = '''py_inc_dir = {0}
 py_pylib_dir = {1}
 sip_module_dir = {2}
-'''.format(sysroot.target_py_include_dir, sysroot.target_lib_dir,
-                sysroot.target_sitepackages_dir)
+'''.format(self.target_py_include_dir, self.target_lib_dir,
+                self.target_sitepackages_dir)
 
-        cfg_name = 'sip-' + sysroot.target_arch_name + '.cfg'
+        cfg_name = 'sip-' + self.target_arch_name + '.cfg'
 
         with open(cfg_name, 'wt') as cfg_file:
             cfg_file.write(cfg)
 
         # Configure, build and install.
-        args = [sysroot.host_python, 'configure.py', '--static', '--sysroot',
-                sysroot.sysroot_dir, '--no-pyi', '--no-tools', '--use-qmake',
+        args = [self.host_python, 'configure.py', '--static', '--sysroot',
+                self.sysroot_dir, '--no-pyi', '--no-tools', '--use-qmake',
                 '--configuration', cfg_name]
 
-        if version_nr >= (4, 19, 9):
+        if self.version >= (4, 19, 9):
             args.append('--no-dist-info')
 
         if self.module_name:
             args.extend(['--sip-module', self.module_name])
 
-        sysroot.run(*args)
-        sysroot.run(sysroot.host_qmake)
-        sysroot.run(sysroot.host_make)
-        sysroot.run(sysroot.host_make, 'install')
+        self.run(*args)
+        self.run(self.host_qmake)
+        self.run(self.host_make)
+        self.run(self.host_make, 'install')

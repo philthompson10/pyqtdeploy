@@ -161,6 +161,7 @@ class SysrootTest(TestCase):
 
         sysroot = os.path.join('sysroot',
                 '{0}-{1}'.format(self.target, test_name))
+        shutil.rmtree(sysroot, ignore_errors=True)
 
         # Extract the name of the component.
         component = test_name.split('_')[0]
