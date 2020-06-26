@@ -25,17 +25,17 @@
 
 
 from PyQt5.QtCore import pyqtSlot, Qt
-from PyQt5.QtWidgets import (QTreeWidget, QTreeWidgetItem,
+from PyQt5.QtWidgets import (QSplitter, QTreeWidget, QTreeWidgetItem,
         QTreeWidgetItemIterator, QVBoxLayout, QWidget)
 
 from ..metadata import get_module_availability, get_python_metadata
 
 
-class StandardLibraryPage(QWidget):
-    """ The GUI for the standard library page of a project. """
+class PackagesPage(QSplitter):
+    """ The GUI for the packages page of a project. """
 
     # The page's label.
-    label = "Standard Library"
+    label = "Packages"
 
     @property
     def project(self):
@@ -63,116 +63,100 @@ class StandardLibraryPage(QWidget):
         self._project = None
 
         # Create the page's GUI.
-        layout = QVBoxLayout()
-
-        self._stdlib_edit = QTreeWidget(
-                whatsThis="This shows the packages and modules in the target "
-                        "Python version's standard library. Check those "
-                        "packages and modules that are explicitly imported by "
-                        "the application. A module will be partially checked "
-                        "(and automatically included) if another module "
-                        "requires it.")
-        self._stdlib_edit.setHeaderLabels(["Package"])
-        self._stdlib_edit.itemChanged.connect(self._module_changed)
-
-        layout.addWidget(self._stdlib_edit)
-
-        self.setLayout(layout)
+        self._stdlib_edit = StdlibEditor(self)
+        self._others_edit = OthersEditor(self)
 
     @pyqtSlot()
     def _update_page(self):
         """ Update the page using the current project. """
 
-        project = self.project
+        self._stdlib_edit.update()
+        self._others_edit.update()
 
-        if project.python_target_version is None:
-            return
 
-        editor = self._stdlib_edit
+class ModulesEditor(QTreeWidget):
+    """ An editor for selecting a number of interdependent modules and
+    packages.
+    """
 
-        metadata = get_python_metadata(project.python_target_version)
-        module_availability = get_module_availability(metadata,
-                project.external_components_availability)
+    def __init__(self, page, title, whats_this):
+        """ Initialise the editor. """
 
-        blocked = editor.blockSignals(True)
+        super().__init__(whatsThis=whats_this)
 
-        editor.clear()
+        self.setHeaderLabels([title])
+        self.itemChanged.connect(self.module_changed)
 
-        def add_module(name, module, parent):
-            itm = QTreeWidgetItem(parent, name.split('.')[-1:])
-            itm.setFlags(Qt.ItemIsEnabled|Qt.ItemIsUserCheckable)
-            itm._name = name
+        pane = QWidget()
+        layout = QVBoxLayout()
+        layout.addWidget(self)
+        pane.setLayout(layout)
+        page.addWidget(pane)
 
-            # Change the appearence of the item according to its availability.
-            availability = module_availability[name]
+        self.page = page
 
-            if availability == 0:
-                itm.setDisabled(True)
-            elif availability == 1:
-                font = itm.font()
-                font.setItalics(True)
-                itm.setFont(font)
+    def module_changed(self, itm, col):
+        """ Invoked when a module changes. """
 
-            # Handle any sub-modules.
-            if module.modules is not None:
-                for submodule_name in module.modules:
-                    # We assume that a missing sub-module is because it is not
-                    # in the current version rather than bad meta-data.
-                    submodule = metadata.get(submodule_name)
-                    if submodule is not None and not submodule.internal:
-                        add_module(submodule_name, submodule, itm)
+    def populate(self):
+        """ Populate the editor. """
 
-        for name, module in metadata.items():
-            if not module.internal and '.' not in name:
-                add_module(name, module, editor)
+    def update(self):
+        """ Update the contents of the editor. """
 
-        editor.sortItems(0, Qt.AscendingOrder)
+        blocked = self.blockSignals(True)
+        self.clear()
 
-        editor.blockSignals(blocked)
+        if self.page.project.python_target_version is None:
+            self.setEnabled(False)
+        else:
+            self.setEnabled(True)
+            self.populate()
 
-        self._set_dependencies()
+        self.blockSignals(blocked)
 
-    def _set_dependencies(self):
-        """ Set the dependency information. """
 
-        project = self.project
-        editor = self._stdlib_edit
+class OthersEditor(ModulesEditor):
+    """ An editor for selecting a number of other modules and packages
+    specified in the sysroot.
+    """
 
-        required_modules, _ = project.get_stdlib_requirements()
+    def __init__(self, page):
+        """ Initialise the editor. """
 
-        blocked = editor.blockSignals(True)
+        super().__init__(page, "Other Packages",
+                "This shows the packages and modules that are "
+                "available in the sysroot. Check those packages and modules "
+                "that are explicitly imported by the application. A module "
+                "will be partially checked (and automatically included) if "
+                "another module requires it.")
 
-        it = QTreeWidgetItemIterator(editor)
-        itm = it.value()
-        while itm is not None:
-            explicit = required_modules.get(itm._name)
-            expanded = False
-            if explicit is None:
-                state = Qt.Unchecked
-            elif explicit:
-                state = Qt.Checked
-                expanded = True
-            else:
-                state = Qt.PartiallyChecked
+    def module_changed(self, itm, col):
+        """ Invoked when a module changes. """
 
-            itm.setCheckState(0, state)
+    def populate(self):
+        """ Populate the editor. """
 
-            # Make sure every explicitly checked item is visible.
-            if expanded:
-                parent = itm.parent()
-                while parent is not None:
-                    parent.setExpanded(True)
-                    parent = parent.parent()
 
-            it += 1
-            itm = it.value()
+class StdlibEditor(ModulesEditor):
+    """ An editor for selecting a number of standard library modules and
+    packages.
+    """
 
-        editor.blockSignals(blocked)
+    def __init__(self, page):
+        """ Initialise the editor. """
 
-    def _module_changed(self, itm, col):
-        """ Invoked when a standard library module has changed. """
+        super().__init__(page, "Standard Library",
+                "This shows the packages and modules in the target Python "
+                "version's standard library. Check those packages and modules "
+                "that are explicitly imported by the application. A module "
+                "will be partially checked (and automatically included) if "
+                "another module requires it.")
 
-        project = self._project
+    def module_changed(self, itm, col):
+        """ Invoked when a module changes. """
+
+        project = self.page.project
 
         # Get all the names to add or remove.
         names = []
@@ -203,3 +187,80 @@ class StandardLibraryPage(QWidget):
         self._set_dependencies()
 
         project.modified = True
+
+    def populate(self):
+        """ Populate the editor. """
+
+        project = self.page.project
+
+        metadata = get_python_metadata(project.python_target_version)
+        module_availability = get_module_availability(metadata,
+                project.external_components_availability)
+
+        def add_module(name, module, parent):
+            itm = QTreeWidgetItem(parent, name.split('.')[-1:])
+            itm.setFlags(Qt.ItemIsEnabled|Qt.ItemIsUserCheckable)
+            itm._name = name
+
+            # Change the appearence of the item according to its availability.
+            availability = module_availability[name]
+
+            if availability == 0:
+                itm.setDisabled(True)
+            elif availability == 1:
+                font = itm.font()
+                font.setItalics(True)
+                itm.setFont(font)
+
+            # Handle any sub-modules.
+            if module.modules is not None:
+                for submodule_name in module.modules:
+                    # We assume that a missing sub-module is because it is not
+                    # in the current version rather than bad meta-data.
+                    submodule = metadata.get(submodule_name)
+                    if submodule is not None and not submodule.internal:
+                        add_module(submodule_name, submodule, itm)
+
+        for name, module in metadata.items():
+            if not module.internal and '.' not in name:
+                add_module(name, module, self)
+
+        self.sortItems(0, Qt.AscendingOrder)
+
+        self._set_dependencies()
+
+    def _set_dependencies(self):
+        """ Set the dependency information. """
+
+        project = self.page.project
+
+        required_modules, _ = project.get_stdlib_requirements()
+
+        blocked = self.blockSignals(True)
+
+        it = QTreeWidgetItemIterator(self)
+        itm = it.value()
+        while itm is not None:
+            explicit = required_modules.get(itm._name)
+            expanded = False
+            if explicit is None:
+                state = Qt.Unchecked
+            elif explicit:
+                state = Qt.Checked
+                expanded = True
+            else:
+                state = Qt.PartiallyChecked
+
+            itm.setCheckState(0, state)
+
+            # Make sure every explicitly checked item is visible.
+            if expanded:
+                parent = itm.parent()
+                while parent is not None:
+                    parent.setExpanded(True)
+                    parent = parent.parent()
+
+            it += 1
+            itm = it.value()
+
+        self.blockSignals(blocked)

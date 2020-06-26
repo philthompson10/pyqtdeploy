@@ -37,10 +37,8 @@ from ..version import PYQTDEPLOY_RELEASE
 
 from .application_page import ApplicationPage
 from .exception_handlers import handle_user_exception
-from .other_extension_modules_page import OtherExtensionModulesPage
-from .other_packages_page import OtherPackagesPage
+from .packages_page import PackagesPage
 from .qmake_page import QMakePage
-from .standard_library_page import StandardLibraryPage
 from .sysroot_page import SysrootPage
 
 
@@ -95,22 +93,14 @@ pyqtdeploy is a tool for deploying PyQt applications written using Python v3.5 o
         application_page = ApplicationPage()
         tabs.addTab(application_page, application_page.label)
 
-        qmake_page = QMakePage()
-        tabs.addTab(qmake_page, qmake_page.label)
-
-        self._standard_library_page = StandardLibraryPage()
-        tabs.addTab(self._standard_library_page,
-                self._standard_library_page.label)
-
-        other_packages_page = OtherPackagesPage()
-        tabs.addTab(other_packages_page, other_packages_page.label)
-
-        other_extension_modules_page = OtherExtensionModulesPage()
-        tabs.addTab(other_extension_modules_page,
-                other_extension_modules_page.label)
+        self._packages_page = PackagesPage()
+        tabs.addTab(self._packages_page, self._packages_page.label)
 
         sysroot_page = SysrootPage()
         tabs.addTab(sysroot_page, sysroot_page.label)
+
+        qmake_page = QMakePage()
+        tabs.addTab(qmake_page, qmake_page.label)
 
         self.setCentralWidget(tabs)
 
@@ -197,13 +187,6 @@ pyqtdeploy is a tool for deploying PyQt applications written using Python v3.5 o
                 if project is not None:
                     self._set_project(project)
 
-    def _python_target_version_changed(self):
-        """ Invoked when the version of Python being targeted changes. """
-
-        tabs = self.centralWidget()
-        tabs.setTabEnabled(tabs.indexOf(self._standard_library_page),
-                self._project.python_target_version is not None)
-
     def _save_project(self):
         """ Save the project and return True if it was saved. """
 
@@ -242,10 +225,6 @@ pyqtdeploy is a tool for deploying PyQt applications written using Python v3.5 o
 
         self._project.name_changed.connect(self._name_changed)
         self._name_changed(self._project.name)
-
-        self._project.python_target_version_changed.connect(
-                self._python_target_version_changed)
-        self._python_target_version_changed()
 
         tabs = self.centralWidget()
 
