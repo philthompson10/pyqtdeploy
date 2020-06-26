@@ -6,7 +6,6 @@ version = "1.2.11"
 
 [Python]
 version = "$PYTHON_VERSION"
-install_host_from_source = false
 
 
 [Qt]

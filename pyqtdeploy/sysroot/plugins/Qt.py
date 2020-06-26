@@ -109,20 +109,52 @@ class QtComponent(SourceComponent):
         if self.version >= (5, 13):
             self.warning("Qt v5.13 and later is untested")
 
-        # Make sure any installed version is the one specified.
-        if not self.install_from_source:
-            self._verify_installed_version()
-
         # If we are linking against OpenSSL then get its version number.
         if self.ssl == 'openssl-linked':
-            openssl = self.get_component('OpenSSL')
-            self._openssl_version = openssl.version
+            self._openssl = self.get_component('OpenSSL')
         else:
-            self._openssl_version = None
+            self._openssl = None
+
+        if self.install_from_source:
+            # We don't support cross-compiling Qt.
+            if self.host_platform_name != self.target_platform_name:
+                self.error("cross compiling Qt is not supported")
+
+            if not self.edition:
+                self.error(
+                        "the 'edition' option must be specified when building "
+                        "from source")
+
+            # Make sure we have a Python v2.7 installation on Windows.
+            if self.host_platform_name == 'win':
+                self._py_27 = self.get_python_install_path(2, 7)
+
+            # Check the OpenSSL version.
+            if self._openssl is not None:
+                if self.version >= (5, 15):
+                    if self._openssl.version != (1, 1, 1):
+                        self.error(
+                                "v{0} requires OpenSSL v1.1.1".format(
+                                        self.version))
+        else:
+            self._verify_installed_version()
+
+            # Check the OpenSSL version for compatibility with the binary
+            # installers.
+            if self._openssl is not None:
+                if self.version >= (5, 12, 4):
+                    if self._openssl.version != (1, 1, 1):
+                        self.error("
+                                v{0} requires OpenSSL v1.1.1".format(
+                                        self.version))
+                else:
+                    if self._openssl.version != (1, 0, 2):
+                        self.error("
+                                v{0} requires OpenSSL v1.0.2".format(
+                                        self.version))
 
         # Android-specific checks.
         if self.target_platform_name == 'android':
-            # Issue warnings about untested SDK and NDK versions.
             if sysroot.android_sdk_version < (26, 1, 1):
                 self.warning(
                         "versions of the SDK earlier than v26.1.1 are untested")
@@ -138,28 +170,6 @@ class QtComponent(SourceComponent):
             if sysroot.android_ndk_version > 19:
                 self.warning(
                         "versions of the NDK later than r19 are untested")
-
-            if self._openssl_version is not None:
-                # The standard Qt build for Android uses OpenSSL v1.0.* so we
-                # must use the same.
-                # TODO: Check if Qt v5.13 is built against OpenSSL v1.1.*.
-                if self._openssl_version >= (1, 1):
-                    self.error("OpenSSL v1.0.* is required for Android")
-
-        # Additional checks for when we are installing from source.
-        if self.install_from_source:
-            # We don't support cross-compiling Qt.
-            if self.host_platform_name != self.target_platform_name:
-                self.error("cross compiling Qt is not supported")
-
-            if not self.edition:
-                self.error(
-                        "the 'edition' option must be specified when building "
-                        "from source")
-
-            # Make sure we have a Python v2.7 installation.
-            if self.host_platform_name == 'win':
-                self._py_27 = self.get_python_install_path(2, 7)
 
     def _install_from_source(self):
         """ Install Qt from source. """
@@ -207,7 +217,7 @@ class QtComponent(SourceComponent):
                 args.append('-openssl-linked')
 
                 if sys.platform == 'win32':
-                    if self._openssl_version >= (1, 1):
+                    if self._openssl.version >= (1, 1):
                         openssl_libs = '-llibssl -llibcrypto'
                     else:
                         openssl_libs = '-lssleay32 -llibeay32'
