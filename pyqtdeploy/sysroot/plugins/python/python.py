@@ -42,6 +42,18 @@ class PythonComponent(SourceComponent):
     # not the sysroot.
     preinstalls = ['Qt']
 
+    def get_archive_name(self):
+        """ Return the filename of the source archive. """
+
+        return 'Python-{}.tgz'.format(self.version)
+
+    def get_archive_urls(self):
+        """ Return the list of URLs where the source archive might be
+        downloaded from.
+        """
+
+        return ['https://www.python.org/ftp/python/{}/'.format(self.version)]
+
     def get_options(self):
         """ Return a list of ComponentOption objects that define the components
         configurable options.
@@ -107,7 +119,7 @@ class PythonComponent(SourceComponent):
                                 "v{1}".format(self.version, host_version))
 
         if self.install_from_source:
-            # Make Qt is specified.
+            # Make sure Qt is specified.
             self.get_component('Qt')
 
             # Check the OpenSSL support.
@@ -115,13 +127,21 @@ class PythonComponent(SourceComponent):
             if openssl is None:
                 self._has_openssl = False
             else:
-                if self.version < (3, 5, 3) and openssl.version >= (1, 1, 0):
-                    self.error(
-                            "v{0} requires OpenSSL v1.0".format(self.version))
-                elif self.version >= (3, 6) and openssl.version < (1, 0, 2):
-                    self.error(
-                            "v{0} requires OpenSSL v1.0.2 or later".format(
-                                    self.version))
+                if self.version >= (3, 8):
+                    if openssl.version != (1, 1, 1):
+                        self.error(
+                                "v{0} requires OpenSSL v1.1.1".format(
+                                        self.version))
+                elif self.version == (3, 7):
+                    if openssl.version != (1, 1, 0):
+                        self.error(
+                                "v{0} requires OpenSSL v1.1.0".format(
+                                        self.version))
+                else:
+                    if openssl.version != (1, 0, 2):
+                        self.error(
+                                "v{0} requires OpenSSL v1.0.2".format(
+                                        self.version))
 
                 self._has_openssl = True
         elif self.host_platform_name != 'win':
@@ -254,21 +274,13 @@ build_time_vars = {
 ''')
         scd.close()
 
-    def _get_archive(self):
-        """ Return the pathname of the Python source archive. """
-
-        return self.get_archive('Python-{}.tgz'.format(self.version),
-                url='https://www.python.org/ftp/python/{}/'.format(
-                        self.version))
-
     def _install_host_from_source(self):
         """ Install the host Python from source. """
 
         self.building_for_target = False
 
         # Unpack the source.
-        archive = self._get_archive()
-        self.unpack_archive(archive)
+        self.unpack_archive(self.get_archive())
 
         self.run('./configure', '--prefix', self.host_dir,
                 '--with-ensurepip=no')
@@ -292,7 +304,7 @@ build_time_vars = {
 
         # Unpack the source for any separately compiled internal extension
         # modules.
-        archive = self._get_archive()
+        archive = self.get_archive()
 
         old_wd = os.getcwd()
         os.chdir(self.target_src_dir)

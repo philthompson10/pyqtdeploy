@@ -37,6 +37,19 @@ class QtComponent(SourceComponent):
     # this one.
     preinstalls = ['OpenSSL', 'zlib']
 
+    def get_archive_name(self):
+        """ Return the filename of the source archive. """
+
+        return 'qt-everywhere-src-{}.tar.xz'.format(self.version)
+
+    def get_archive_urls(self):
+        """ Return the list of URLs where the source archive might be
+        downloaded from.
+        """
+
+        return ['https://download.qt.io/archive/qt/{}.{}/{}/single/'.format(
+                self.version.major, self.version.minor, self.version)]
+
     def get_options(self):
         """ Return a list of ComponentOption objects that define the components
         configurable options.
@@ -151,11 +164,7 @@ class QtComponent(SourceComponent):
     def _install_from_source(self):
         """ Install Qt from source. """
 
-        archive = self.get_archive(
-                'qt-everywhere-src-{}.tar.xz'.format(self.version),
-                url='https://download.qt.io/archive/qt/{}.{}/{}/single/'.format(
-                        self.version.major, self.version.minor, self.version))
-        self.unpack_archive(archive)
+        self.unpack_archive(self.get_archive())
 
         if self.host_platform_name == 'win':
             configure = 'configure.bat'

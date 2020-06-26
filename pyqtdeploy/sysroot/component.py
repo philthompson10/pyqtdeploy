@@ -421,12 +421,14 @@ class SourceComponent(ComponentBase):
     installed from a source package.
     """
 
-    def get_archive(self, archive_name, url=None):
+    def get_archive(self):
         """ Return the pathname of a local copy of a source archive.  The
         source directories specified by the --source-dir command line option
         are searched first.  If the archive was not found then it is downloaded
         from the optional URL.
         """
+
+        archive_name = self.get_archive_name()
 
         # Search any source directories.
         for source_dir in self._sysroot.source_dirs:
@@ -440,10 +442,7 @@ class SourceComponent(ComponentBase):
                         "Found '{0}' in {1}".format(archive_name, source_dir))
                 return archive
 
-        if url is None:
-            self.error("unable to find '{0}'".format(archive))
-
-        # Search the URL cache.
+        # Search the download cache.
         cache_dir = os.path.join(os.path.expanduser('~'), '.pyqtdeploy',
                 'cache')
 
@@ -452,25 +451,42 @@ class SourceComponent(ComponentBase):
             self.verbose("Found '{0}' in download cache".format(archive_name))
             return archive
 
-        # Download the archive into the cache.
-        from urllib.request import urlopen
+        # Try and download the archive into the cache.
+        urls = self.get_archive_urls()
+        if urls:
+            from urllib.request import urlopen
 
-        self.create_dir(cache_dir)
+            self.create_dir(cache_dir)
 
-        archive_url = url + archive_name
+            for url in urls:
+                archive_url = url + archive_name
 
-        self.progress("Downloading '{0}'".format(archive_url))
+                self.verbose("Trying to download '{0}' from {1}".format(
+                        archive_name, url))
 
-        try:
-            with urlopen(archive_url) as response, open(archive, 'wb') as f:
-                shutil.copyfileobj(response, f)
-        except Exception as e:
-            self.error("unable to download '{0}'".format(archive_url),
-                    detail=str(e))
+                try:
+                    with urlopen(archive_url) as response, open(archive, 'wb') as f:
+                        shutil.copyfileobj(response, f)
+                except Exception as e:
+                    continue
 
-        self.verbose("Downloaded '{0}'".format(archive_url))
+                self.verbose("Downloaded '{0}'".format(archive_url))
 
-        return archive
+                return archive
+
+        self.error("unable to find '{0}'".format(archive))
+
+    @abstractmethod
+    def get_archive_name(self):
+        """ Return the filename of the source archive. """
+
+    def get_archive_urls(self):
+        """ Return the list of URLs where the source archive might be
+        downloaded from.
+        """
+
+        # This default implementation does not support downloads.
+        return []
 
     def get_options(self):
         """ Return a list of ComponentOption objects that define the components
@@ -488,7 +504,8 @@ class SourceComponent(ComponentBase):
 
     def unpack_archive(self, archive, chdir=True):
         """ An archive is unpacked in the current directory.  If requested its
-        top level directory becomes the current directory.
+        top level directory becomes the current directory.  The name of the
+        directory (not its pathname) is returned.
         """
 
         # Windows has a problem extracting the Qt source archive (probably the
@@ -533,3 +550,5 @@ class SourceComponent(ComponentBase):
         # Change to the extracted directory if required.
         if chdir:
             os.chdir(archive_root)
+
+        return archive_root
