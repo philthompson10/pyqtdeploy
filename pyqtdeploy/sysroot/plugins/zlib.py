@@ -32,6 +32,18 @@ from ... import ComponentOption, SourceComponent
 class zlibComponent(SourceComponent):
     """ The zlib component. """
 
+    def get_archive_name(self):
+        """ Return the filename of the source archive. """
+
+        return 'zlib-{}.tar.gz'.format(self.version)
+
+    def get_archive_urls(self):
+        """ Return the list of URLs where the source archive might be
+        downloaded from.
+        """
+
+        return ['https://zlib.net/']
+
     def get_options(self):
         """ Return a list of ComponentOption objects that define the components
         configurable options.
@@ -49,9 +61,11 @@ class zlibComponent(SourceComponent):
     def install(self):
         """ Install for the target. """
 
-        archive = self.get_archive('zlib-{}.tar.gz'.format(self.version),
-                url='https://zlib.net/')
-        self.unpack_archive(archive)
+        if not self.install_from_source:
+            return
+
+        # Unpack the source.
+        self.unpack_archive(self.get_archive())
 
         if self.target_platform_name == 'win':
             make_args = [self.host_make, '-f', 'win32\\Makefile.msc',

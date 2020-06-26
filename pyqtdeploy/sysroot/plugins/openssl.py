@@ -26,6 +26,7 @@
 
 import glob
 import os
+import shutil
 
 from ... import ComponentOption, SourceComponent
 
@@ -33,34 +34,55 @@ from ... import ComponentOption, SourceComponent
 class OpenSSLComponent(SourceComponent):
     """ The OpenSSL component. """
 
+    def get_archive_name(self):
+        """ Return the filename of the source archive. """
+
+        return 'openssl-{}.tar.gz'.format(self.version)
+
+    def get_archive_urls(self):
+        """ Return the list of URLs where the source archive might be
+        downloaded from.
+        """
+
+        # The URLs depend on the version number.
+        if self.version >= (1, 1, 1):
+            sub_url = '1.1.1'
+        elif self.version >= (1, 1, 0):
+            sub_url = '1.1.0'
+        else:
+            sub_url = '1.0.2'
+
+        return ['https://www.openssl.org/source/old/{}/'.format(sub_url),
+                'https://www.openssl.org/source/']
+
     def install(self):
         """ Install for the target. """
 
-		# Unpack the source.
-        archive = sysroot.find_file(self.source)
-        sysroot.unpack_archive(archive)
+        if not self.install_from_source:
+            return
 
-        # Get the version number.
-        version_nr = sysroot.extract_version(archive)
+		# Unpack the source.
+        self.unpack_archive(self.get_archive())
 
         # Set common options.
-        common_options = ['--prefix=' + sysroot.sysroot_dir, 'no-engine']
+        common_options = ['--prefix=' + self.sysroot_dir, 'no-engine']
 
         if self.host_platform_name == 'win' and self.find_exe('nasm', required=False) is None:
             self.verbose(
-                    "Disabling assembler optimisations as nasm isn't installed")
+                    "Disabling assembler optimisations as nasm isn't "
+                            "installed")
             common_options.append('no-asm')
 
-        if version_nr >= (1, 1):
-            self._install_1_1(sysroot, common_options)
+        if self.version >= (1, 1):
+            self._install_1_1(common_options)
         else:
-            self._install_1_0(sysroot, common_options)
+            self._install_1_0_2(common_options)
 
     def verify(self):
         """ Verify the component. """
 
-        # We only support v1.0 and v1.1.0.
-        if 1 > self.version >= (1, 1, 1):
+        # We only support v1.0.2 and v1.1.0.
+        if (1, 0, 2) > self.version >= (1, 1, 1):
             self.error("v{0} is not supported".format(self.version))
 
         # Make sure any installed version is the one specified.
@@ -83,59 +105,83 @@ class OpenSSLComponent(SourceComponent):
         tools = ['make', 'perl']
 
         # See if we will need to apply a patch from the Python source code.
-        if target == 'macos' and self.version == (1, 0):
-            if self.get_component('Python').version <= (3, 6, 4):
+        if target == 'macos' and self.version == (1, 0, 2):
+            python = self.get_component('Python')
+            if python.version <= (3, 6, 4):
+                # The exact version of OpenSSL must be used otherwise the patch
+                # may fail.
+                if python.version >= (3, 5, 4):
+                    if self.version.suffix != 'k':
+                        self.error(
+                                "v1.0.2k is required by Python v{0}".format(
+                                        python.version))
+                elif python.version == (3, 5, 3):
+                    if self.version.suffix != 'j':
+                        self.error(
+                                "v1.0.2j is required by Python v{0}".format(
+                                        python.version))
+                elif python.version == (3, 5, 2):
+                    if self.version.suffix != 'f':
+                        self.error(
+                                "v1.0.2f is required by Python v{0}".format(
+                                        python.version))
+                else:
+                    if self.version.suffix != 'd':
+                        self.error(
+                                "v1.0.2d is required by Python v{0}".format(
+                                        python.version))
+
                 tools.append('patch')
 
         self.verify_host_tools(tools)
 
-    def _install_1_1(self, sysroot, common_options):
+    def _install_1_1(self, common_options):
         """ Install v1.1 for supported platforms. """
 
-        if sysroot.target_platform_name == sysroot.host_platform_name:
+        if self.target_platform_name == self.host_platform_name:
             # We are building natively.
 
             # TODO: add support for Linux.
-            if sysroot.target_arch_name == 'macos-64':
+            if self.target_arch_name == 'macos-64':
                 args = ['./config', 'no-shared']
                 args.extend(common_options)
 
-                sysroot.run(*args)
-                sysroot.run(sysroot.host_make)
-                sysroot.run(sysroot.host_make, 'install')
+                self.run(*args)
+                self.run(self.host_make)
+                self.run(self.host_make, 'install')
 
-            elif sysroot.target_platform_name == 'win':
-                self._install_1_1_win(sysroot, common_options)
+            elif self.target_platform_name == 'win':
+                self._install_1_1_win(common_options)
         else:
             # We are cross-compiling.
 
-            if sysroot.target_platform_name == 'android':
-                self._install_1_1_android(sysroot, common_options)
+            if self.target_platform_name == 'android':
+                self._install_1_1_android(common_options)
 
-    def _install_1_1_android(self, sysroot, common_options):
+    def _install_1_1_android(self, common_options):
         """ Install v1.1 for Android on either Linux or MacOS hosts. """
 
         # Configure the environment.
-        using_clang = (sysroot.android_ndk_version >= 16)
+        using_clang = (self.android_ndk_version >= 16)
 
-        original_path = sysroot.add_to_path(sysroot.android_toolchain_bin)
+        original_path = self.add_to_path(self.android_toolchain_bin)
 
         configure_args = ['perl', 'Configure']
 
         if using_clang:
-            os.environ['CC'] = sysroot.android_toolchain_cc
-            os.environ['AR'] = sysroot.android_toolchain_prefix + 'ar'
-            os.environ['RANLIB'] = sysroot.android_toolchain_prefix + 'ranlib'
+            os.environ['CC'] = self.android_toolchain_cc
+            os.environ['AR'] = self.android_toolchain_prefix + 'ar'
+            os.environ['RANLIB'] = self.android_toolchain_prefix + 'ranlib'
         else:
-            configure_args.append('--cross-compile-prefix=' + sysroot.android_toolchain_prefix)
+            configure_args.append('--cross-compile-prefix=' + self.android_toolchain_prefix)
 
             os.environ['CROSS_SYSROOT'] = os.path.join(
-                    sysroot.android_ndk_sysroot)
+                    self.android_ndk_sysroot)
 
         configure_args.extend(common_options)
         configure_args.append('android')
 
-        sysroot.run(*configure_args)
+        self.run(*configure_args)
 
         # Fix the Makefile so that it creates .so files without version
         # numbers for qmake to be able to handle.
@@ -151,12 +197,12 @@ class OpenSSLComponent(SourceComponent):
         with open('Makefile', 'w') as f:
             f.write(mf)
 
-        sysroot.run(sysroot.host_make)
-        sysroot.run(sysroot.host_make, 'install')
+        self.run(self.host_make)
+        self.run(self.host_make, 'install')
 
         for lib in ('libcrypto', 'libssl'):
             # Remove the static library that was also built.
-            os.remove(os.path.join(sysroot.target_lib_dir, lib + '.a'))
+            os.remove(os.path.join(self.target_lib_dir, lib + '.a'))
 
         if using_clang:
             del os.environ['CC']
@@ -167,25 +213,25 @@ class OpenSSLComponent(SourceComponent):
 
         os.environ['PATH'] = original_path
 
-    def _install_1_1_win(self, sysroot, common_options):
+    def _install_1_1_win(self, common_options):
         """ Install v1.1 for Windows. """
 
         # Set the architecture-specific values.
-        if sysroot.target_arch_name.endswith('-64'):
+        if self.target_arch_name.endswith('-64'):
             target = 'VC-WIN64A'
         else:
             target = 'VC-WIN32'
 
         args = ['perl', 'Configure', target, 'no-shared',
-                '--openssldir=' + sysroot.sysroot_dir + '\\ssl']
+                '--openssldir=' + self.sysroot_dir + '\\ssl']
         args.extend(common_options)
 
-        sysroot.run(*args)
-        sysroot.run(sysroot.host_make)
-        sysroot.run(sysroot.host_make, 'install')
+        self.run(*args)
+        self.run(self.host_make)
+        self.run(self.host_make, 'install')
 
-    def _install_1_0(self, sysroot, common_options):
-        """ Install v1.0 for supported platforms. """
+    def _install_1_0_2(self, common_options):
+        """ Install v1.0.2 for supported platforms. """
 
         # Add the common options that Python used prior to v3.7.
         common_options.extend([
@@ -200,47 +246,47 @@ class OpenSSLComponent(SourceComponent):
             'no-ssl3-method',
         ])
 
-        if sysroot.target_platform_name == sysroot.host_platform_name:
+        if self.target_platform_name == self.host_platform_name:
             # We are building natively.
 
-            if sysroot.target_arch_name == 'macos-64':
-                self._install_1_0_macos(sysroot, common_options)
+            if self.target_arch_name == 'macos-64':
+                self._install_1_0_2_macos(common_options)
 
-            elif sysroot.target_platform_name == 'win':
-                self._install_1_0_win(sysroot, common_options)
+            elif self.target_platform_name == 'win':
+                self._install_1_0_2_win(common_options)
         else:
             # We are cross-compiling.
 
-            if sysroot.target_platform_name == 'android':
-                self._install_1_0_android(sysroot, common_options)
+            if self.target_platform_name == 'android':
+                self._install_1_0_2_android(common_options)
 
-    def _install_1_0_android(self, sysroot, common_options):
-        """ Install v1.0 for Android on either Linux or MacOS hosts. """
+    def _install_1_0_2_android(self, common_options):
+        """ Install v1.0.2 for Android on either Linux or MacOS hosts. """
 
         # Configure the environment.
-        using_clang = (sysroot.android_ndk_version >= 16)
+        using_clang = (self.android_ndk_version >= 16)
 
-        original_path = sysroot.add_to_path(sysroot.android_toolchain_bin)
+        original_path = self.add_to_path(self.android_toolchain_bin)
         os.environ['MACHINE'] = 'arm7'
         os.environ['RELEASE'] = '2.6.37'
         os.environ['SYSTEM'] = 'android'
         os.environ['ARCH'] = 'arm'
-        os.environ['ANDROID_DEV'] = os.path.join(sysroot.android_ndk_sysroot,
+        os.environ['ANDROID_DEV'] = os.path.join(self.android_ndk_sysroot,
                 'usr')
 
         if using_clang:
-            os.environ['CC'] = sysroot.android_toolchain_cc
-            os.environ['AR'] = sysroot.android_toolchain_prefix + 'ar'
-            os.environ['RANLIB'] = sysroot.android_toolchain_prefix + 'ranlib'
+            os.environ['CC'] = self.android_toolchain_cc
+            os.environ['AR'] = self.android_toolchain_prefix + 'ar'
+            os.environ['RANLIB'] = self.android_toolchain_prefix + 'ranlib'
         else:
-            os.environ['CROSS_COMPILE'] = sysroot.android_toolchain_prefix
+            os.environ['CROSS_COMPILE'] = self.android_toolchain_prefix
 
         # Configure, build and install.
         args = ['perl', 'Configure', 'shared']
         args.extend(common_options)
         args.append('android')
 
-        sysroot.run(*args)
+        self.run(*args)
 
         # Patch the Makefile for clang.
         if using_clang:
@@ -252,24 +298,24 @@ class OpenSSLComponent(SourceComponent):
             with open('Makefile', 'w') as f:
                 f.write(mf)
 
-        sysroot.run(sysroot.host_make, 'depend')
-        sysroot.run(sysroot.host_make,
+        self.run(self.host_make, 'depend')
+        self.run(self.host_make,
                 'CALC_VERSIONS="SHLIB_COMPAT=; SHLIB_SOVER="', 'build_libs',
                 'build_apps')
-        sysroot.run(sysroot.host_make, 'install_sw')
+        self.run(self.host_make, 'install_sw')
 
         for lib in ('libcrypto', 'libssl'):
             # Remove the static library that was also built.
-            os.remove(os.path.join(sysroot.target_lib_dir, lib + '.a'))
+            os.remove(os.path.join(self.target_lib_dir, lib + '.a'))
 
             # The unversioned .so was installed and then overwritten with a
             # symbolic link to the non-existing versioned .so, so install it
             # again.
             lib_so = lib + '.so'
-            installed_lib_so = os.path.join(sysroot.target_lib_dir, lib_so)
+            installed_lib_so = os.path.join(self.target_lib_dir, lib_so)
 
             os.remove(installed_lib_so)
-            sysroot.copy_file(lib_so, installed_lib_so)
+            self.copy_file(lib_so, installed_lib_so)
 
         if using_clang:
             del os.environ['CC']
@@ -285,40 +331,44 @@ class OpenSSLComponent(SourceComponent):
         del os.environ['ANDROID_DEV']
         os.environ['PATH'] = original_path
 
-    def _install_1_0_macos(self, sysroot, common_options):
-        """ Install v1.0 for 64 bit macOS. """
+    def _install_1_0_2_macos(self, common_options):
+        """ Install v1.0.2 for 64 bit macOS. """
 
         # Find and apply any Python patch.
-        if self.python_source:
-            python_archive = sysroot.find_file(self.python_source)
-            python_dir = sysroot.unpack_archive(python_archive, chdir=False)
+        python = self.get_component('Python')
+        if python.version <= (3, 6, 4):
+            python_archive = python.get_archive()
+            python_dir = self.unpack_archive(python_archive, chdir=False)
 
             patches = glob.glob(python_dir + '/Mac/BuildScript/openssl*.patch')
 
             if len(patches) > 1:
-                sysroot.error(
-                        "found multiple OpenSSL patches in the Python source tree")
+                self.error(
+                        "found multiple OpenSSL patches in the Python source "
+                                "tree")
 
             if len(patches) == 1:
-                sysroot.run('patch', '-p1', '-i', patches[0])
+                self.run('patch', '-p1', '-i', patches[0])
+
+            shutil.rmtree(python_dir, ignore_errors=True)
 
         # Configure, build and install.
-        sdk_env = 'OSX_SDK=' + sysroot.apple_sdk
+        sdk_env = 'OSX_SDK=' + self.apple_sdk
 
         args = ['perl', 'Configure',
                 'darwin64-x86_64-cc', 'enable-ec_nistp_64_gcc_128']
         args.extend(common_options)
 
-        sysroot.run(*args)
-        sysroot.run(sysroot.host_make, 'depend', sdk_env)
-        sysroot.run(sysroot.host_make, 'all', sdk_env)
-        sysroot.run(sysroot.host_make, 'install_sw', sdk_env)
+        self.run(*args)
+        self.run(self.host_make, 'depend', sdk_env)
+        self.run(self.host_make, 'all', sdk_env)
+        self.run(self.host_make, 'install_sw', sdk_env)
 
-    def _install_1_0_win(self, sysroot, common_options):
-        """ Install v1.0 for Windows. """
+    def _install_1_0_2_win(self, common_options):
+        """ Install v1.0.2 for Windows. """
 
         # Set the architecture-specific values.
-        if sysroot.target_arch_name.endswith('-64'):
+        if self.target_arch_name.endswith('-64'):
             target = 'VC-WIN64A'
             post_config = 'ms\\do_win64a.bat'
         else:
@@ -333,10 +383,10 @@ class OpenSSLComponent(SourceComponent):
         args = ['perl', 'Configure', target]
         args.extend(common_options)
 
-        sysroot.run(*args)
-        sysroot.run(post_config)
-        sysroot.run(sysroot.host_make, '-f', 'ms\\nt.mak')
-        sysroot.run(sysroot.host_make, '-f', 'ms\\nt.mak', 'install')
+        self.run(*args)
+        self.run(post_config)
+        self.run(self.host_make, '-f', 'ms\\nt.mak')
+        self.run(self.host_make, '-f', 'ms\\nt.mak', 'install')
 
     def _verify_installed_version(self):
         """ Verify that the installed version is compatible with the specified
