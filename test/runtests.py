@@ -42,19 +42,11 @@ def find_tests(test, target):
     tests = []
 
     if test is None:
-        test = 'tests'
-    elif os.path.isabs(test):
-        raise UserException(
-                "'{0}' must be relative to the 'tests' directory".format(test))
-    else:
-        test = os.path.join('tests', test)
-
-        if not os.path.exists(test):
-            raise UserException("'{0}' does not exist".format(test))
+        test = os.path.join(os.path.dirname(__file__), 'tests')
 
     if os.path.isfile(test):
         tests.append((test, False))
-    else:
+    elif os.path.isdir(test):
         for dirpath, _, filenames in os.walk(test):
             # See if there is a file describing the tests expected to fail for
             # a particular platform.
@@ -85,6 +77,8 @@ def find_tests(test, target):
                 tests.append(
                         (os.path.join(dirpath, fn),
                                 expected_fails.get(fn, False)))
+    else:
+        raise UserException("unknown test '{0}'".format(test))
 
     return sorted(tests)
 
@@ -168,8 +162,11 @@ class SysrootTest(TestCase):
         sysroot = os.path.join('sysroot',
                 '{0}-{1}'.format(self.target, test_name))
 
+        # Extract the name of the component.
+        component = test_name.split('_')[0]
+
         # Run pyqtdeploy-sysroot.
-        args = ['pyqtdeploy-sysroot']
+        args = ['pyqtdeploy-sysroot', '--component', component]
 
         if no_clean:
             args.append('--no-clean')
