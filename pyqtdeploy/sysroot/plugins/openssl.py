@@ -31,6 +31,20 @@ import shutil
 from ... import ComponentOption, SourceComponent
 
 
+# OpenSSL currently has 3 relevent 'releases': v1.0.2, v1.1.0 and v1.1.1.
+#
+# Python v3.5 and v3.6 use v1.0.2, Python v3.7 uses v1.1.0 and Python v3.8 and
+# later use v1.1.1.  In addition Python v3.6.4 and earlier contain a patch for
+# OpenSSL for macOS which requires an exact version of OpenSSL to ensure the
+# patch doesn't fail.  Specifically, Python v3.5.0 and v3.5.1 requires OpenSSL
+# v1.0.2d, Python v3.5.2 requires OpenSSL v1.0.2f, Python v3.5.3 requires
+# OpenSSL v1.0.2j, and Python v3.5.4 to Python v3.6.4 require OpenSSL v1.0.2k.
+#
+# Qt v5.15 requires OpenSSL v1.1.1, earlier versions only require OpenSSL
+# v1.0.0.  The binary installers of Qt v5.12.4 and later are built against
+# OpenSSL v1.1.1.
+
+
 class OpenSSLComponent(SourceComponent):
     """ The OpenSSL component. """
 
