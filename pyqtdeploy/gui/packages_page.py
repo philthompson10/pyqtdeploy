@@ -28,8 +28,6 @@ from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import (QSplitter, QTreeWidget, QTreeWidgetItem,
         QTreeWidgetItemIterator, QVBoxLayout, QWidget)
 
-from ..metadata import get_module_availability, get_python_metadata
-
 
 class PackagesPage(QSplitter):
     """ The GUI for the packages page of a project. """
@@ -107,7 +105,7 @@ class ModulesEditor(QTreeWidget):
         blocked = self.blockSignals(True)
         self.clear()
 
-        if self.page.project.python_target_version is None:
+        if self.page.project.python_component is None:
             self.setEnabled(False)
         else:
             self.setEnabled(True)
@@ -192,9 +190,10 @@ class StdlibEditor(ModulesEditor):
         """ Populate the editor. """
 
         project = self.page.project
+        python = project.python_component
 
-        metadata = get_python_metadata(project.python_target_version)
-        module_availability = get_module_availability(metadata,
+        metadata = python.metadata
+        module_availability = python.get_module_availability(metadata,
                 project.external_components_availability)
 
         def add_module(name, module, parent):
@@ -208,9 +207,9 @@ class StdlibEditor(ModulesEditor):
             if availability == 0:
                 itm.setDisabled(True)
             elif availability == 1:
-                font = itm.font()
-                font.setItalics(True)
-                itm.setFont(font)
+                font = itm.font(0)
+                font.setItalic(True)
+                itm.setFont(0, font)
 
             # Handle any sub-modules.
             if module.modules is not None:

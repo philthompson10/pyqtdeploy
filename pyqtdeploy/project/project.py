@@ -29,13 +29,11 @@ import toml
 
 from PyQt5.QtCore import QDir, QFileInfo, QObject, pyqtSignal
 
-from ..metadata import external_components, get_python_metadata
 from ..platforms import Architecture, Platform
 from ..sysroot import Sysroot, SysrootSpecification
 from ..user_exception import UserException
 
-from .project_parts import (ExternalLibrary, ExtensionModule, QrcDirectory,
-        QrcFile, QrcPackage)
+from .project_parts import QrcDirectory, QrcFile, QrcPackage
 
 
 class Project(QObject):
@@ -95,9 +93,7 @@ class Project(QObject):
         self._name = QFileInfo(name) if name != '' else None
 
         self.external_components_availability = {}
-        self._sysroots = []
-
-        self.python_target_version = None
+        self.python_component = None
 
         # Initialise the project data.
         self.application_name = ''
@@ -106,17 +102,12 @@ class Project(QObject):
         self.application_package = QrcPackage()
         self.application_script = ''
         self.application_entry_point = ''
-        self.external_libraries = {}
-        self.other_extension_modules = []
-        self.other_packages = []
-        self.pyqt_modules = []
-        self.python_use_platform = ['win']
-        self.qmake_configuration = ''
-        self.standard_library = []
         self.sys_path = ''
-        self.sysroot = None
+        self.standard_library = []
+        self.other_packages = []
         self.sysroot_dir = ''
         self.sysroot_toml = ''
+        self.qmake_configuration = ''
 
     def path_to_user(self, path):
         """ Convert a file name to one that is relative to the project file if
@@ -186,8 +177,7 @@ class Project(QObject):
         """
 
         # Work out the dependencies.
-        # TODO
-        metadata = get_python_metadata(self.python_target_version)
+        metadata = self.python_component.metadata
         all_modules = {name: _DepState(module)
                 for name, module in metadata.items()}
 
@@ -260,7 +250,7 @@ class Project(QObject):
                     (dep_state.explicit or dep_state.implicit))
 
     @classmethod
-    def load(cls, file_name):
+    def load(cls, file_name, target=None):
         """ Return a new project loaded from the given file.  Raise a
         UserException if there was an error.
         """
@@ -281,26 +271,27 @@ class Project(QObject):
         project = cls()
         project._name = fi
         loader(project, file_path)
-        project.load_sysroot()
+        project.load_sysroot(target)
 
         return project
 
-    def load_sysroot(self):
+    def load_sysroot(self, target=None):
         """ Load the project's sysroot specification file. """
 
         # Get the pathname of the project file.
         file_path = QDir.toNativeSeparators(self._name.canonicalFilePath())
 
-        # Create a non-verified sysroot for each supported target architecture
-        # that define Python and Qt components.
+        # Unless a specific target was specified, create a non-verified sysroot
+        # for each supported target architecture that define Python and Qt
+        # components.
         host = Architecture.architecture()
         specification = SysrootSpecification(self.sysroot_toml, file_path)
 
-        self._sysroots = []
-        self.python_target_version = None
-        self.qt_target_version = None
+        self.python_component = None
+        sysroots = []
+        targets = Architecture.all_architectures if target is None else [target]
 
-        for target in Architecture.all_architectures:
+        for target in targets:
             sysroot = Sysroot(specification, host, target)
 
             # Make sure the same version of Python and Qt is specified for each
@@ -308,27 +299,18 @@ class Project(QObject):
             # Qt components.
             python = sysroot.get_component('Python', required=False)
             if python is not None:
-                if self.python_target_version is None:
-                    self.python_target_version = python.version
-                elif self.python_target_version != python.version:
+                if self.python_component is None:
+                    self.python_component = python
+                elif self.python_component.version != python.version:
                     raise UserException(
                             "The sysroot specification file defines more than "
                                     "one version of Python.")
 
-            qt = sysroot.get_component('Qt', required=False)
-            if qt is not None:
-                if self.qt_target_version is None:
-                    self.qt_target_version = qt.version
-                elif self.qt_target_version != qt.version:
-                    raise UserException(
-                            "The sysroot specification file defines more than "
-                                    "one version of Qt.")
-
-            if python is not None and qt is not None:
-                self._sysroots.append(sysroot)
+                if sysroot.get_component('Qt', required=False) is not None:
+                    sysroots.append(sysroot)
 
         # Make sure at least one target specified Python and Qt components.
-        if len(self._sysroots) == 0:
+        if len(sysroots) == 0:
             raise UserException(
                     "The sysroot specification file does not define 'Python' "
                     "and 'Qt' components for any target architecture.")
@@ -338,18 +320,17 @@ class Project(QObject):
         # it is available for all sysroots.
         self.external_components_availability = {}
 
-        for name in external_components:
+        for name in self.python_component.external_component_names:
             nr_sysroots = 0
 
-            for sysroot in self._sysroots:
-                for component in sysroot.components:
-                    if component.name == name:
-                        nr_sysroots += 1
-                        break
+            for sysroot in sysroots:
+                if sysroot.get_component(name, required=False) is not None:
+                    nr_sysroots += 1
+                    break
 
             if nr_sysroots == 0:
                 availability = 0
-            elif nr_sysroots == len(self._sysroots):
+            elif nr_sysroots == len(sysroots):
                 availability = 2
             else:
                 availability = 1
@@ -449,13 +430,8 @@ class Project(QObject):
 
         project.sysroot_toml = root.get('sysroot', '')
         project.sysroot_dir = root.get('sysroot_dir', '')
-        project.pyqt_modules = cls._get_list(root, 'pyqt_modules')
         project.standard_library = cls._get_list(root, 'standard_library')
-
-        # The Python configuration.
-        python = cls._get_dict(root, 'Python')
-
-        project.python_use_platform = cls._get_list(python, 'platform_python')
+        project.other_packages = cls._get_list(root, 'other_packages')
 
         # The application specific configuration.
         application = cls._get_dict(root, 'Application')
@@ -477,43 +453,6 @@ class Project(QObject):
         else:
             project.application_package = QrcPackage()
 
-        # Any external C libraries.
-        project.external_libraries = {}
-
-        for target, xlibs in cls._get_dict(root, 'ExternalLibraries').items():
-            target_external_libs = []
-
-            for xlib in xlibs:
-                name = xlib.get('name', '')
-                defines = xlib.get('defines', '')
-                includepath = xlib.get('includepath', '')
-                libs = xlib.get('libs', '')
-
-                target_external_libs.append(
-                        ExternalLibrary(name, defines, includepath, libs))
-
-            project.external_libraries[target] = target_external_libs
-
-        # Any other Python packages.
-        project.other_packages = [cls._load_package(p)
-                for p in cls._get_list(root, 'packages')]
-
-        # Any other extension modules.
-        project.other_extension_modules = []
-
-        for extension_module in cls._get_list(root, 'extension_modules'):
-            name = extension_module.get('name')
-            qt = extension_module.get('qt', '')
-            config = extension_module.get('config', '')
-            sources = extension_module.get('sources', '')
-            defines = extension_module.get('defines', '')
-            includepath = extension_module.get('includepath', '')
-            libs = extension_module.get('libs', '')
-
-            project.other_extension_modules.append(
-                    ExtensionModule(name, qt, config, sources, defines,
-                            includepath, libs))
-
     def _save_project(self, file_name):
         """ Save the project to the given file.  Raise a UserException if there
         was an error.
@@ -523,15 +462,9 @@ class Project(QObject):
             'version': self.version,
             'sysroot': self.sysroot_toml,
             'sysroot_dir': self.sysroot_dir,
-            'pyqt_modules': self.pyqt_modules,
-            'standard_library': self.standard_library
+            'standard_library': self.standard_library,
+            'other_packages': self.other_packages
         }
-
-        python = {
-            'platform_python': self.python_use_platform
-        }
-
-        root['Python'] = python
 
         application = {
             'entry_point': self.application_entry_point,
@@ -548,45 +481,6 @@ class Project(QObject):
                     self.application_package)
 
         root['Application'] = application
-
-        externals = {}
-
-        for target, external_libs in self.external_libraries.items():
-            target_externals = []
-
-            for external_lib in external_libs:
-                external = {
-                    'name': external_lib.name,
-                    'defines': external_lib.defines,
-                    'includepath': external_lib.includepath,
-                    'libs': external_lib.libs
-                }
-
-                target_externals.append(external)
-
-            externals[target] = target_externals
-
-        root['ExternalLibraries'] = externals
-
-        root['packages'] = [self._save_packages(p)
-                for p in self.other_packages]
-
-        extensions = []
-
-        for extension_module in self.other_extension_modules:
-            extension = {
-                'name': extension_module.name,
-                'qt': extension_module.qt,
-                'config': extension_module.config,
-                'sources': extension_module.sources,
-                'defines': extension_module.defines,
-                'includepath': extension_module.includepath,
-                'libs': extension_module.libs
-            }
-
-            extensions.append(extension)
-
-        root['extension_modules'] = extensions
 
         try:
             with open(file_name, 'w') as f:

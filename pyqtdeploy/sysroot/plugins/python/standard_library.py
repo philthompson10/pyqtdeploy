@@ -24,11 +24,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from ..version_number import VersionNumber
-
-
-__all__ = ['ExtensionModule', 'external_components', 'get_module_availability',
-        'get_python_metadata']
+from ....modules import (CodecModule, CoreExtensionModule, CorePythonModule,
+        ExtensionModule, PythonModule)
 
 
 # These are the external components, refered to by well known names, that the
@@ -37,177 +34,6 @@ __all__ = ['ExtensionModule', 'external_components', 'get_module_availability',
 # not relevant for a particular version.
 external_components = ('bzip2', 'curses', 'gdbm', 'LZMA', 'ndbm', 'OpenSSL',
         'panel', 'Readline', 'SQLite', 'zlib')
-
-
-class StdlibModule:
-    """ Encapsulate the meta-data for a module in the standard library. """
-
-    def __init__(self, internal, target, deps, hidden_deps, core, builtin,
-            defines, xdep, modules, source, libs, includepath, pyd, dlls):
-        """ Initialise the object. """
-
-        # Set if the module is internal.
-        self.internal = internal
-
-        # The target platform(s) of the module.
-        self.target = target
-
-        # The sequence of modules that this one is dependent on.
-        self.deps = (deps, ) if isinstance(deps, str) else deps
-
-        # The sequence of additional modules that this one is dependent on.
-        # These dependencies are hidden from the user and (most importantly)
-        # further sub-dependencies are ignored.  The use case is the warnings
-        # module in Python v3 which is a dependency of the core (for a simple
-        # function that should never be called) but drags in a lot of other
-        # stuff.
-        self.hidden_deps = (hidden_deps, ) if isinstance(hidden_deps, str) else hidden_deps
-
-        # Set if the module is always compiled in to the interpreter library
-        # (if it is an extension module) or if it is required (if it is a
-        # Python module).
-        self.core = core
-
-        # Set if the module is a core Python module that is embedded as a
-        # builtin.
-        self.builtin = builtin
-
-        # The sequence of (possibly scoped) DEFINES to add to the .pro file.
-        self.defines = (defines, ) if isinstance(defines, str) else defines
-
-        # The name of a required external component.
-        self.xdep = xdep
-
-        # The sequence of modules or sub-packages if this is a package,
-        # otherwise None.
-        self.modules = (modules, ) if isinstance(modules, str) else modules
-
-        # The sequence of (possibly scoped) source files relative to the
-        # Modules directory if this is an extension module, otherwise None.
-        self.source = (source, ) if isinstance(source, str) else source
-
-        # The sequence of (possibly scoped) LIBS to add to the .pro file.
-        self.libs = (libs, ) if isinstance(libs, str) else libs
-
-        # The sequence of (possibly scoped) directories relative to the Modules
-        # directory to add to INCLUDEPATH.
-        self.includepath = (includepath, ) if isinstance(includepath, str) else includepath
-
-        # The name of the extension module if it is implemented as a .pyd file
-        # included in the Windows installer from python.org.
-        self.pyd = pyd
-
-        # The sequence of additional DLLs needed by the extension module and
-        # included in the Windows installer from python.org.
-        self.dlls = (dlls, ) if isinstance(dlls, str) else dlls
-
-
-class VersionedModule:
-    """ Encapsulate the meta-data common to all types of module. """
-
-    def __init__(self, min_version=None, version=None, max_version=None,
-            internal=False, target='', deps=(), hidden_deps=(), core=False,
-            builtin=False, defines=None, xdep=None, modules=None, source=None,
-            libs=None, includepath=None, pyd=None, dlls=None):
-        """ Initialise the object. """
-
-        # A meta-datum is uniquely identified by a range of version numbers.
-        # It is an error if version numbers for a particular module overlaps.
-        if version is None:
-            if min_version is None:
-                min_version = 3
-
-            if max_version is None:
-                max_version = 3
-        else:
-            min_version = max_version = version
-
-        self.min_version = min_version
-        self.max_version = max_version
-
-        self.module = StdlibModule(internal, target, deps, hidden_deps, core,
-                builtin, defines, xdep, modules, source, libs, includepath,
-                pyd, dlls)
-
-
-class ExtensionModule(VersionedModule):
-    """ Encapsulate the meta-data for a single extension module. """
-
-    def __init__(self, source, libs=None, includepath=None, min_version=None,
-            version=None, max_version=None, internal=False, target='', deps=(),
-            hidden_deps=(), core=False, defines=None, xdep=None, pyd=None,
-            dlls=None):
-        """ Initialise the object. """
-
-        super().__init__(min_version=min_version, version=version,
-                max_version=max_version, internal=internal, target=target,
-                deps=deps, hidden_deps=hidden_deps, core=core, defines=defines,
-                xdep=xdep, source=source, libs=libs, includepath=includepath,
-                pyd=pyd, dlls=dlls)
-
-
-class CoreExtensionModule(ExtensionModule):
-    """ Encapsulate the meta-data for an extension module that is always
-    compiled in to the interpreter library.  These are modules that the core
-    relies on and modules that can only be build with Py_BUILD_CORE defined.
-    """
-
-    def __init__(self, min_version=None, version=None, max_version=None,
-            internal=False, target='', deps=(), hidden_deps=()):
-        """ Initialise the object. """
-
-        super().__init__(source=(), min_version=min_version, version=version,
-                max_version=max_version, internal=internal, target=target,
-                deps=deps, hidden_deps=hidden_deps, core=True)
-
-
-class PythonModule(VersionedModule):
-    """ Encapsulate the meta-data for a single Python module. """
-
-    def __init__(self, min_version=None, version=None, max_version=None,
-            internal=False, target='', deps=(), hidden_deps=(), core=False,
-            builtin=False, modules=None):
-        """ Initialise the object. """
-
-        super().__init__(min_version=min_version, version=version,
-                max_version=max_version, internal=internal, target=target,
-                deps=deps, hidden_deps=hidden_deps, core=core, builtin=builtin,
-                modules=modules)
-
-
-class CorePythonModule(PythonModule):
-    """ Encapsulate the meta-data for a Python module that is always required
-    by an application.
-    """
-
-    def __init__(self, min_version=None, version=None, max_version=None,
-            internal=False, target='', deps=(), hidden_deps=(), builtin=False,
-            modules=None):
-        """ Initialise the object. """
-
-        super().__init__(min_version=min_version, version=version,
-                max_version=max_version, internal=internal, target=target,
-                deps=deps, hidden_deps=hidden_deps, core=True, builtin=builtin,
-                modules=modules)
-
-
-class CodecModule(PythonModule):
-    """ Encapsulate the meta-data for a Python module that implements a codec
-    in the encodings package.
-    """
-
-    def __init__(self, min_version=None, version=None, max_version=None,
-            target='', deps=(), core=False):
-        """ Initialise the object. """
-
-        if isinstance(deps, str):
-            deps = (deps, )
-
-        all_deps = ('encodings', 'codecs') + deps
-
-        super().__init__(min_version=min_version, version=version,
-                max_version=max_version, target=target, deps=all_deps,
-                core=core)
 
 
 # The encodings modules.
@@ -253,6 +79,7 @@ _encodings_modules = (
     'encodings.utf_32', 'encodings.utf_32_be', 'encodings.utf_32_le',
     'encodings.utf_7', 'encodings.utf_8', 'encodings.utf_8_sig',
     'encodings.uu_codec', 'encodings.zlib_codec')
+
 
 # The meta-data for each module.
 _metadata = {
@@ -3616,8 +3443,8 @@ def _get_a_modules_availability(name, module_availability, python_metadata,
 
 
 def get_python_metadata(version):
-    """ Return the dict of StdlibModule instances for a particular version of
-    Python.  It is assumed that the version is valid.
+    """ Return the dict of Module instances for a particular version of Python.
+    It is assumed that the version is valid.
     """
 
     version_metadata = {}

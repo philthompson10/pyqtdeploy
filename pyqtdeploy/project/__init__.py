@@ -1,4 +1,4 @@
-# Copyright (c) 2014, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,5 +25,4 @@
 
 
 # Publish the sub-package's API.
-from .project import (ExtensionModule, ExternalLibrary, Project, QrcDirectory,
-        QrcFile, QrcPackage)
+from .project import Project, QrcDirectory, QrcFile, QrcPackage
