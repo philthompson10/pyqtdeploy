@@ -26,8 +26,7 @@
 
 import argparse
 
-from . import (Builder, MessageHandler, Project, PYQTDEPLOY_RELEASE,
-        UserException)
+from . import Builder, MessageHandler, PYQTDEPLOY_RELEASE, UserException
 
 
 def main():
@@ -63,8 +62,6 @@ def main():
             help="the Python source code directory", metavar="DIR")
     parser.add_argument('--standard-library-dir',
             help="the target Python standard library directory", metavar="DIR")
-    parser.add_argument('--sysroot', help="the system image root directory",
-            metavar="DIR")
     parser.add_argument('--target', help="the target architecture"),
     parser.add_argument('--quiet', help="disable progress messages",
             action='store_true')
@@ -83,10 +80,9 @@ def main():
         return 2
 
     try:
-        builder = Builder(Project.load(args.project), args.target,
-                message_handler)
+        builder = Builder(args.project, args.target, message_handler)
 
-        builder.build(args.opt, args.resources, args.clean, args.sysroot,
+        builder.build(args.opt, args.resources, args.clean,
                 build_dir=args.build_dir, include_dir=args.include_dir,
                 interpreter=args.interpreter,
                 python_library=args.python_library, source_dir=args.source_dir,

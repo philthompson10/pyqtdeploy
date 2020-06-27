@@ -30,8 +30,7 @@ from ..platforms import Platform
 from ..user_exception import UserException
 from ..version_number import VersionNumber
 
-from .project_parts import (ExternalLibrary, ExtensionModule, QrcDirectory,
-        QrcFile, QrcPackage)
+from .project_parts import QrcDirectory, QrcFile, QrcPackage
 
 
 # The minimum supported XML project version.
@@ -75,14 +74,6 @@ def load_xml(project, file_path):
         raise UserException(
                 "The project's format is version {0} but only version {1} is supported.".format(version, _LAST_VERSION))
 
-    # The Python specific configuration.
-    python = root.find('Python')
-    _assert(python is not None, "Missing 'Python' tag.")
-
-    # This was added in version 5.
-    project.python_use_platform = _replace_scopes(
-            python.get('platformpython', '')).split()
-
     # The application specific configuration.
     application = root.find('Application')
     _assert(application is not None, "Missing 'Application' tag.")
@@ -115,7 +106,7 @@ def load_xml(project, file_path):
     for pyqt_m in root.iterfind('PyQtModule'):
         name = pyqt_m.get('name', '')
         _assert(name != '', "Missing or empty 'PyQtModule.name' attribute.")
-        project.pyqt_modules.append(name)
+        project.other_packages.append('PyQt5.' + name)
 
     # Any standard library modules.
     for stdlib_module_element in root.iterfind('StdlibModule'):
@@ -124,78 +115,12 @@ def load_xml(project, file_path):
 
         project.standard_library.append(name)
 
-    # Any external C libraries.
-    for external_lib_element in root.iterfind('ExternalLib'):
-        name = external_lib_element.get('name')
-        _assert(name is not None, "Missing 'ExternalLib.name' attribute.")
-
-        defines = _fix_scopes(external_lib_element.get('defines', ''))
-        includepath = _fix_scopes(
-                    external_lib_element.get('includepath', ''))
-        libs = _fix_scopes(external_lib_element.get('libs', ''))
-
-        external_lib = ExternalLibrary(name, defines, includepath, libs)
-
-        target = external_lib_element.get('target')
-        if target is None:
-            # The project format is version 6 or earlier.
-            target_list = [p.name for p in Platform.all_platforms]
-        else:
-            target_list = [target]
-
-        for target in target_list:
-            project.external_libraries.setdefault(target, []).append(
-                        external_lib)
-
-    # Any other Python packages.
-    project.other_packages = [_load_package(package)
-            for package in root.iterfind('Package')]
-
-    # Any other extension module.
-    for extension_module_element in root.iterfind('ExtensionModule'):
-        name = _fix_scopes(extension_module_element.get('name'))
-        _assert(name is not None, "Missing 'ExtensionModule.name' attribute.")
-
-        qt = _fix_scopes(extension_module_element.get('qt', ''))
-        config = _fix_scopes(extension_module_element.get('config', ''))
-        sources = _fix_scopes(extension_module_element.get('sources', ''))
-        defines = _fix_scopes(extension_module_element.get('defines', ''))
-        includepath = _fix_scopes(
-                extension_module_element.get('includepath', ''))
-        libs = _fix_scopes(extension_module_element.get('libs', ''))
-
-        project.other_extension_modules.append(
-                ExtensionModule(name, qt, config, sources, defines,
-                        includepath, libs))
-
 
 def _assert(ok, detail):
     """ Validate an assertion and raise a UserException if it failed. """
 
     if not ok:
         raise UserException("The project file is invalid.", detail)
-
-
-def _fix_scopes(value):
-    """ In version 6 and earlier scopes where qmake scopes, starting with
-    version 7 they are our well defined platform names.  This handles the
-    conversion for a string.
-    """
-
-    if '#' in value:
-        updated = []
-
-        for single in value.split():
-            parts = single.split('#', maxsplit=1)
-            if len(parts) == 2:
-                lhs, rhs = parts
-                updated.append(_replace_scopes(lhs) + '#' + rhs)
-            else:
-                updated.append(single)
-
-        value = ' '.join(updated)
-
-    return value
 
 
 def _get_bool(element, name, context, default=None):
@@ -212,22 +137,6 @@ def _get_bool(element, name, context, default=None):
                     name))
 
     return bool(value)
-
-
-def _get_int(element, name, context, default=None):
-    """ Get an integer attribute from an element. """
-
-    value = element.get(name)
-    try:
-        value = int(value)
-    except:
-        value = default
-
-    _assert(value is not None,
-            "Missing or invalid integer value of '{0}.{1}'.".format(context,
-                    name))
-
-    return value
 
 
 def _load_mfs_contents(mfs_element):

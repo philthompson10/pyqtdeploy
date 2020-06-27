@@ -161,6 +161,43 @@ class PythonComponent(SourceComponent):
             if self.android_api < 21:
                 self.error("Android API level 21 or greater is required")
 
+    ###########################################################################
+
+    # The methods and properties in this section are assumed to be implemented
+    # by the 'Python' component.
+
+    @property
+    def external_component_names(self):
+        """ The sequence of well known names of external components that the
+        standard library depends on.
+        """
+
+        from .standard_library import external_components
+
+        return external_components
+
+    @staticmethod
+    def get_module_availability(metadata, external_components_availability):
+        """ Return a map of the availability of each standard library module.
+        """
+
+        from .standard_library import get_module_availability
+
+        return get_module_availability(metadata,
+                external_components_availability)
+
+    @property
+    def metadata(self):
+        """ The sequence of well known names of external components that the
+        standard library depends on.
+        """
+
+        from .standard_library import get_python_metadata
+
+        return get_python_metadata(self.version)
+
+    ###########################################################################
+
     def _configure_python(self):
         """ Configure a Python source directory for a particular target. """
 

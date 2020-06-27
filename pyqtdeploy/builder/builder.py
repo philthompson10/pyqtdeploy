@@ -36,7 +36,6 @@ from PyQt5.QtCore import (QByteArray, QCoreApplication, QDir, QFile,
 
 from ..file_utilities import (create_file, get_embedded_dir,
         get_embedded_file_for_version, read_embedded_file)
-from ..metadata import (get_python_metadata, pyqt4_metadata, pyqt5_metadata)
 from ..project import QrcDirectory
 from ..platforms import Architecture, Platform
 from ..user_exception import UserException
@@ -48,16 +47,18 @@ from ..windows import get_py_install_path
 class Builder:
     """ The builder for a project. """
 
-    def __init__(self, project, target_arch_name, message_handler):
+    def __init__(self, project_name, target_arch_name, message_handler):
         """ Initialise the builder for a project. """
 
-        self._project = project
         self._message_handler = message_handler
 
         self._host = Architecture.architecture()
         self._target = Architecture.architecture(target_arch_name)
 
-    def build(self, opt, nr_resources, clean, sysroot, build_dir, include_dir, interpreter, python_library, source_dir, standard_library_dir):
+        self._project = Project.load(project_name, self._target)
+
+    def build(self, opt, nr_resources, clean, build_dir, include_dir,
+            interpreter, python_library, source_dir, standard_library_dir):
         """ Build the project in a given directory.  Raise a UserException if
         there is an error.
         """

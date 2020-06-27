@@ -80,30 +80,3 @@ class QrcDirectory(QrcFile):
         copy.contents = [content.copy() for content in self.contents]
 
         return copy
-
-
-class ExternalLibrary():
-    """ The encapsulation of an external library. """
-
-    def __init__(self, name, defines, includepath, libs):
-        """ Initialise the external library. """
-
-        self.name = name
-        self.defines = defines
-        self.includepath = includepath
-        self.libs = libs
-
-
-class ExtensionModule():
-    """ The encapsulation of an extension module. """
-
-    def __init__(self, name, qt, config, sources, defines, includepath, libs):
-        """ Initialise the extension module. """
-
-        self.name = name
-        self.qt = qt
-        self.config = config
-        self.sources = sources
-        self.defines = defines
-        self.includepath = includepath
-        self.libs = libs
