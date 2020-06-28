@@ -192,7 +192,7 @@ class StdlibEditor(ModulesEditor):
         project = self.page.project
         python = project.python_component
 
-        metadata = python.metadata
+        metadata = python.get_modules()
         module_availability = python.get_module_availability(metadata,
                 project.external_components_availability)
 

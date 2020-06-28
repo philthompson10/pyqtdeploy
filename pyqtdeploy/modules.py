@@ -134,21 +134,6 @@ class ExtensionModule(VersionedModule):
                 pyd=pyd, dlls=dlls)
 
 
-class CoreExtensionModule(ExtensionModule):
-    """ Encapsulate the meta-data for an extension module that is always
-    compiled in to the interpreter library.  These are modules that the core
-    relies on and modules that can only be build with Py_BUILD_CORE defined.
-    """
-
-    def __init__(self, min_version=None, version=None, max_version=None,
-            internal=False, target='', deps=(), hidden_deps=()):
-        """ Initialise the object. """
-
-        super().__init__(source=(), min_version=min_version, version=version,
-                max_version=max_version, internal=internal, target=target,
-                deps=deps, hidden_deps=hidden_deps, core=True)
-
-
 class PythonModule(VersionedModule):
     """ Encapsulate the meta-data for a single Python module. """
 
@@ -161,38 +146,3 @@ class PythonModule(VersionedModule):
                 max_version=max_version, internal=internal, target=target,
                 deps=deps, hidden_deps=hidden_deps, core=core, builtin=builtin,
                 modules=modules)
-
-
-class CorePythonModule(PythonModule):
-    """ Encapsulate the meta-data for a Python module that is always required
-    by an application.
-    """
-
-    def __init__(self, min_version=None, version=None, max_version=None,
-            internal=False, target='', deps=(), hidden_deps=(), builtin=False,
-            modules=None):
-        """ Initialise the object. """
-
-        super().__init__(min_version=min_version, version=version,
-                max_version=max_version, internal=internal, target=target,
-                deps=deps, hidden_deps=hidden_deps, core=True, builtin=builtin,
-                modules=modules)
-
-
-class CodecModule(PythonModule):
-    """ Encapsulate the meta-data for a Python module that implements a codec
-    in the encodings package.
-    """
-
-    def __init__(self, min_version=None, version=None, max_version=None,
-            target='', deps=(), core=False):
-        """ Initialise the object. """
-
-        if isinstance(deps, str):
-            deps = (deps, )
-
-        all_deps = ('encodings', 'codecs') + deps
-
-        super().__init__(min_version=min_version, version=version,
-                max_version=max_version, target=target, deps=all_deps,
-                core=core)

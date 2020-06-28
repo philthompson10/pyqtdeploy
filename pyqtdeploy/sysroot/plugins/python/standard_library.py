@@ -24,8 +24,57 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from ....modules import (CodecModule, CoreExtensionModule, CorePythonModule,
-        ExtensionModule, PythonModule)
+from .... import ExtensionModule, PythonModule
+
+
+class CodecModule(PythonModule):
+    """ Encapsulate the meta-data for a Python module that implements a codec
+    in the encodings package.
+    """
+
+    def __init__(self, min_version=None, version=None, max_version=None,
+            target='', deps=(), core=False):
+        """ Initialise the object. """
+
+        if isinstance(deps, str):
+            deps = (deps, )
+
+        all_deps = ('encodings', 'codecs') + deps
+
+        super().__init__(min_version=min_version, version=version,
+                max_version=max_version, target=target, deps=all_deps,
+                core=core)
+
+
+class CoreExtensionModule(ExtensionModule):
+    """ Encapsulate the meta-data for an extension module that is always
+    compiled in to the interpreter library.  These are modules that the core
+    relies on and modules that can only be build with Py_BUILD_CORE defined.
+    """
+
+    def __init__(self, min_version=None, version=None, max_version=None,
+            internal=False, target='', deps=(), hidden_deps=()):
+        """ Initialise the object. """
+
+        super().__init__(source=(), min_version=min_version, version=version,
+                max_version=max_version, internal=internal, target=target,
+                deps=deps, hidden_deps=hidden_deps, core=True)
+
+
+class CorePythonModule(PythonModule):
+    """ Encapsulate the meta-data for a Python module that is always required
+    by an application.
+    """
+
+    def __init__(self, min_version=None, version=None, max_version=None,
+            internal=False, target='', deps=(), hidden_deps=(), builtin=False,
+            modules=None):
+        """ Initialise the object. """
+
+        super().__init__(min_version=min_version, version=version,
+                max_version=max_version, internal=internal, target=target,
+                deps=deps, hidden_deps=hidden_deps, core=True, builtin=builtin,
+                modules=modules)
 
 
 # These are the external components, refered to by well known names, that the
@@ -82,7 +131,7 @@ _encodings_modules = (
 
 
 # The meta-data for each module.
-_metadata = {
+standard_library = {
     # These are the public modules.
 
     '__future__':
@@ -1262,7 +1311,7 @@ _metadata = {
         PythonModule(max_version=(3, 6),
                 deps=('hashlib', '_operator', 'warnings')),
         PythonModule(min_version=(3, 7),
-                deps=('hashlib', '_hashlib', '_operator', 'warnings'))),
+                deps=('hashlib', '?_hashlib', '_operator', 'warnings'))),
 
     'html':
         PythonModule(deps=('html.entities', 're'),
@@ -3416,7 +3465,10 @@ def _get_a_modules_availability(name, module_availability, python_metadata,
         module_availability[name] = availability
 
         for dep in module.deps:
-            if dep[0] in '?!':
+            if dep.startswith('?'):
+                # The dependency is optional so its availability has no impact.
+                continue
+            elif dep.startswith('!'):
                 dep = dep[1:]
 
             dep_availability = _get_a_modules_availability(dep,
@@ -3440,25 +3492,6 @@ def _get_a_modules_availability(name, module_availability, python_metadata,
         module_availability[name] = availability
 
     return availability
-
-
-def get_python_metadata(version):
-    """ Return the dict of Module instances for a particular version of Python.
-    It is assumed that the version is valid.
-    """
-
-    version_metadata = {}
-
-    for name, versions in _metadata.items():
-        if not isinstance(versions, tuple):
-            versions = (versions, )
-
-        for versioned_module in versions:
-            if versioned_module.min_version <= version <= versioned_module.max_version:
-                version_metadata[name] = versioned_module.module
-                break
-
-    return version_metadata
 
 
 if __name__ == '__main__':
@@ -3488,7 +3521,7 @@ if __name__ == '__main__':
         # Get the meta-data for this version.
         version_metadata = {}
 
-        for name, versions in _metadata.items():
+        for name, versions in standard_library.items():
             if not isinstance(versions, tuple):
                 versions = (versions, )
 

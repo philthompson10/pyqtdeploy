@@ -73,6 +73,9 @@ class ComponentBase(ABC):
     # this one.
     preinstalls = []
 
+    # The dict of VersionedModule objects provided by the component.
+    provides = {}
+
     # The installation status.
     _IS_NOT_INSTALLED, _IS_IN_PROGRESS, _IS_INSTALLED = range(3)
 
@@ -240,6 +243,24 @@ class ComponentBase(ABC):
 
         return self._sysroot.get_component(name, required=required,
                 component=self)
+
+    def get_modules(self):
+        """ Return a map of Module instances, key by the name of the module, of
+        the modules provided by a particular version of the component.
+        """
+
+        modules = {}
+
+        for name, versions in self.provides.items():
+            if not isinstance(versions, tuple):
+                versions = (versions, )
+
+            for versioned_module in versions:
+                if versioned_module.min_version <= self.version <= versioned_module.max_version:
+                    modules[name] = versioned_module.module
+                    break
+
+        return modules
 
     def get_version_from_file(self, identifier, filename):
         """ Return the stripped line from a file containing an identifier

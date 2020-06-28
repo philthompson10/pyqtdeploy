@@ -31,6 +31,8 @@ import sys
 from .... import ComponentOption, SourceComponent
 
 from .pyconfig import generate_pyconfig_h
+from .standard_library import (external_components, get_module_availability,
+        standard_library)
 
 
 class PythonComponent(SourceComponent):
@@ -41,6 +43,9 @@ class PythonComponent(SourceComponent):
     # these are only used by this component when building the application and
     # not the sysroot.
     preinstalls = ['Qt']
+
+    # The dict of VersionedModule objects provided by the component.
+    provides = standard_library
 
     def get_archive_name(self):
         """ Return the filename of the source archive. """
@@ -172,8 +177,6 @@ class PythonComponent(SourceComponent):
         standard library depends on.
         """
 
-        from .standard_library import external_components
-
         return external_components
 
     @staticmethod
@@ -181,20 +184,8 @@ class PythonComponent(SourceComponent):
         """ Return a map of the availability of each standard library module.
         """
 
-        from .standard_library import get_module_availability
-
         return get_module_availability(metadata,
                 external_components_availability)
-
-    @property
-    def metadata(self):
-        """ The sequence of well known names of external components that the
-        standard library depends on.
-        """
-
-        from .standard_library import get_python_metadata
-
-        return get_python_metadata(self.version)
 
     ###########################################################################
 
