@@ -81,8 +81,8 @@ class Project(QObject):
             self._name = QFileInfo(value)
             self.name_changed.emit(value)
 
-    # Emitted when the version number of Python being targeted changes.
-    python_target_version_changed = pyqtSignal()
+    # Emitted when the sysroot has been loaded.
+    sysroot_loaded = pyqtSignal()
 
     def __init__(self, name=''):
         """ Initialise the project. """
@@ -92,7 +92,7 @@ class Project(QObject):
         self._modified = False
         self._name = QFileInfo(name) if name != '' else None
 
-        self.external_components_availability = {}
+        self.component_availability = {}
         self.python_component = None
 
         # Initialise the project data.
@@ -315,28 +315,21 @@ class Project(QObject):
                     "The sysroot specification file does not define 'Python' "
                     "and 'Qt' components for any target architecture.")
 
-        # The availability is 0 if a component isn't available in any sysroot,
-        # 1 if it is available for at least one sysroot architecture and 2 if
-        # it is available for all sysroots.
-        self.external_components_availability = {}
+        # The availability is omitted if a component isn't available in any
+        # sysroot, 1 if it is available for at least one sysroot architecture
+        # and 2 if it is available for all sysroots.
+        component_count = {}
 
-        for name in self.python_component.external_component_names:
-            nr_sysroots = 0
+        for sysroot in sysroots:
+            for component in sysroot.components:
+                component_count[component.name] = component_count.get(component.name, 0) + 1
 
-            for sysroot in sysroots:
-                if sysroot.get_component(name, required=False) is not None:
-                    nr_sysroots += 1
+        self.component_availability = {}
 
-            if nr_sysroots == 0:
-                availability = 0
-            elif nr_sysroots == len(sysroots):
-                availability = 2
-            else:
-                availability = 1
+        for name, count in component_count.items():
+            self.component_availability[name] = 2 if count == len(sysroots) else 1
 
-            self.external_components_availability[name] = availability
-
-        self.python_target_version_changed.emit()
+        self.sysroot_loaded.emit()
 
     def save(self):
         """ Save the project.  Raise a UserException if there was an error. """

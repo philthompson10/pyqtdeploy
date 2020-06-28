@@ -77,14 +77,6 @@ class CorePythonModule(PythonModule):
                 modules=modules)
 
 
-# These are the external components, refered to by well known names, that the
-# Python standard library can depend on.  Note that these are not dependent on
-# the particular version of Python as they will never be referenced if they are
-# not relevant for a particular version.
-external_components = ('bzip2', 'curses', 'gdbm', 'LZMA', 'ndbm', 'OpenSSL',
-        'panel', 'Readline', 'SQLite', 'zlib')
-
-
 # The encodings modules.
 _encodings_modules = (
     'encodings.ascii', 'encodings.base64_codec', 'encodings.big5',
@@ -3434,64 +3426,6 @@ standard_library = {
     'xml.sax._exceptions':
         PythonModule(internal=True, deps='xml.sax'),
 }
-
-
-def get_module_availability(python_metadata, external_components_availability):
-    """ Return a map of the availability of each Python module.  The key is the
-    module name and the value is the availability (a value between 0 and 2).
-    """
-
-    module_availability = {}
-
-    for name in python_metadata.keys():
-        _get_a_modules_availability(name, module_availability, python_metadata,
-                external_components_availability)
-
-    return module_availability
-
-
-def _get_a_modules_availability(name, module_availability, python_metadata,
-        external_components_availability):
-    """ Return the availability of a particular module. """
-
-    availability = module_availability.get(name)
-    if availability is None:
-        module = python_metadata[name]
-
-        availability = external_components_availability.get(module.xdep, 2)
-
-        # Modules can have circular dependencies so set this now to prevent
-        # infinite recursion.
-        module_availability[name] = availability
-
-        for dep in module.deps:
-            if dep.startswith('?'):
-                # The dependency is optional so its availability has no impact.
-                continue
-            elif dep.startswith('!'):
-                dep = dep[1:]
-
-            dep_availability = _get_a_modules_availability(dep,
-                    module_availability, python_metadata,
-                    external_components_availability)
-
-            if availability > dep_availability:
-                availability = dep_availability
-
-        for dep in module.hidden_deps:
-            if dep[0] in '?!':
-                dep = dep[1:]
-
-            dep_availability = _get_a_modules_availability(dep,
-                    module_availability, python_metadata,
-                    external_components_availability)
-
-            if availability > dep_availability:
-                availability = dep_availability
-
-        module_availability[name] = availability
-
-    return availability
 
 
 if __name__ == '__main__':
