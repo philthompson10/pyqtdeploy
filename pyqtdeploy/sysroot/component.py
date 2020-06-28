@@ -86,6 +86,7 @@ class ComponentBase(ABC):
 
         self.name = name
         self._sysroot = sysroot
+        self._modules = None
 
         # Configure the component.
         for option in self.get_options():
@@ -245,11 +246,15 @@ class ComponentBase(ABC):
                 component=self)
 
     def get_modules(self):
-        """ Return a map of Module instances, key by the name of the module, of
-        the modules provided by a particular version of the component.
+        """ Return a map of Module instances, keyed by the name of the module,
+        of the modules provided by a particular version of the component.
         """
 
-        modules = {}
+        # Return any cached value.
+        if self._modules is not None:
+            return self._modules
+
+        self._modules = {}
 
         for name, versions in self.provides.items():
             if not isinstance(versions, tuple):
@@ -257,10 +262,24 @@ class ComponentBase(ABC):
 
             for versioned_module in versions:
                 if versioned_module.min_version <= self.version <= versioned_module.max_version:
-                    modules[name] = versioned_module.module
+                    self._modules[name] = versioned_module.module
                     break
 
-        return modules
+        return self._modules
+
+    def get_modules_availability(self, component_availability):
+        """ Return a map of the availability of each module provided by the
+        component.  The key is the module name and the value is the
+        availability (a value between 0 and 2).
+        """
+
+        modules_availability = {}
+
+        for name in self.get_modules().keys():
+            self._get_a_modules_availability(name, modules_availability,
+                    component_availability)
+
+        return modules_availability
 
     def get_version_from_file(self, identifier, filename):
         """ Return the stripped line from a file containing an identifier
@@ -448,6 +467,51 @@ class ComponentBase(ABC):
         self.error(
                 "the '{0}' attribute is only supported for Apple targets".format(
                         attr_name))
+
+    def _get_a_modules_availability(self, name, modules_availability,
+            component_availability):
+        """ Return the availability of a particular module. """
+
+        availability = modules_availability.get(name)
+        if availability is None:
+            module = self._modules[name]
+
+            if module.xdep is None:
+                availability = 2
+            else:
+                availability = component_availability.get(module.xdep, 0)
+
+            # Modules can have circular dependencies so set this now to prevent
+            # infinite recursion.
+            modules_availability[name] = availability
+
+            for dep in module.deps:
+                if dep.startswith('?'):
+                    # The dependency is optional so its availability has no
+                    # impact.
+                    continue
+                elif dep.startswith('!'):
+                    dep = dep[1:]
+
+                dep_availability = self._get_a_modules_availability(dep,
+                        modules_availability, component_availability)
+
+                if availability > dep_availability:
+                    availability = dep_availability
+
+            for dep in module.hidden_deps:
+                if dep[0] in '?!':
+                    dep = dep[1:]
+
+                dep_availability = self._get_a_modules_availability(dep,
+                        modules_availability, component_availability)
+
+                if availability > dep_availability:
+                    availability = dep_availability
+
+            modules_availability[name] = availability
+
+        return availability
 
 
 class SourceComponent(ComponentBase):

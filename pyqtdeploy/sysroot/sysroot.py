@@ -72,7 +72,7 @@ class Sysroot:
         self._python_component = None
         self._qt_component = None
 
-        self._components = specification.create_components_for_target(target,
+        self.components = specification.create_components_for_target(target,
                 self)
 
     @staticmethod
@@ -109,7 +109,7 @@ class Sysroot:
         is required then raise an exception.
         """
 
-        for comp in self._components:
+        for comp in self.components:
             if comp.name == name:
                 return comp
 
@@ -189,10 +189,10 @@ class Sysroot:
         self.target.configure()
 
         if component_names:
-            components = self._components_from_names(component_names)
+            components = self.components_from_names(component_names)
             empty_sysroot = False
         else:
-            components = self._components
+            components = self.components
             empty_sysroot = True
 
         self.create_dir(self.sysroot_dir, empty=empty_sysroot)
@@ -231,7 +231,7 @@ class Sysroot:
         if component_names:
             components = self._components_from_names(component_names)
         else:
-            components = self._components
+            components = self.components
 
         assert self._message_handler is not None
         self._specification.show_options(components, self._message_handler)
@@ -254,7 +254,7 @@ class Sysroot:
         self.target.verify_as_target(self._message_handler)
 
         # Verify the components.
-        for component in self._components:
+        for component in self.components:
             self.progress(
                     "Verifying {0} v{1}...".format(component.name,
                             component.version))
@@ -287,7 +287,7 @@ class Sysroot:
         components = []
 
         for name in component_names:
-            for component in self._components:
+            for component in self.components:
                 if component.name == name:
                     components.append(component)
                     break

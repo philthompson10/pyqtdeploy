@@ -48,9 +48,7 @@ class PackagesPage(QSplitter):
         if self._project != value:
             self._project = value
 
-            self._project.python_target_version_changed.connect(
-                    self._update_page)
-
+            self._project.sysroot_loaded.connect(self._update_page)
             self._update_page()
 
     def __init__(self):
@@ -192,9 +190,9 @@ class StdlibEditor(ModulesEditor):
         project = self.page.project
         python = project.python_component
 
-        metadata = python.get_modules()
-        module_availability = python.get_module_availability(metadata,
-                project.external_components_availability)
+        modules = python.get_modules()
+        modules_availability = python.get_modules_availability(
+                project.component_availability)
 
         def add_module(name, module, parent):
             itm = QTreeWidgetItem(parent, name.split('.')[-1:])
@@ -202,7 +200,7 @@ class StdlibEditor(ModulesEditor):
             itm._name = name
 
             # Change the appearence of the item according to its availability.
-            availability = module_availability[name]
+            availability = modules_availability[name]
 
             if availability == 0:
                 itm.setDisabled(True)
@@ -216,11 +214,11 @@ class StdlibEditor(ModulesEditor):
                 for submodule_name in module.modules:
                     # We assume that a missing sub-module is because it is not
                     # in the current version rather than bad meta-data.
-                    submodule = metadata.get(submodule_name)
+                    submodule = modules.get(submodule_name)
                     if submodule is not None and not submodule.internal:
                         add_module(submodule_name, submodule, itm)
 
-        for name, module in metadata.items():
+        for name, module in modules.items():
             if not module.internal and '.' not in name:
                 add_module(name, module, self)
 
