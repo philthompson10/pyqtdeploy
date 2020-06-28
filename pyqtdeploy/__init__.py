@@ -35,4 +35,5 @@ from .version import PYQTDEPLOY_RELEASE
 
 
 # These are for component plugins.
+from .modules import ExtensionModule, PythonModule, VersionedModule
 from .sysroot import ComponentBase, ComponentOption, SourceComponent

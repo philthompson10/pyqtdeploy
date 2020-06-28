@@ -103,12 +103,17 @@ def load_xml(project, file_path):
         project.application_package = QrcPackage()
 
     # Any PyQt modules.
+    project.other_packages = []
+
     for pyqt_m in root.iterfind('PyQtModule'):
         name = pyqt_m.get('name', '')
         _assert(name != '', "Missing or empty 'PyQtModule.name' attribute.")
+
         project.other_packages.append('PyQt5.' + name)
 
     # Any standard library modules.
+    project.standard_library = []
+
     for stdlib_module_element in root.iterfind('StdlibModule'):
         name = stdlib_module_element.get('name')
         _assert(name is not None, "Missing 'StdlibModule.name' attribute.")

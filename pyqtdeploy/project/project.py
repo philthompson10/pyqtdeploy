@@ -177,7 +177,7 @@ class Project(QObject):
         """
 
         # Work out the dependencies.
-        metadata = self.python_component.metadata
+        metadata = self.python_component.get_modules()
         all_modules = {name: _DepState(module)
                 for name, module in metadata.items()}
 
@@ -326,7 +326,6 @@ class Project(QObject):
             for sysroot in sysroots:
                 if sysroot.get_component(name, required=False) is not None:
                     nr_sysroots += 1
-                    break
 
             if nr_sysroots == 0:
                 availability = 0

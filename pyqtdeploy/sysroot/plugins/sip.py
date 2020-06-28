@@ -26,7 +26,7 @@
 
 import os
 
-from ... import ComponentOption, SourceComponent
+from ... import ComponentOption, SourceComponent, VersionedModule
 
 
 class SIPComponent(SourceComponent):
@@ -76,6 +76,15 @@ class SIPComponent(SourceComponent):
         os.mkdir(build_module)
         os.chdir(build_module)
         self._install_module(archive)
+
+    @property
+    def provides(self):
+        """ The dict of VersionedModule objects provided by the component. """
+
+        return {
+            # TODO
+            self.module_name: VersionedModule(libs=self.module_name)
+        }
 
     def verify(self):
         """ Verify the component. """
