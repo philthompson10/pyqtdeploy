@@ -92,8 +92,7 @@ class Project(QObject):
         self._modified = False
         self._name = QFileInfo(name) if name != '' else None
 
-        self.component_availability = {}
-        self.python_component = None
+        self.sysroot_specification = None
 
         # Initialise the project data.
         self.application_name = ''
@@ -280,6 +279,13 @@ class Project(QObject):
 
         # Get the pathname of the project file.
         file_path = QDir.toNativeSeparators(self._name.canonicalFilePath())
+
+        self.sysroot_specification = SysrootSpecification(self.sysroot_toml,
+                file_path)
+
+        self.sysroot_loaded.emit()
+        # TODO
+        return
 
         # Unless a specific target was specified, create a non-verified sysroot
         # for each supported target architecture that define Python and Qt

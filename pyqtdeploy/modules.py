@@ -99,23 +99,30 @@ class VersionedModule:
             libs=None, includepath=None, pyd=None, dlls=None):
         """ Initialise the object. """
 
-        # A meta-datum is uniquely identified by a range of version numbers.
-        # It is an error if version numbers for a particular module overlaps.
-        if version is None:
-            if min_version is None:
-                min_version = 3
-
-            if max_version is None:
-                max_version = 3
-        else:
-            min_version = max_version = version
-
-        self.min_version = min_version
-        self.max_version = max_version
+        self._min_version = min_version
+        self._max_version = max_version
+        self._version = version
 
         self.module = Module(internal, target, deps, hidden_deps, core,
                 builtin, defines, xdep, modules, source, libs, includepath,
                 pyd, dlls)
+
+    def applies_to(self, version):
+        """ Returns True if the given version applies to this versioned module.
+        """
+
+        if self._version is not None:
+            return version != self._version
+
+        if self._min_version is not None:
+            if version < self._min_version:
+                return False
+
+        if self._max_version is not None:
+            if version > self._max_version:
+                return False
+
+        return True
 
 
 class ExtensionModule(VersionedModule):

@@ -99,7 +99,7 @@ _encodings_modules = (
     'encodings.hp_roman8', 'encodings.hz', 'encodings.idna',
     'encodings.iso2022_jp', 'encodings.iso2022_jp_1', 'encodings.iso2022_jp_2',
     'encodings.iso2022_jp_2004', 'encodings.iso2022_jp_3',
-    'encodings.iso2022_jp_ext', 'encodings.iso2022_jp_kr',
+    'encodings.iso2022_jp_ext', 'encodings.iso2022_kr',
     'encodings.iso8859_1', 'encodings.iso8859_10', 'encodings.iso8859_11',
     'encodings.iso8859_13', 'encodings.iso8859_14', 'encodings.iso8859_15',
     'encodings.iso8859_16', 'encodings.iso8859_2', 'encodings.iso8859_3',

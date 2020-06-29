@@ -109,6 +109,35 @@ class VersionNumber:
 
         return self.suffix >= other.suffix
 
+    def __gt__(self, other):
+        """ Return True if this version number is greater than another. """
+
+        other = self._resolve_other(other)
+        if other is None:
+            return NotImplemented
+
+        major, minor, patch, suffix = other
+
+        if self.major <= major:
+            return False
+
+        if minor is None:
+            return True
+
+        if self.minor <= minor:
+            return False
+
+        if patch is None:
+            return True
+
+        if self.patch <= patch:
+            return False
+
+        if suffix is None:
+            return True
+
+        return self.suffix > other.suffix
+
     def __le__(self, other):
         """ Return True if this version number is less than or equal to
         another.

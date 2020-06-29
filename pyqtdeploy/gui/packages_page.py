@@ -24,9 +24,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QSplitter, QTreeWidget, QTreeWidgetItem,
         QTreeWidgetItemIterator, QVBoxLayout, QWidget)
+
+from ..platforms import Architecture
+from ..sysroot import Sysroot
 
 
 class PackagesPage(QSplitter):
@@ -48,8 +51,11 @@ class PackagesPage(QSplitter):
         if self._project != value:
             self._project = value
 
-            self._project.sysroot_loaded.connect(self._update_page)
-            self._update_page()
+            self._stdlib_edit.clear()
+            self._others_edit.clear()
+
+            self._project.sysroot_loaded.connect(self._sysroot_loaded)
+            self._sysroot_loaded()
 
     def __init__(self):
         """ Initialise the page. """
@@ -62,12 +68,101 @@ class PackagesPage(QSplitter):
         self._stdlib_edit = StdlibEditor(self)
         self._others_edit = OthersEditor(self)
 
-    @pyqtSlot()
-    def _update_page(self):
-        """ Update the page using the current project. """
+    def _sysroot_loaded(self):
+        """ Invoked when a sysroot specification has been loaded. """
 
-        self._stdlib_edit.update()
-        self._others_edit.update()
+        project = self._project
+
+        # Create a non-verified sysroot for each target architecture and
+        # determine the availability of each module.
+        module_items = {}
+        host = Architecture.architecture()
+
+        self._stdlib_edit.blockSignals(True)
+        self._others_edit.blockSignals(True)
+
+        for target in Architecture.all_architectures:
+            sysroot = Sysroot(project.sysroot_specification, host, target)
+
+            for component in sysroot.components:
+                editor = (self._stdlib_edit if component.name == 'Python' else self._others_edit)
+
+                modules = component.get_modules()
+
+                for module_name, module in modules.items():
+                    # TODO: this doesn't work for components that provide
+                    # sub-packages (eg. PyQt5.sip).
+                    if module.internal or '.' in module_name:
+                        continue
+
+                    self._add_component_module_item(module_items, module_name,
+                            modules, editor)
+
+        # Ensure that any modules explcitly used by the project have an item
+        # even if they are not provided by the sysroot.
+        for module_name in project.standard_library:
+            self._add_project_module(module_items, module_name, stdlib=True)
+
+        for module_name in project.other_packages:
+            self._add_project_module(module_items, module_name, stdlib=False)
+
+        # Sort module items in each editor.
+        self._stdlib_edit.sortItems(0, Qt.AscendingOrder)
+        self._others_edit.sortItems(0, Qt.AscendingOrder)
+
+        self._stdlib_edit.blockSignals(False)
+        self._others_edit.blockSignals(False)
+
+        self._update_dependencies()
+
+    def _add_component_module_item(self, module_items, module_name, modules,
+            parent):
+        """ Add a module provided by a component. """
+
+        module = modules[module_name]
+
+        try:
+            module_item = module_items[module_name]
+        except KeyError:
+            module_item = ModuleItem(parent, module_name, module)
+            module_items[module_name] = module_item
+
+        module_item.target_count += 1
+
+        if module.modules is not None:
+            for submodule in module.modules:
+                self._add_component_module_item(module_items, submodule,
+                        modules, module_item)
+
+    def _add_project_module(self, module_items, module_name, stdlib,
+            checked=True):
+        """ Make sure a module is in the dict of all modules. """
+
+        # Make sure any parent module items exist.
+        if '.' in module_name:
+            parent_name = '.'.join(module_name.split('.')[:-1])
+            parent = self._add_project_module(module_items, parent_name,
+                    stdlib, checked=False)
+            parent.setExpanded(True)
+        else:
+            parent = (self._stdlib_edit if stdlib else self._others_edit)
+
+        try:
+            module_item = module_items[module_name]
+        except KeyError:
+            module_item = ModuleItem(parent, module_name)
+            module_items[module_name] = module_item
+
+        if checked:
+            module_item.setCheckState(0, Qt.Checked)
+
+        return module_item
+
+    def _update_dependencies(self):
+        """ Update the implicit state of each module. """
+
+        #self._stdlib_edit.update()
+        #self._others_edit.update()
 
 
 class ModulesEditor(QTreeWidget):
@@ -81,7 +176,7 @@ class ModulesEditor(QTreeWidget):
         super().__init__(whatsThis=whats_this)
 
         self.setHeaderLabels([title])
-        self.itemChanged.connect(self.module_changed)
+        #self.itemChanged.connect(self.module_changed)
 
         pane = QWidget()
         layout = QVBoxLayout()
@@ -261,3 +356,26 @@ class StdlibEditor(ModulesEditor):
             itm = it.value()
 
         self.blockSignals(blocked)
+
+
+class ModuleItem(QTreeWidgetItem):
+    """ An item in a QTreeWidget that encapsulates a public module. """
+
+    def __init__(self, parent, module_name, module=None):
+        """ Initialise the item. """
+
+        super().__init__(parent, module_name.split('.')[-1:])
+
+        self.setFlags(Qt.ItemIsEnabled|Qt.ItemIsUserCheckable)
+        self.setCheckState(0, Qt.Unchecked)
+
+        self.module = module
+        self.target_count = 0
+
+    def set_availability(self):
+        """ Set the availability of the module. """
+
+        if self.target_count == 0:
+            self.setBackground(0, Qt.red)
+        elif self.target_count != len(Architecture.all_architectures):
+            self.setBackground(0, Qt.darkYellow)
