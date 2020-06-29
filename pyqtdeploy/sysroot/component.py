@@ -261,7 +261,7 @@ class ComponentBase(ABC):
                 versions = (versions, )
 
             for versioned_module in versions:
-                if versioned_module.min_version <= self.version <= versioned_module.max_version:
+                if versioned_module.applies_to(self.version):
                     self._modules[name] = versioned_module.module
                     break
 
