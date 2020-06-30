@@ -25,6 +25,7 @@
 
 
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFontInfo, QGuiApplication
 from PyQt5.QtWidgets import (QCheckBox, QFileDialog, QGridLayout, QGroupBox,
         QLineEdit, QPlainTextEdit, QWidget)
 
@@ -119,13 +120,16 @@ class ApplicationPage(QWidget):
 
         layout.addLayout(options_layout, 0, 1)
 
+        # Extra space is needed before the application package editor.
+        layout.setRowMinimumHeight(1,
+                1.4 * QFontInfo(QGuiApplication.font()).pixelSize())
+
         self._package_edit = _ApplicationPackageEditor()
         self._package_edit.package_changed.connect(self._package_changed)
         package_edit_gb = QGroupBox(self._package_edit.title)
         package_edit_gb.setFlat(True)
         package_edit_gb.setLayout(self._package_edit)
-        layout.addWidget(package_edit_gb, 1, 0, 1, 2)
-        layout.setRowStretch(1, 1)
+        layout.addWidget(package_edit_gb, 2, 0, 1, 2)
 
         qmake = CollapsibleWidget("Additional qmake Configuration")
         self._qmake_edit = QPlainTextEdit(
@@ -134,7 +138,7 @@ class ApplicationPage(QWidget):
                         "<tt>qmake</tt>.",
                 textChanged=self._qmake_changed)
         qmake.setWidget(self._qmake_edit)
-        layout.addWidget(qmake, 2, 0, 1, 2)
+        layout.addWidget(qmake, 3, 0, 1, 2)
 
         self.setLayout(layout)
 
@@ -227,6 +231,8 @@ class _ApplicationPackageEditor(PackageEditor):
                         "directory and its contents. Check those directories "
                         "and files that should be included in the "
                         "application.")
+
+        self.setContentsMargins(0, 0, 0, 0)
 
         self._project = None
 
