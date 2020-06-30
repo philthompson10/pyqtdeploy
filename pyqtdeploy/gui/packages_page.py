@@ -25,14 +25,17 @@
 
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QSplitter, QTreeWidget, QTreeWidgetItem,
-        QTreeWidgetItemIterator, QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import (QSizePolicy, QSplitter, QTreeWidget,
+        QTreeWidgetItem, QTreeWidgetItemIterator, QVBoxLayout, QWidget)
 
 from ..platforms import Architecture
 from ..sysroot import Sysroot
 
+from .better_form import BetterForm
+from .filename_editor import FilenameEditor
 
-class PackagesPage(QSplitter):
+
+class PackagesPage(QWidget):
     """ The GUI for the packages page of a project. """
 
     # The page's label.
@@ -54,8 +57,11 @@ class PackagesPage(QSplitter):
             self._stdlib_edit.clear()
             self._others_edit.clear()
 
-            self._project.sysroot_loaded.connect(self._sysroot_loaded)
-            self._sysroot_loaded()
+            self._toml_edit.set_project(value)
+            self._dir_edit.set_project(value)
+
+            self._project.sysroot_loaded.connect(self._update_page)
+            self._update_page()
 
     def __init__(self):
         """ Initialise the page. """
@@ -65,13 +71,61 @@ class PackagesPage(QSplitter):
         self._project = None
 
         # Create the page's GUI.
+        layout = QVBoxLayout()
+
         self._stdlib_edit = StdlibEditor(self)
         self._others_edit = OthersEditor(self)
 
-    def _sysroot_loaded(self):
-        """ Invoked when a sysroot specification has been loaded. """
+        splitter = QSplitter()
+        splitter.setSizePolicy(
+                QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
+        splitter.addWidget(self._stdlib_edit)
+        splitter.addWidget(self._others_edit)
+        layout.addWidget(splitter)
+
+        form = BetterForm()
+
+        self._toml_edit = FilenameEditor("Sysroot specification file",
+                placeholderText="Specification file name",
+                whatsThis="The name of the sysroot specification file.",
+                textEdited=self._toml_changed)
+        form.addRow("Sysroot specification file", self._toml_edit)
+
+        self._dir_edit = FilenameEditor("Sysroot Directory",
+                placeholderText="Sysroot directory name",
+                whatsThis="The name of the sysroot directory.",
+                textEdited=self._dir_changed, directory=True)
+        form.addRow("Sysroot directory", self._dir_edit)
+
+        layout.addLayout(form)
+
+        self.setLayout(layout)
+
+    def _toml_changed(self, value):
+        """ Invoked when the user edits the specification file name. """
+
+        project = self.project
+
+        project.sysroot_toml = value
+        project.modified = True
+
+        project.load_sysroot()
+
+    def _dir_changed(self, value):
+        """ Invoked when the user edits the sysroot directory name. """
+
+        project = self.project
+
+        project.sysroot_dir = value
+        project.modified = True
+
+    def _update_page(self):
+        """ Update the page using the current project. """
 
         project = self._project
+
+        self._toml_edit.setText(project.sysroot_toml)
+        self._dir_edit.setText(project.sysroot_dir)
 
         # Create a non-verified sysroot for each target architecture and
         # determine the availability of each module.
@@ -85,18 +139,13 @@ class PackagesPage(QSplitter):
             sysroot = Sysroot(project.sysroot_specification, host, target)
 
             for component in sysroot.components:
-                editor = (self._stdlib_edit if component.name == 'Python' else self._others_edit)
+                stdlib = (component.name == 'Python')
 
                 modules = component.get_modules()
 
-                for module_name, module in modules.items():
-                    # TODO: this doesn't work for components that provide
-                    # sub-packages (eg. PyQt5.sip).
-                    if module.internal or '.' in module_name:
-                        continue
-
-                    self._add_component_module_item(module_items, module_name,
-                            modules, editor)
+                for module_name in modules.keys():
+                    self._add_component_module(module_items, module_name,
+                            modules, stdlib)
 
         # Ensure that any modules explcitly used by the project have an item
         # even if they are not provided by the sysroot.
@@ -115,24 +164,42 @@ class PackagesPage(QSplitter):
 
         self._update_dependencies()
 
-    def _add_component_module_item(self, module_items, module_name, modules,
-            parent):
+    def _add_component_module(self, module_items, module_name, modules,
+            stdlib):
         """ Add a module provided by a component. """
 
-        module = modules[module_name]
+        # TODO: is the modules attribute of a module (ie. the list of
+        # sub-modules) used any more?
+
+        # Make sure any parent module items exist.
+        if '.' in module_name:
+            parent_name = '.'.join(module_name.split('.')[:-1])
+            parent = self._add_component_module(module_items, parent_name,
+                    modules, stdlib)
+        else:
+            parent = (self._stdlib_edit if stdlib else self._others_edit)
+
+        module_item = self._add_module(parent, module_items, module_name,
+                module=modules.get(module_name))
+
+        module_item.target_count += 1
+
+        return module_item
+
+    def _add_module(self, parent, module_items, module_name, module=None):
+        """ Make sure a module appears in the dict of all modules. """
 
         try:
             module_item = module_items[module_name]
+
+            # Update the module if it is currently just a place holder.
+            if module_item.module is None:
+                module_item.module = module
         except KeyError:
             module_item = ModuleItem(parent, module_name, module)
             module_items[module_name] = module_item
 
-        module_item.target_count += 1
-
-        if module.modules is not None:
-            for submodule in module.modules:
-                self._add_component_module_item(module_items, submodule,
-                        modules, module_item)
+        return module_item
 
     def _add_project_module(self, module_items, module_name, stdlib,
             checked=True):
@@ -147,11 +214,7 @@ class PackagesPage(QSplitter):
         else:
             parent = (self._stdlib_edit if stdlib else self._others_edit)
 
-        try:
-            module_item = module_items[module_name]
-        except KeyError:
-            module_item = ModuleItem(parent, module_name)
-            module_items[module_name] = module_item
+        module_item = self._add_module(parent, module_items, module_name)
 
         if checked:
             module_item.setCheckState(0, Qt.Checked)
@@ -177,12 +240,6 @@ class ModulesEditor(QTreeWidget):
 
         self.setHeaderLabels([title])
         #self.itemChanged.connect(self.module_changed)
-
-        pane = QWidget()
-        layout = QVBoxLayout()
-        layout.addWidget(self)
-        pane.setLayout(layout)
-        page.addWidget(pane)
 
         self.page = page
 
@@ -361,7 +418,7 @@ class StdlibEditor(ModulesEditor):
 class ModuleItem(QTreeWidgetItem):
     """ An item in a QTreeWidget that encapsulates a public module. """
 
-    def __init__(self, parent, module_name, module=None):
+    def __init__(self, parent, module_name, module):
         """ Initialise the item. """
 
         super().__init__(parent, module_name.split('.')[-1:])

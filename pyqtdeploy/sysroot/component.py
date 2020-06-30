@@ -245,7 +245,7 @@ class ComponentBase(ABC):
         return self._sysroot.get_component(name, required=required,
                 component=self)
 
-    def get_modules(self):
+    def get_modules(self, include_internal=False):
         """ Return a map of Module instances, keyed by the name of the module,
         of the modules provided by a particular version of the component.
         """
@@ -262,7 +262,14 @@ class ComponentBase(ABC):
 
             for versioned_module in versions:
                 if versioned_module.applies_to(self.version):
-                    self._modules[name] = versioned_module.module
+                    module = versioned_module.module
+
+                    if module.internal and not include_internal:
+                        continue
+
+                    # TODO: ignore modules not for this target.
+
+                    self._modules[name] = module
                     break
 
         return self._modules
