@@ -38,7 +38,6 @@ from ..version import PYQTDEPLOY_RELEASE
 from .application_page import ApplicationPage
 from .exception_handlers import handle_user_exception
 from .packages_page import PackagesPage
-from .qmake_page import QMakePage
 
 
 class ProjectGUI(QMainWindow):
@@ -94,9 +93,6 @@ pyqtdeploy is a tool for deploying PyQt applications written using Python v3.5 o
 
         self._packages_page = PackagesPage()
         tabs.addTab(self._packages_page, self._packages_page.label)
-
-        qmake_page = QMakePage()
-        tabs.addTab(qmake_page, qmake_page.label)
 
         self.setCentralWidget(tabs)
 

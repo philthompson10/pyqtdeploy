@@ -26,9 +26,10 @@
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QCheckBox, QFileDialog, QGridLayout, QGroupBox,
-        QLineEdit, QWidget)
+        QLineEdit, QPlainTextEdit, QWidget)
 
 from .better_form import BetterForm
+from .collapsible_widget import CollapsibleWidget
 from .filename_editor import FilenameEditor
 from .package_editor import PackageEditor
 
@@ -121,9 +122,19 @@ class ApplicationPage(QWidget):
         self._package_edit = _ApplicationPackageEditor()
         self._package_edit.package_changed.connect(self._package_changed)
         package_edit_gb = QGroupBox(self._package_edit.title)
+        package_edit_gb.setFlat(True)
         package_edit_gb.setLayout(self._package_edit)
         layout.addWidget(package_edit_gb, 1, 0, 1, 2)
         layout.setRowStretch(1, 1)
+
+        qmake = CollapsibleWidget("Additional qmake Configuration")
+        self._qmake_edit = QPlainTextEdit(
+                whatsThis="Any text entered here will be appended to the "
+                        "generated <tt>.pro</tt> that will be processed by "
+                        "<tt>qmake</tt>.",
+                textChanged=self._qmake_changed)
+        qmake.setWidget(self._qmake_edit)
+        layout.addWidget(qmake, 2, 0, 1, 2)
 
         self.setLayout(layout)
 
@@ -147,6 +158,10 @@ class ApplicationPage(QWidget):
         self._bundle_edit.setCheckState(
                 Qt.Checked if project.application_is_bundle else Qt.Unchecked)
         self._bundle_edit.blockSignals(blocked)
+
+        blocked = self._qmake_edit.blockSignals(True)
+        self._qmake_edit.setPlainText(self._project.qmake_configuration)
+        self._qmake_edit.blockSignals(blocked)
 
     def _console_changed(self, state):
         """ Invoked when the user changes the console state. """
@@ -187,6 +202,12 @@ class ApplicationPage(QWidget):
     def _package_changed(self):
         """ Invoked when the user edits the application package. """
 
+        self.project.modified = True
+
+    def _qmake_changed(self):
+        """ Invoked when the user edits the qmake configuration. """
+
+        self.project.qmake_configuration = self._qmake_edit.toPlainText()
         self.project.modified = True
 
 
