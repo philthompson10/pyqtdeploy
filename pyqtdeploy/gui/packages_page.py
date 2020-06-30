@@ -25,6 +25,7 @@
 
 
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (QSizePolicy, QSplitter, QTreeWidget,
         QTreeWidgetItem, QTreeWidgetItemIterator, QVBoxLayout, QWidget)
 
@@ -69,12 +70,13 @@ class PackagesPage(QWidget):
         super().__init__()
 
         self._project = None
+        self._module_items = {}
 
         # Create the page's GUI.
         layout = QVBoxLayout()
 
-        self._stdlib_edit = StdlibEditor(self)
-        self._others_edit = OthersEditor(self)
+        self._stdlib_edit = StdlibEditor()
+        self._others_edit = OthersEditor()
 
         splitter = QSplitter()
         splitter.setSizePolicy(
@@ -129,7 +131,7 @@ class PackagesPage(QWidget):
 
         # Create a non-verified sysroot for each target architecture and
         # determine the availability of each module.
-        module_items = {}
+        self._module_items.clear()
         host = Architecture.architecture()
 
         self._stdlib_edit.blockSignals(True)
@@ -144,28 +146,31 @@ class PackagesPage(QWidget):
                 modules = component.get_modules()
 
                 for module_name in modules.keys():
-                    self._add_component_module(module_items, module_name,
-                            modules, stdlib)
+                    self._add_component_module(module_name, modules, stdlib)
 
         # Ensure that any modules explcitly used by the project have an item
         # even if they are not provided by the sysroot.
         for module_name in project.standard_library:
-            self._add_project_module(module_items, module_name, stdlib=True)
+            self._add_project_module(module_name, stdlib=True)
 
         for module_name in project.other_packages:
-            self._add_project_module(module_items, module_name, stdlib=False)
+            self._add_project_module(module_name, stdlib=False)
+
+        # Set the availability of each module.
+        for module_item in self._module_items.values():
+            module_item.set_availability()
 
         # Sort module items in each editor.
         self._stdlib_edit.sortItems(0, Qt.AscendingOrder)
         self._others_edit.sortItems(0, Qt.AscendingOrder)
 
+        # Update the dependencies.
+        self._update_dependencies()
+
         self._stdlib_edit.blockSignals(False)
         self._others_edit.blockSignals(False)
 
-        self._update_dependencies()
-
-    def _add_component_module(self, module_items, module_name, modules,
-            stdlib):
+    def _add_component_module(self, module_name, modules, stdlib):
         """ Add a module provided by a component. """
 
         # TODO: is the modules attribute of a module (ie. the list of
@@ -174,47 +179,45 @@ class PackagesPage(QWidget):
         # Make sure any parent module items exist.
         if '.' in module_name:
             parent_name = '.'.join(module_name.split('.')[:-1])
-            parent = self._add_component_module(module_items, parent_name,
-                    modules, stdlib)
+            parent = self._add_component_module(parent_name, modules, stdlib)
         else:
             parent = (self._stdlib_edit if stdlib else self._others_edit)
 
-        module_item = self._add_module(parent, module_items, module_name,
+        module_item = self._add_module(parent, module_name,
                 module=modules.get(module_name))
 
         module_item.target_count += 1
 
         return module_item
 
-    def _add_module(self, parent, module_items, module_name, module=None):
+    def _add_module(self, parent, module_name, module=None):
         """ Make sure a module appears in the dict of all modules. """
 
         try:
-            module_item = module_items[module_name]
+            module_item = self._module_items[module_name]
 
             # Update the module if it is currently just a place holder.
             if module_item.module is None:
                 module_item.module = module
         except KeyError:
             module_item = ModuleItem(parent, module_name, module)
-            module_items[module_name] = module_item
+            self._module_items[module_name] = module_item
 
         return module_item
 
-    def _add_project_module(self, module_items, module_name, stdlib,
-            checked=True):
+    def _add_project_module(self, module_name, stdlib, checked=True):
         """ Make sure a module is in the dict of all modules. """
 
         # Make sure any parent module items exist.
         if '.' in module_name:
             parent_name = '.'.join(module_name.split('.')[:-1])
-            parent = self._add_project_module(module_items, parent_name,
-                    stdlib, checked=False)
+            parent = self._add_project_module(parent_name, stdlib,
+                    checked=False)
             parent.setExpanded(True)
         else:
             parent = (self._stdlib_edit if stdlib else self._others_edit)
 
-        module_item = self._add_module(parent, module_items, module_name)
+        module_item = self._add_module(parent, module_name)
 
         if checked:
             module_item.setCheckState(0, Qt.Checked)
@@ -222,10 +225,47 @@ class PackagesPage(QWidget):
         return module_item
 
     def _update_dependencies(self):
-        """ Update the implicit state of each module. """
+        """ Update the inter-module dependencies. """
 
-        #self._stdlib_edit.update()
-        #self._others_edit.update()
+        # The first pass is to clear any implicit modules.
+        for module_item in self._module_items.values():
+            if module_item.checkState(0) == Qt.PartiallyChecked:
+                module_item.setCheckState(0, Qt.Unchecked)
+
+        # The second pass is to set the state of any implicit modules.
+        for module_item in self._module_items.values():
+            if module_item.module is not None and module_item.module.core:
+                self._set_implicit(module_item)
+            elif module_item.checkState(0) == Qt.Checked:
+                self._set_implicit(module_item.parent())
+                self._set_implicit_deps(module_item)
+            else:
+                module_item.setCheckState(0, Qt.Unchecked)
+
+    def _set_implicit(self, module_item):
+        """ Set a module's state (and that of all it's parents) to be partially
+        checked (unless it is already checked).
+        """
+
+        while module_item is not None:
+            if module_item.checkState(0) == Qt.Unchecked:
+                module_item.setCheckState(0, Qt.PartiallyChecked)
+
+            module_item = module_item.parent()
+
+    def _set_implicit_deps(self, module_item):
+        """ Set a module's state (and that of all it's dependents) to be
+        partially checked (unless it is already checked).
+        """
+
+        if module_item.module is None:
+            return
+
+        for dep in module_item.module.deps:
+            dep_module_item = self._module_items.get(dep)
+            if dep_module_item is not None and dep_module_item.checkState(0) == Qt.Unchecked:
+                self._set_implicit(dep_module_item)
+                self._set_implicit_deps(dep_module_item)
 
 
 class ModulesEditor(QTreeWidget):
@@ -233,7 +273,7 @@ class ModulesEditor(QTreeWidget):
     packages.
     """
 
-    def __init__(self, page, title, whats_this):
+    def __init__(self, title, whats_this):
         """ Initialise the editor. """
 
         super().__init__(whatsThis=whats_this)
@@ -241,27 +281,8 @@ class ModulesEditor(QTreeWidget):
         self.setHeaderLabels([title])
         #self.itemChanged.connect(self.module_changed)
 
-        self.page = page
-
     def module_changed(self, itm, col):
         """ Invoked when a module changes. """
-
-    def populate(self):
-        """ Populate the editor. """
-
-    def update(self):
-        """ Update the contents of the editor. """
-
-        blocked = self.blockSignals(True)
-        self.clear()
-
-        if self.page.project.python_component is None:
-            self.setEnabled(False)
-        else:
-            self.setEnabled(True)
-            self.populate()
-
-        self.blockSignals(blocked)
 
 
 class OthersEditor(ModulesEditor):
@@ -269,10 +290,10 @@ class OthersEditor(ModulesEditor):
     specified in the sysroot.
     """
 
-    def __init__(self, page):
+    def __init__(self):
         """ Initialise the editor. """
 
-        super().__init__(page, "Other Packages",
+        super().__init__("Other Packages",
                 "This shows the packages and modules that are "
                 "available in the sysroot. Check those packages and modules "
                 "that are explicitly imported by the application. A module "
@@ -282,19 +303,16 @@ class OthersEditor(ModulesEditor):
     def module_changed(self, itm, col):
         """ Invoked when a module changes. """
 
-    def populate(self):
-        """ Populate the editor. """
-
 
 class StdlibEditor(ModulesEditor):
     """ An editor for selecting a number of standard library modules and
     packages.
     """
 
-    def __init__(self, page):
+    def __init__(self):
         """ Initialise the editor. """
 
-        super().__init__(page, "Standard Library",
+        super().__init__("Standard Library",
                 "This shows the packages and modules in the target Python "
                 "version's standard library. Check those packages and modules "
                 "that are explicitly imported by the application. A module "
@@ -336,87 +354,15 @@ class StdlibEditor(ModulesEditor):
 
         project.modified = True
 
-    def populate(self):
-        """ Populate the editor. """
-
-        project = self.page.project
-        python = project.python_component
-
-        modules = python.get_modules()
-        modules_availability = python.get_modules_availability(
-                project.component_availability)
-
-        def add_module(name, module, parent):
-            itm = QTreeWidgetItem(parent, name.split('.')[-1:])
-            itm.setFlags(Qt.ItemIsEnabled|Qt.ItemIsUserCheckable)
-            itm._name = name
-
-            # Change the appearence of the item according to its availability.
-            availability = modules_availability[name]
-
-            if availability == 0:
-                itm.setDisabled(True)
-            elif availability == 1:
-                font = itm.font(0)
-                font.setItalic(True)
-                itm.setFont(0, font)
-
-            # Handle any sub-modules.
-            if module.modules is not None:
-                for submodule_name in module.modules:
-                    # We assume that a missing sub-module is because it is not
-                    # in the current version rather than bad meta-data.
-                    submodule = modules.get(submodule_name)
-                    if submodule is not None and not submodule.internal:
-                        add_module(submodule_name, submodule, itm)
-
-        for name, module in modules.items():
-            if not module.internal and '.' not in name:
-                add_module(name, module, self)
-
-        self.sortItems(0, Qt.AscendingOrder)
-
-        self._set_dependencies()
-
-    def _set_dependencies(self):
-        """ Set the dependency information. """
-
-        project = self.page.project
-
-        required_modules, _ = project.get_stdlib_requirements()
-
-        blocked = self.blockSignals(True)
-
-        it = QTreeWidgetItemIterator(self)
-        itm = it.value()
-        while itm is not None:
-            explicit = required_modules.get(itm._name)
-            expanded = False
-            if explicit is None:
-                state = Qt.Unchecked
-            elif explicit:
-                state = Qt.Checked
-                expanded = True
-            else:
-                state = Qt.PartiallyChecked
-
-            itm.setCheckState(0, state)
-
-            # Make sure every explicitly checked item is visible.
-            if expanded:
-                parent = itm.parent()
-                while parent is not None:
-                    parent.setExpanded(True)
-                    parent = parent.parent()
-
-            it += 1
-            itm = it.value()
-
-        self.blockSignals(blocked)
-
 
 class ModuleItem(QTreeWidgetItem):
     """ An item in a QTreeWidget that encapsulates a public module. """
+
+    # The colour to use for modules that aren't available for any target.
+    _NO_TARGETS = QColor('#f00000')
+
+    # The colour to use for modules that are only available for some targets.
+    _SOME_TARGETS = QColor('#f08000')
 
     def __init__(self, parent, module_name, module):
         """ Initialise the item. """
@@ -424,7 +370,6 @@ class ModuleItem(QTreeWidgetItem):
         super().__init__(parent, module_name.split('.')[-1:])
 
         self.setFlags(Qt.ItemIsEnabled|Qt.ItemIsUserCheckable)
-        self.setCheckState(0, Qt.Unchecked)
 
         self.module = module
         self.target_count = 0
@@ -433,6 +378,6 @@ class ModuleItem(QTreeWidgetItem):
         """ Set the availability of the module. """
 
         if self.target_count == 0:
-            self.setBackground(0, Qt.red)
+            self.setForeground(0, self._NO_TARGETS)
         elif self.target_count != len(Architecture.all_architectures):
-            self.setBackground(0, Qt.darkYellow)
+            self.setForeground(0, self._SOME_TARGETS)

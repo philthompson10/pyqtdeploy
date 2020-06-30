@@ -83,7 +83,8 @@ class SIPComponent(SourceComponent):
 
         return {
             # TODO
-            self.module_name: VersionedModule(libs=self.module_name)
+            self.module_name: VersionedModule(deps=('atexit', 'enum', 'gc'),
+                    libs=self.module_name)
         }
 
     def verify(self):

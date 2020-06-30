@@ -29,8 +29,7 @@ import toml
 
 from PyQt5.QtCore import QDir, QFileInfo, QObject, pyqtSignal
 
-from ..platforms import Architecture, Platform
-from ..sysroot import Sysroot, SysrootSpecification
+from ..sysroot import SysrootSpecification
 from ..user_exception import UserException
 
 from .project_parts import QrcDirectory, QrcFile, QrcPackage
@@ -167,87 +166,6 @@ class Project(QObject):
 
         return fi
 
-    def get_stdlib_requirements(self, include_hidden=False):
-        """ Return a 2-tuple of the required Python standard library modules
-        and the required external libraries.  The modules are a dict with the
-        module name as the key and a bool as the value.  The bool is True if
-        the module is explicitly required and False if it is implicitly
-        required.  The libraries are a set of well known library names.
-        """
-
-        # Work out the dependencies.
-        metadata = self.python_component.get_modules()
-        all_modules = {name: _DepState(module)
-                for name, module in metadata.items()}
-
-        visit = 0
-        for name in all_modules.keys():
-            self._set_dependency_state(all_modules, name, visit)
-            visit += 1
-
-        # Extract the required modules and libraries.
-        required_modules = {}
-        required_libraries = set()
-
-        for name, dep_state in all_modules.items():
-            if dep_state.explicit:
-                explicit = True
-            elif dep_state.implicit:
-                explicit = False
-            else:
-                continue
-
-            # Handle any hidden dependencies if required.
-            if include_hidden:
-                for hidden_dep in dep_state.module.hidden_deps:
-                    if hidden_dep not in required_modules:
-                        required_modules[hidden_dep] = False
-
-            required_modules[name] = explicit
-
-            if dep_state.module.xdep is not None:
-                required_libraries.add(dep_state.module.xdep)
-
-        return required_modules, required_libraries
-
-    def _set_dependency_state(self, all_modules, name, visit, is_dep=False):
-        """ Set a module's dependency state. """
-
-        dep_state = all_modules[name]
-
-        if dep_state.visit == visit:
-            return
-
-        dep_state.visit = visit
-
-        if dep_state.module.builtin:
-            # This will mean that the explicit and implicit states will remain
-            # None and so the module will be omitted from the list.
-            return
-
-        dep_state.explicit = (name in self.standard_library)
-
-        if dep_state.module.core or is_dep:
-            dep_state.implicit = True
-
-        for dep in dep_state.module.deps:
-            # If the first character of the module is '?' then it should be
-            # excluded if SSL support is disabled.  If the first character is
-            # '!' then it should be excluded if SSL support is enabled.
-            if dep[0] == '?':
-                if 'ssl' not in self.standard_library:
-                    continue
-
-                dep = dep[1:]
-            elif dep[0] == '!':
-                if 'ssl' in self.standard_library:
-                    continue
-
-                dep = dep[1:]
-
-            self._set_dependency_state(all_modules, dep, visit,
-                    (dep_state.explicit or dep_state.implicit))
-
     @classmethod
     def load(cls, file_name, target=None):
         """ Return a new project loaded from the given file.  Raise a
@@ -282,58 +200,6 @@ class Project(QObject):
 
         self.sysroot_specification = SysrootSpecification(self.sysroot_toml,
                 file_path)
-
-        self.sysroot_loaded.emit()
-        # TODO
-        return
-
-        # Unless a specific target was specified, create a non-verified sysroot
-        # for each supported target architecture that define Python and Qt
-        # components.
-        host = Architecture.architecture()
-        specification = SysrootSpecification(self.sysroot_toml, file_path)
-
-        self.python_component = None
-        sysroots = []
-        targets = Architecture.all_architectures if target is None else [target]
-
-        for target in targets:
-            sysroot = Sysroot(specification, host, target)
-
-            # Make sure the same version of Python and Qt is specified for each
-            # one.  For the moment ignore targets that don't specify Python and
-            # Qt components.
-            python = sysroot.get_component('Python', required=False)
-            if python is not None:
-                if self.python_component is None:
-                    self.python_component = python
-                elif self.python_component.version != python.version:
-                    raise UserException(
-                            "The sysroot specification file defines more than "
-                                    "one version of Python.")
-
-                if sysroot.get_component('Qt', required=False) is not None:
-                    sysroots.append(sysroot)
-
-        # Make sure at least one target specified Python and Qt components.
-        if len(sysroots) == 0:
-            raise UserException(
-                    "The sysroot specification file does not define 'Python' "
-                    "and 'Qt' components for any target architecture.")
-
-        # The availability is omitted if a component isn't available in any
-        # sysroot, 1 if it is available for at least one sysroot architecture
-        # and 2 if it is available for all sysroots.
-        component_count = {}
-
-        for sysroot in sysroots:
-            for component in sysroot.components:
-                component_count[component.name] = component_count.get(component.name, 0) + 1
-
-        self.component_availability = {}
-
-        for name, count in component_count.items():
-            self.component_availability[name] = 2 if count == len(sysroots) else 1
 
         self.sysroot_loaded.emit()
 
@@ -523,17 +389,3 @@ class Project(QObject):
             subcontainers.append(subcontainer)
 
         container['Content'] = subcontainers
-
-
-class _DepState:
-    """ Encapsulate the state information required when working out module
-    dependencies.
-    """
-
-    def __init__(self, module):
-        """ Initialise the object. """
-
-        self.module = module
-        self.explicit = False
-        self.implicit = False
-        self.visit = -1
