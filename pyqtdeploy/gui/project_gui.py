@@ -39,7 +39,6 @@ from .application_page import ApplicationPage
 from .exception_handlers import handle_user_exception
 from .packages_page import PackagesPage
 from .qmake_page import QMakePage
-from .sysroot_page import SysrootPage
 
 
 class ProjectGUI(QMainWindow):
@@ -95,9 +94,6 @@ pyqtdeploy is a tool for deploying PyQt applications written using Python v3.5 o
 
         self._packages_page = PackagesPage()
         tabs.addTab(self._packages_page, self._packages_page.label)
-
-        sysroot_page = SysrootPage()
-        tabs.addTab(sysroot_page, sysroot_page.label)
 
         qmake_page = QMakePage()
         tabs.addTab(qmake_page, qmake_page.label)
