@@ -83,7 +83,8 @@ class SIPComponent(SourceComponent):
 
         return {
             # TODO
-            self.module_name: VersionedModule(deps=('atexit', 'enum', 'gc'),
+            self.module_name: VersionedModule(
+                    deps=('Python:atexit', 'Python:enum', 'Python:gc'),
                     libs=self.module_name)
         }
 
