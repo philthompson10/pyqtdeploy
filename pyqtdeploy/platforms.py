@@ -213,7 +213,7 @@ class Architecture:
             if isinstance(targets, str):
                 # String targets can come from the project file (ie. the user)
                 # and so need to be validated.
-                if targets[0] == '!':
+                if targets.startswith('!'):
                     # Note that this assumes that the target is a platform
                     # rather than an architecture.  If this is incorrect then
                     # it is a bug in the meta-data somewhere.

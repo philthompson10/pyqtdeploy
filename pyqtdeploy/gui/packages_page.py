@@ -149,7 +149,7 @@ class PackagesPage(QWidget):
 
                 stdlib = (component.name == 'Python')
 
-                modules = component.get_modules()
+                modules = component.modules
 
                 for module_name in modules:
                     self._add_component_module(module_name, modules, stdlib)
@@ -182,6 +182,11 @@ class PackagesPage(QWidget):
         # TODO: is the modules attribute of a module (ie. the list of
         # sub-modules) used any more?
 
+        # Ignore internal modules.
+        module = modules.get(module_name)
+        if module is not None and module.internal:
+            return None
+
         # Make sure any parent module items exist.
         if '.' in module_name:
             parent_name = '.'.join(module_name.split('.')[:-1])
@@ -189,8 +194,7 @@ class PackagesPage(QWidget):
         else:
             parent = (self._stdlib_edit if stdlib else self._others_edit)
 
-        module_item = self._add_module(parent, module_name,
-                module=modules.get(module_name))
+        module_item = self._add_module(parent, module_name, module=module)
 
         module_item.target_count += 1
 
@@ -269,9 +273,6 @@ class PackagesPage(QWidget):
 
         for dep in module_item.module.deps:
             if dep.startswith('?'):
-                if not self._has_openssl:
-                    continue
-
                 dep = dep[1:]
             elif dep.startswith('!'):
                 if self._has_openssl:

@@ -245,30 +245,31 @@ class ComponentBase(ABC):
         return self._sysroot.get_component(name, required=required,
                 component=self)
 
-    def get_modules(self, include_internal=False):
-        """ Return a map of Module instances, keyed by the name of the module,
-        of the modules provided by this version of the component.
+    @property
+    def modules(self):
+        """ The map of Module instances, keyed by the name of the module, of
+        the modules provided by this version of the component.
         """
 
         if self._modules is not None:
             return self._modules
 
+        self._cn = "Unknown"
         self._modules = {}
         provides = self.provides
         openssl = self.get_component('OpenSSL', required=False)
         result_cache = {}
 
         for name in provides:
-            module = self._available_version(name, include_internal, provides,
-                    openssl, result_cache)
+            module = self._available_version(name, provides, openssl,
+                    result_cache)
 
             if module is not None:
                 self._modules[name] = module
 
         return self._modules
 
-    def _available_version(self, name, include_internal, provides, openssl,
-            result_cache):
+    def _available_version(self, name, provides, openssl, result_cache):
         """ Return the Module object for a module that is available for this
         version and target and available components or None if it is not
         available.
@@ -280,7 +281,10 @@ class ComponentBase(ABC):
         except KeyError:
             pass
 
-        # Try each version of the module.
+        ocn = self._cn
+        self._cn = name
+        # Try each version of the module.  Note that there may be multiples
+        # (target-specific) for the same version.
         versions = provides[name]
 
         if not isinstance(versions, tuple):
@@ -296,28 +300,22 @@ class ComponentBase(ABC):
                 # afterwards.
                 result_cache[name] = module
 
-                if not self._is_available(module, include_internal, provides, openssl, result_cache):
-                    module = None
-
-                break
+                if self._is_available(module, provides, openssl, result_cache):
+                    break
         else:
             module = None
 
         # Cache the result.
         result_cache[name] = module
 
+        self._cn = ocn
         return module
 
-    def _is_available(self, module, include_internal, provides, openssl,
-            result_cache):
+    def _is_available(self, module, provides, openssl, result_cache):
         """ Return True if a Module object for a module is available for this
         version and target and available components or None if it is not
         available.
         """
-
-        # Discard internal modules if we aren't interested in them.
-        if module.internal and not include_internal:
-            return False
 
         # Discard modules with missing external dependencies.
         if module.xdep is not None and self.get_component(module.xdep, required=False) == None:
@@ -344,14 +342,16 @@ class ComponentBase(ABC):
                 component_name, dep = dep.split(':', maxsplit=1)
                 component = self.get_component(component_name, required=False)
                 if component is None:
-                    dep_module = None
-                else:
-                    dep_module = component.get_modules(include_internal).get(dep)
+                    return False
+
+                dep_module = component.modules.get(dep)
             else:
-                dep_module = self._available_version(dep, include_internal,
-                        provides, openssl, result_cache)
+                dep_module = self._available_version(dep, provides, openssl,
+                        result_cache)
 
             if dep_module is None:
+                if self.target_arch_name == 'macos-64':
+                    print("Discarding", self._cn, dep)
                 return False
 
         return True

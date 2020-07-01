@@ -1655,21 +1655,23 @@ standard_library = {
         PythonModule(deps=('gettext', 'os', 'textwrap')),
 
     'os': (
-        PythonModule(version=(3, 5),
-                deps=('collections', 'copyreg', 'errno', 'io', 'nt',
-                        'ntpath', 'posix', 'posixpath', 'stat', 'subprocess',
-                        'warnings')),
-        PythonModule(version=(3, 6),
-                deps=('abc', 'collections', 'copyreg', 'errno', 'io', 'nt',
-                        'ntpath', 'posix', 'posixpath', 'stat', 'subprocess',
-                        'warnings')),
-        PythonModule(min_version=(3, 7), max_version=(3, 7, 6),
-                deps=('abc', 'collections', 'copyreg', 'io', 'nt', 'ntpath',
-                        'posix', 'posixpath', 'stat', 'subprocess',
-                        'warnings')),
-        PythonModule(min_version=(3, 7, 7),
-                deps=('abc', 'collections', '_collections_abc', 'copyreg',
-                        'io', 'nt', 'ntpath', 'posix', 'posixpath', 'stat',
+        PythonModule(version=(3, 5), target='!win',
+                deps=('_collections_abc', 'errno', 'io', 'posix', 'posixpath',
+                        'stat', 'subprocess', 'warnings')),
+        PythonModule(version=(3, 5), target='win',
+                deps=('_collections_abc', 'errno', 'io', 'nt', 'ntpath',
+                        'stat', 'subprocess', 'warnings')),
+        PythonModule(version=(3, 6), target='!win',
+                deps=('abc', '_collections_abc', 'errno', 'io', 'posix',
+                        'posixpath', 'stat', 'subprocess', 'warnings')),
+        PythonModule(version=(3, 6), target='win',
+                deps=('abc', '_collections_abc', 'errno', 'io', 'nt', 'ntpath',
+                        'stat', 'subprocess', 'warnings')),
+        PythonModule(version=(3, 7), target='!win',
+                deps=('abc', '_collections_abc', 'io', 'posix', 'posixpath',
+                        'stat', 'subprocess', 'warnings')),
+        PythonModule(version=(3, 7), target='win',
+                deps=('abc', '_collections_abc', 'io', 'nt', 'ntpath', 'stat',
                         'subprocess', 'warnings'))),
 
     'ossaudiodev':
@@ -1965,11 +1967,15 @@ standard_library = {
     'struct':
         PythonModule(deps='_struct'),
 
-    'subprocess':
-        PythonModule(
-                deps=('errno', 'gc', 'io', 'msvcrt', 'os', '_posixsubprocess',
-                        'select', 'selectors', 'signal', 'threading', 'time',
-                        'traceback', 'warnings', '_winapi')),
+    'subprocess': (
+        PythonModule(target='!win',
+                deps=('errno', 'gc', 'io', 'os', '_posixsubprocess', 'select',
+                        'selectors', 'signal', 'threading', 'time',
+                        'traceback', 'warnings')),
+        PythonModule(target='win',
+                deps=('errno', 'gc', 'io', 'msvcrt', 'os', 'signal',
+                        'threading', 'time', 'traceback', 'warnings',
+                        '_winapi'))),
 
     'sunau': (
         PythonModule(max_version=(3, 6), deps=('audioop', 'collections')),
