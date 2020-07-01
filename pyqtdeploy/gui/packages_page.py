@@ -71,6 +71,7 @@ class PackagesPage(QWidget):
 
         self._project = None
         self._module_items = {}
+        self._has_openssl = False
 
         # Create the page's GUI.
         layout = QVBoxLayout()
@@ -137,15 +138,20 @@ class PackagesPage(QWidget):
         self._stdlib_edit.blockSignals(True)
         self._others_edit.blockSignals(True)
 
+        self._has_openssl = False
+
         for target in Architecture.all_architectures:
             sysroot = Sysroot(project.sysroot_specification, host, target)
 
             for component in sysroot.components:
+                if component.name == 'OpenSSL':
+                    self._has_openssl = True
+
                 stdlib = (component.name == 'Python')
 
                 modules = component.get_modules()
 
-                for module_name in modules.keys():
+                for module_name in modules:
                     self._add_component_module(module_name, modules, stdlib)
 
         # Ensure that any modules explcitly used by the project have an item
@@ -262,6 +268,22 @@ class PackagesPage(QWidget):
             return
 
         for dep in module_item.module.deps:
+            if dep.startswith('?'):
+                if not self._has_openssl:
+                    continue
+
+                dep = dep[1:]
+            elif dep.startswith('!'):
+                if self._has_openssl:
+                    continue
+
+                dep = dep[1:]
+
+            # We have a global pool of all modules so the component doesn't
+            # matter.
+            if ':' in dep:
+                _, dep = dep.split(':', maxsplit=1)
+
             dep_module_item = self._module_items.get(dep)
             if dep_module_item is not None and dep_module_item.checkState(0) == Qt.Unchecked:
                 self._set_implicit(dep_module_item)

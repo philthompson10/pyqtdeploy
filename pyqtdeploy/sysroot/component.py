@@ -247,46 +247,114 @@ class ComponentBase(ABC):
 
     def get_modules(self, include_internal=False):
         """ Return a map of Module instances, keyed by the name of the module,
-        of the modules provided by a particular version of the component.
+        of the modules provided by this version of the component.
         """
 
-        # Return any cached value.
         if self._modules is not None:
             return self._modules
 
         self._modules = {}
+        provides = self.provides
+        openssl = self.get_component('OpenSSL', required=False)
+        result_cache = {}
 
-        for name, versions in self.provides.items():
-            if not isinstance(versions, tuple):
-                versions = (versions, )
+        for name in provides:
+            module = self._available_version(name, include_internal, provides,
+                    openssl, result_cache)
 
-            for versioned_module in versions:
-                if versioned_module.applies_to(self.version):
-                    module = versioned_module.module
-
-                    if module.internal and not include_internal:
-                        continue
-
-                    # TODO: ignore modules not for this target.
-
-                    self._modules[name] = module
-                    break
+            if module is not None:
+                self._modules[name] = module
 
         return self._modules
 
-    def get_modules_availability(self, component_availability):
-        """ Return a map of the availability of each module provided by the
-        component.  The key is the module name and the value is the
-        availability (a value between 0 and 2).
+    def _available_version(self, name, include_internal, provides, openssl,
+            result_cache):
+        """ Return the Module object for a module that is available for this
+        version and target and available components or None if it is not
+        available.
         """
 
-        modules_availability = {}
+        # See if we have already determined if the module is available.
+        try:
+            return result_cache[name]
+        except KeyError:
+            pass
 
-        for name in self.get_modules().keys():
-            self._get_a_modules_availability(name, modules_availability,
-                    component_availability)
+        # Try each version of the module.
+        versions = provides[name]
 
-        return modules_availability
+        if not isinstance(versions, tuple):
+            versions = (versions, )
+
+        for versioned_module in versions:
+            if versioned_module.applies_to(self.version):
+                module = versioned_module.module
+
+                # Circular dependencies are valid (and presumably dealt with in
+                # the module implementation) so we assume the module will be
+                # available (to prevent recursive calls) and update the result
+                # afterwards.
+                result_cache[name] = module
+
+                if not self._is_available(module, include_internal, provides, openssl, result_cache):
+                    module = None
+
+                break
+        else:
+            module = None
+
+        # Cache the result.
+        result_cache[name] = module
+
+        return module
+
+    def _is_available(self, module, include_internal, provides, openssl,
+            result_cache):
+        """ Return True if a Module object for a module is available for this
+        version and target and available components or None if it is not
+        available.
+        """
+
+        # Discard internal modules if we aren't interested in them.
+        if module.internal and not include_internal:
+            return False
+
+        # Discard modules with missing external dependencies.
+        if module.xdep is not None and self.get_component(module.xdep, required=False) == None:
+            return False
+
+        # Discard modules not applicable to the target architecture.
+        if module.target != '' and not self._sysroot.target.is_targeted(module.target):
+            return False
+
+        # Check any dependencies.
+        for dep in module.deps:
+            if dep.startswith('?'):
+                # The dependency is optional so its availability has no impact.
+                continue
+            elif dep.startswith('!'):
+                # This is only provided if OpenSSL is not available.
+                if openssl is not None:
+                    continue
+
+                dep = dep[1:]
+
+            # See if it is an inter-component dependency.
+            if ':' in dep:
+                component_name, dep = dep.split(':', maxsplit=1)
+                component = self.get_component(component_name, required=False)
+                if component is None:
+                    dep_module = None
+                else:
+                    dep_module = component.get_modules(include_internal).get(dep)
+            else:
+                dep_module = self._available_version(dep, include_internal,
+                        provides, openssl, result_cache)
+
+            if dep_module is None:
+                return False
+
+        return True
 
     def get_version_from_file(self, identifier, filename):
         """ Return the stripped line from a file containing an identifier
@@ -474,51 +542,6 @@ class ComponentBase(ABC):
         self.error(
                 "the '{0}' attribute is only supported for Apple targets".format(
                         attr_name))
-
-    def _get_a_modules_availability(self, name, modules_availability,
-            component_availability):
-        """ Return the availability of a particular module. """
-
-        availability = modules_availability.get(name)
-        if availability is None:
-            module = self._modules[name]
-
-            if module.xdep is None:
-                availability = 2
-            else:
-                availability = component_availability.get(module.xdep, 0)
-
-            # Modules can have circular dependencies so set this now to prevent
-            # infinite recursion.
-            modules_availability[name] = availability
-
-            for dep in module.deps:
-                if dep.startswith('?'):
-                    # The dependency is optional so its availability has no
-                    # impact.
-                    continue
-                elif dep.startswith('!'):
-                    dep = dep[1:]
-
-                dep_availability = self._get_a_modules_availability(dep,
-                        modules_availability, component_availability)
-
-                if availability > dep_availability:
-                    availability = dep_availability
-
-            for dep in module.hidden_deps:
-                if dep[0] in '?!':
-                    dep = dep[1:]
-
-                dep_availability = self._get_a_modules_availability(dep,
-                        modules_availability, component_availability)
-
-                if availability > dep_availability:
-                    availability = dep_availability
-
-            modules_availability[name] = availability
-
-        return availability
 
 
 class SourceComponent(ComponentBase):
