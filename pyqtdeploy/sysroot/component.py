@@ -317,6 +317,15 @@ class ComponentBase(ABC):
         available.
         """
 
+        # If it is a core module then assume it is available.  If it isn't
+        # (probably because it is target-specific) then assume that modules
+        # that depend on it always take mitigating action.  One such example is
+        # the 'pwd' module in the standard library.
+        # TODO: this only works as when the module is a dependency and not for
+        # the module's own entry.
+        if module.core:
+            return True
+
         # Discard modules with missing external dependencies.
         if module.xdep is not None and self.get_component(module.xdep, required=False) == None:
             return False
@@ -350,6 +359,9 @@ class ComponentBase(ABC):
                         result_cache)
 
             if dep_module is None:
+                #if self._cn == 'importlib.resources':
+                if self._cn == 'pathlib':
+                    print("Discarding:", dep, self.target_arch_name)
                 return False
 
         return True
