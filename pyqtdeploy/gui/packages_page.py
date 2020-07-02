@@ -152,7 +152,10 @@ class PackagesPage(QWidget):
                 modules = component.modules
 
                 for module_name in modules:
-                    self._add_component_module(module_name, modules, stdlib)
+                    module_item = self._get_module_item(module_name, modules,
+                            stdlib)
+                    if module_item is not None:
+                        module_item.target_count += 1
 
         # Ensure that any modules explcitly used by the project have an item
         # even if they are not provided by the sysroot.
@@ -176,8 +179,10 @@ class PackagesPage(QWidget):
         self._stdlib_edit.blockSignals(False)
         self._others_edit.blockSignals(False)
 
-    def _add_component_module(self, module_name, modules, stdlib):
-        """ Add a module provided by a component. """
+    def _get_module_item(self, module_name, modules, stdlib):
+        """ Return a ModuleItem object for a module or None if the module is
+        internal.
+        """
 
         # TODO: is the modules attribute of a module (ie. the list of
         # sub-modules) used any more?
@@ -190,15 +195,11 @@ class PackagesPage(QWidget):
         # Make sure any parent module items exist.
         if '.' in module_name:
             parent_name = '.'.join(module_name.split('.')[:-1])
-            parent = self._add_component_module(parent_name, modules, stdlib)
+            parent = self._get_module_item(parent_name, modules, stdlib)
         else:
             parent = (self._stdlib_edit if stdlib else self._others_edit)
 
-        module_item = self._add_module(parent, module_name, module=module)
-
-        module_item.target_count += 1
-
-        return module_item
+        return self._add_module(parent, module_name, module=module)
 
     def _add_module(self, parent, module_name, module=None):
         """ Make sure a module appears in the dict of all modules. """
