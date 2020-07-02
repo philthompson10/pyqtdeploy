@@ -350,8 +350,6 @@ class ComponentBase(ABC):
                         result_cache)
 
             if dep_module is None:
-                if self.target_arch_name == 'macos-64':
-                    print("Discarding", self._cn, dep)
                 return False
 
         return True
