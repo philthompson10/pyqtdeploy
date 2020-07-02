@@ -488,7 +488,7 @@ standard_library = {
                         'distutils.sysconfig', 'distutils.util', 'os')),
 
     'distutils.command.bdist_msi':
-        PythonModule(
+        PythonModule(target='win',
                 deps=('distutils.core', 'distutils.dir_util',
                         'distutils.errors', 'distutils.log',
                         'distutils.sysconfig', 'distutils.util',
@@ -502,7 +502,7 @@ standard_library = {
                         'subprocess')),
 
     'distutils.command.bdist_wininst':
-        PythonModule(
+        PythonModule(target='win',
                 deps=('distutils.core', 'distutils.dir_util',
                         'distutils.errors', 'distutils.log',
                         'distutils.sysconfig', 'distutils.util', 'msvcrt',
@@ -519,14 +519,20 @@ standard_library = {
                         'distutils.errors', 'distutils.log',
                         'distutils.sysconfig', 'os')),
 
-    'distutils.command.build_ext':
-        PythonModule(
+    'distutils.command.build_ext': (
+        PythonModule(target='!win',
+                deps=('concurrent.futures', 'contextlib',
+                        'distutils.ccompiler', 'distutils.core',
+                        'distutils.dep_util', 'distutils.errors',
+                        'distutils.extension', 'distutils.log',
+                        'distutils.sysconfig', 'distutils.util', 'os', 're')),
+        PythonModule(target='win',
                 deps=('concurrent.futures', 'contextlib',
                         'distutils.ccompiler', 'distutils.core',
                         'distutils.dep_util', 'distutils.errors',
                         'distutils.extension', 'distutils.log',
                         'distutils._msvccompiler', 'distutils.sysconfig',
-                        'distutils.util', 'os', 're')),
+                        'distutils.util', 'os', 're'))),
 
     'distutils.command.build_py':
         PythonModule(
@@ -682,7 +688,7 @@ standard_library = {
         PythonModule(),
 
     'distutils.msvccompiler':
-        PythonModule(
+        PythonModule(target='win',
                 deps=('distutils.ccompiler', 'distutils.errors',
                         'distutils.log', 'distutils.msvc9compiler', 'os',
                         'winreg')),
@@ -1276,10 +1282,11 @@ standard_library = {
     'getopt':
         PythonModule(deps=('gettext', 'os')),
 
-    'getpass':
-        PythonModule(
-                deps=('contextlib', 'io', 'msvcrt', 'os', 'pwd', 'termios',
-                        'warnings')),
+    'getpass': (
+        PythonModule(target='!win',
+                deps=('contextlib', 'io', 'os', 'pwd', 'termios', 'warnings')),
+        PythonModule(target='win',
+                deps=('contextlib', 'io', 'msvcrt', 'os', 'pwd', 'warnings'))),
 
     'gettext': (
         PythonModule(max_version=(3, 5, 2),
@@ -1559,8 +1566,10 @@ standard_library = {
     'math':
         ExtensionModule(source=('mathmodule.c', '_math.c'), libs='linux#-lm'),
 
-    'mimetypes':
-        PythonModule(deps=('os', 'posixpath', 'urllib.parse', 'winreg')),
+    'mimetypes': (
+        PythonModule(target='!win', deps=('os', 'posixpath', 'urllib.parse')),
+        PythonModule(target='win',
+                deps=('os', 'posixpath', 'urllib.parse', 'winreg'))),
 
     'mmap':
         CoreExtensionModule(),
@@ -1707,12 +1716,20 @@ standard_library = {
         ExtensionModule(source='parsermodule.c'),
 
     'pathlib': (
-        PythonModule(max_version=(3, 6),
+        PythonModule(max_version=(3, 6), target='!win',
+                deps=('collections', 'contextlib', 'errno', 'fnmatch',
+                        'functools', 'grp', 'io', 'ntpath', 'operator', 'os',
+                        'posixpath', 'pwd', 're', 'stat', 'urllib.parse')),
+        PythonModule(max_version=(3, 6), target='win',
                 deps=('collections', 'contextlib', 'errno', 'fnmatch',
                         'functools', 'grp', 'io', 'nt', 'ntpath', 'operator',
                         'os', 'posixpath', 'pwd', 're', 'stat',
                         'urllib.parse')),
-        PythonModule(min_version=(3, 7),
+        PythonModule(min_version=(3, 7), target='!win',
+                deps=('_collections_abc', 'errno', 'fnmatch', 'functools',
+                        'grp', 'io', 'ntpath', 'operator', 'os', 'posixpath',
+                        'pwd', 're', 'stat', 'urllib.parse')),
+        PythonModule(min_version=(3, 7), target='win',
                 deps=('_collections_abc', 'errno', 'fnmatch', 'functools',
                         'grp', 'io', 'nt', 'ntpath', 'operator', 'os',
                         'posixpath', 'pwd', 're', 'stat', 'urllib.parse'))),
@@ -1753,14 +1770,25 @@ standard_library = {
                         'marshal', 'os', 'types', 'warnings'))),
 
     'platform': (
-        PythonModule(version=(3, 5, 0),
+        PythonModule(version=(3, 5, 0), target='!win',
+                deps=('collections', 'os', 'plistlib', 're', 'socket',
+                        'struct', 'subprocess', 'warnings')),
+        PythonModule(version=(3, 5, 0), target='win',
                 deps=('collections', 'os', 'plistlib', 're', 'socket',
                         'struct', 'subprocess', 'warnings', 'winreg')),
         PythonModule(min_version=(3, 5, 1), max_version=(3, 5, 2),
+                target='!win',
+                deps=('collections', 'os', 'plistlib', 're', 'socket',
+                        'struct', 'subprocess', 'warnings', 'winreg')),
+        PythonModule(min_version=(3, 5, 1), max_version=(3, 5, 2),
+                target='win',
                 deps=('collections', 'ctypes', 'ctypes.wintypes', 'os',
                         'plistlib', 're', 'socket', 'struct', 'subprocess',
                         'warnings', 'winreg')),
-        PythonModule(min_version=(3, 5, 3),
+        PythonModule(min_version=(3, 5, 3), target='!win',
+                deps=('collections', 'os', 'plistlib', 're', 'socket',
+                        'struct', 'subprocess', 'warnings')),
+        PythonModule(min_version=(3, 5, 3), target='win',
                 deps=('collections', 'os', 'plistlib', 're', 'socket',
                         'struct', 'subprocess', 'warnings', 'winreg'))),
 
@@ -2166,31 +2194,75 @@ standard_library = {
                 deps=('urllib', 'collections', 're', 'unicodedata'))),
 
     'urllib.request': (
-        PythonModule(max_version=(3, 5, 1),
+        PythonModule(max_version=(3, 5, 1), target='linux',
+                deps=('urllib', 'base64', 'bisect', 'collections',
+                        'contextlib', 'email', 'email.utils', 'ftplib',
+                        'getpass', 'hashlib', 'http.client', 'http.cookiejar',
+                        'io', 'mimetypes', 'os', 'posixpath', 're', 'socket',
+                        '?ssl', 'tempfile', 'time', 'urllib.error',
+                        'urllib.parse', 'urllib.response', 'warnings')),
+        PythonModule(max_version=(3, 5, 1), target='macos',
                 deps=('urllib', 'base64', 'bisect', 'collections',
                         'contextlib', 'email', 'email.utils', 'fnmatch',
                         'ftplib', 'getpass', 'hashlib', 'http.client',
-                        'http.cookiejar', 'io', 'mimetypes', 'nturl2path',
-                        'os', 'posixpath', 're', '_scproxy', 'socket', '?ssl',
+                        'http.cookiejar', 'io', 'mimetypes', 'os', 'posixpath',
+                        're', '_scproxy', 'socket', '?ssl', 'tempfile', 'time',
+                        'urllib.error', 'urllib.parse', 'urllib.response',
+                        'warnings')),
+        PythonModule(max_version=(3, 5, 1), target='win',
+                deps=('urllib', 'base64', 'bisect', 'collections',
+                        'contextlib', 'email', 'email.utils', 'ftplib',
+                        'getpass', 'hashlib', 'http.client', 'http.cookiejar',
+                        'io', 'mimetypes', 'nturl2path', 'os', 'posixpath',
+                        're', 'socket', '?ssl', 'tempfile', 'time',
+                        'urllib.error', 'urllib.parse', 'urllib.response',
+                        'warnings', 'winreg')),
+        PythonModule(min_version=(3, 5, 2), max_version=(3, 6), target='linux',
+                deps=('urllib', 'base64', 'bisect', 'collections',
+                        'contextlib', 'email', 'email.utils', 'ftplib',
+                        'getpass', 'hashlib', 'http.client', 'http.cookiejar',
+                        'io', 'mimetypes', 'os', 'posixpath', 're', 'socket',
+                        '?ssl', 'string', 'tempfile', 'time', 'urllib.error',
+                        'urllib.parse', 'urllib.response', 'warnings')),
+        PythonModule(min_version=(3, 5, 2), max_version=(3, 6), target='macos',
+                deps=('urllib', 'base64', 'bisect', 'collections',
+                        'contextlib', 'email', 'email.utils', 'fnmatch',
+                        'ftplib', 'getpass', 'hashlib', 'http.client',
+                        'http.cookiejar', 'io', 'mimetypes', 'os', 'posixpath',
+                        're', '_scproxy', 'socket', '?ssl', 'string',
                         'tempfile', 'time', 'urllib.error', 'urllib.parse',
-                        'urllib.response', 'warnings', 'winreg')),
-        PythonModule(min_version=(3, 5, 2), max_version=(3, 6),
+                        'urllib.response', 'warnings')),
+        PythonModule(min_version=(3, 5, 2), max_version=(3, 6), target='win',
                 deps=('urllib', 'base64', 'bisect', 'collections',
-                        'contextlib', 'email', 'email.utils', 'fnmatch',
-                        'ftplib', 'getpass', 'hashlib', 'http.client',
-                        'http.cookiejar', 'io', 'mimetypes', 'nturl2path',
-                        'os', 'posixpath', 're', '_scproxy', 'socket', '?ssl',
-                        'string', 'tempfile', 'time', 'urllib.error',
-                        'urllib.parse', 'urllib.response', 'warnings',
-                        'winreg')),
-        PythonModule(min_version=(3, 7),
+                        'contextlib', 'email', 'email.utils', 'ftplib',
+                        'getpass', 'hashlib', 'http.client', 'http.cookiejar',
+                        'io', 'mimetypes', 'nturl2path', 'os', 'posixpath',
+                        're', 'socket', '?ssl', 'string', 'tempfile', 'time',
+                        'urllib.error', 'urllib.parse', 'urllib.response',
+                        'warnings', 'winreg')),
+        PythonModule(min_version=(3, 7), target='linux',
+                deps=('urllib', 'base64', 'bisect', 'contextlib', 'email',
+                        'email.utils', 'ftplib', 'getpass', 'hashlib',
+                        'http.client', 'http.cookiejar', 'io', 'mimetypes',
+                        'os', 'posixpath', 're', 'socket', '?ssl', 'string',
+                        'tempfile', 'time', 'urllib.error', 'urllib.parse',
+                        'urllib.response', 'warnings')),
+        PythonModule(min_version=(3, 7), target='macos',
                 deps=('urllib', 'base64', 'bisect', 'contextlib', 'email',
                         'email.utils', 'fnmatch', 'ftplib', 'getpass',
                         'hashlib', 'http.client', 'http.cookiejar', 'io',
-                        'mimetypes', 'nturl2path', 'os', 'posixpath', 're',
-                        '_scproxy', 'socket', '?ssl', 'string', 'tempfile',
-                        'time', 'urllib.error', 'urllib.parse',
-                        'urllib.response', 'warnings', 'winreg'))),
+                        'mimetypes', 'os', 'posixpath', 're', '_scproxy',
+                        'socket', '?ssl', 'string', 'tempfile', 'time',
+                        'urllib.error', 'urllib.parse', 'urllib.response',
+                        'warnings')),
+        PythonModule(min_version=(3, 7), target='win',
+                deps=('urllib', 'base64', 'bisect', 'contextlib', 'email',
+                        'email.utils', 'ftplib', 'getpass', 'hashlib',
+                        'http.client', 'http.cookiejar', 'io', 'mimetypes',
+                        'nturl2path', 'os', 'posixpath', 're', 'socket',
+                        '?ssl', 'string', 'tempfile', 'time', 'urllib.error',
+                        'urllib.parse', 'urllib.response', 'warnings',
+                        'winreg'))),
 
     'urllib.response': (
         PythonModule(version=(3, 5),
@@ -2923,32 +2995,35 @@ standard_library = {
                 pyd='_distutils_findvs.pyd'),
 
     'distutils.msvc9compiler':
-        PythonModule(
+        PythonModule(target='win',
                 deps=('distutils.ccompiler', 'distutils.errors',
                         'distutils.log', 'distutils.util', 'os', 're',
                         'subprocess', 'winreg')),
 
     'distutils._msvccompiler': (
-        PythonModule(max_version=(3, 6, 2),
+        PythonModule(max_version=(3, 6, 2), target='win',
                 deps=('distutils.ccompiler', 'distutils.errors',
                         'distutils.log', 'distutils.util', 'itertools', 'os',
                         'shutil', 'stat', 'subprocess', 'winreg')),
         PythonModule(min_version=(3, 6, 3), max_version=(3, 6, 4),
+                target='win',
                 deps=('distutils.ccompiler', 'distutils.errors',
                         'distutils.log', 'distutils.util', '_findvs', 'glob',
                         'itertools', 'os', 'shutil', 'stat', 'subprocess',
                         'threading', 'winreg')),
         PythonModule(min_version=(3, 6, 5), max_version=(3, 7, 1),
+                target='win',
                 deps=('distutils.ccompiler', 'distutils.errors',
                         '_distutils_findvs', 'distutils.log', 'distutils.util',
                         'glob', 'itertools', 'os', 'shutil', 'stat',
                         'subprocess', 'threading', 'winreg')),
         PythonModule(min_version=(3, 7, 2), max_version=(3, 7, 6),
+                target='win',
                 deps=('distutils.ccompiler', 'distutils.errors',
                         'distutils.log', 'distutils.util', 'glob', 'itertools',
                         'json', 'os', 'shutil', 'stat', 'subprocess',
                         'winreg')),
-        PythonModule(min_version=(3, 7, 7),
+        PythonModule(min_version=(3, 7, 7), target='win',
                 deps=('distutils.ccompiler', 'distutils.errors',
                         'distutils.log', 'distutils.util', 'itertools', 'json',
                         'os', 'shutil', 'stat', 'subprocess', 'winreg'))),
@@ -3320,10 +3395,14 @@ standard_library = {
         CoreExtensionModule(internal=True, target='win'),
 
     'ntpath': (
-        PythonModule(max_version=(3, 6), internal=True,
+        PythonModule(max_version=(3, 6), target='!win', internal=True,
+                deps=('genericpath', 'os', 'stat', 'string', 'warnings')),
+        PythonModule(max_version=(3, 6), target='win', internal=True,
                 deps=('genericpath', 'nt', 'os', 'stat', 'string',
                         'warnings')),
-        PythonModule(min_version=(3, 7), internal=True,
+        PythonModule(min_version=(3, 7), target='!win', internal=True,
+                deps=('genericpath', 'os', 'stat', 'string')),
+        PythonModule(min_version=(3, 7), target='win', internal=True,
                 deps=('genericpath', 'nt', 'os', 'stat', 'string'))),
 
     'nturl2path':
