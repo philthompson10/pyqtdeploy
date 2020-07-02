@@ -254,7 +254,6 @@ class ComponentBase(ABC):
         if self._modules is not None:
             return self._modules
 
-        self._cn = "Unknown"
         self._modules = {}
         provides = self.provides
         openssl = self.get_component('OpenSSL', required=False)
@@ -281,8 +280,6 @@ class ComponentBase(ABC):
         except KeyError:
             pass
 
-        ocn = self._cn
-        self._cn = name
         # Try each version of the module.  Note that there may be multiples
         # (target-specific) for the same version.
         versions = provides[name]
@@ -300,15 +297,16 @@ class ComponentBase(ABC):
                 # afterwards.
                 result_cache[name] = module
 
-                if self._is_available(module, provides, openssl, result_cache):
-                    break
+                if not self._is_available(module, provides, openssl, result_cache):
+                    module = None
+
+                break
         else:
             module = None
 
         # Cache the result.
         result_cache[name] = module
 
-        self._cn = ocn
         return module
 
     def _is_available(self, module, provides, openssl, result_cache):
@@ -316,15 +314,6 @@ class ComponentBase(ABC):
         version and target and available components or None if it is not
         available.
         """
-
-        # If it is a core module then assume it is available.  If it isn't
-        # (probably because it is target-specific) then assume that modules
-        # that depend on it always take mitigating action.  One such example is
-        # the 'pwd' module in the standard library.
-        # TODO: this only works as when the module is a dependency and not for
-        # the module's own entry.
-        if module.core:
-            return True
 
         # Discard modules with missing external dependencies.
         if module.xdep is not None and self.get_component(module.xdep, required=False) == None:
@@ -346,6 +335,13 @@ class ComponentBase(ABC):
 
                 dep = dep[1:]
 
+            # Ignore it if it isn't a dependency for this target.
+            if '#' in dep:
+                target, dep = dep.split('#', maxsplit=1)
+
+                if not self._sysroot.target.is_targeted(target):
+                    continue
+
             # See if it is an inter-component dependency.
             if ':' in dep:
                 component_name, dep = dep.split(':', maxsplit=1)
@@ -359,9 +355,6 @@ class ComponentBase(ABC):
                         result_cache)
 
             if dep_module is None:
-                #if self._cn == 'importlib.resources':
-                if self._cn == 'pathlib':
-                    print("Discarding:", dep, self.target_arch_name)
                 return False
 
         return True
