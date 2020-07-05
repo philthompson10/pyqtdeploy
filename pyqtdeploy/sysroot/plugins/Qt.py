@@ -107,7 +107,7 @@ class QtComponent(SourceComponent):
             self.error("Qt v5.12 or later is required")
 
         if self.version >= (5, 13):
-            self.warning("Qt v5.13 and later is untested")
+            self.untested()
 
         # If we are linking against OpenSSL then get its version number.
         if self.ssl == 'openssl-linked':

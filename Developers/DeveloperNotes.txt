@@ -16,17 +16,18 @@ Run the ``diff-py-version.py`` script for the new version of Python::
 This will generate a number of standard diffs in the current directory.
 
 
-python_metadata.py
-------------------
+python.py
+---------
 
-Add the new Python version to the appropriate supported branch.
+Add the new Python release to the appropriate minor version (the LATEST_*
+attributes).
 
 
-Modules
--------
+standard_library.py
+-------------------
 
 Check the ``Lib`` diff for any new or removed ``import`` statements and update
-the Python standard library meta-data accordingly.
+the standard library meta-data accordingly.
 
 
 pyconfig.h
@@ -73,14 +74,13 @@ Check the ``Makefile`` diff:
 _bootstrap.py
 -------------
 
-For Python v3, check the ``Lib/importlib/_bootstrap.py`` diff.  If there are
-any differences then copy it to the builder with a version dependent name.
+Check the ``Lib/importlib/_bootstrap.py`` diff.  If there are any differences
+then copy it to the builder with a version dependent name.
 
 
 _bootstrap_external.py
 ----------------------
 
-For Python v3, check the ``Lib/importlib/_bootstrap_external.py`` diff.  If
-there are any differences then copy it to the builder with a version dependent
-name.  Update the copy with the pyqtdeploy additions (normally just appended to
-the file).
+Check the ``Lib/importlib/_bootstrap_external.py`` diff.  If there are any
+differences then copy it to the builder with a version dependent name.  Update
+the copy with the pyqtdeploy additions (normally just appended to the file).

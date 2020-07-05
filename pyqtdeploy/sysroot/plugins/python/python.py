@@ -34,6 +34,12 @@ from .pyconfig import generate_pyconfig_h
 from .standard_library import standard_library
 
 
+# The latest tested patch releases of each minor version.
+LATEST_3_5_RELEASE = (3, 5, 9)
+LATEST_3_6_RELEASE = (3, 6, 11)
+LATEST_3_7_RELEASE = (3, 7, 8)
+
+
 class PythonComponent(SourceComponent):
     """ The host and target Python component. """
 
@@ -102,7 +108,16 @@ class PythonComponent(SourceComponent):
         if self.version < (3, 5):
             self.error("versions earlier than v3.5 are not supported")
 
-        if self.version >= (3, 8):
+        if self.version == (3, 5):
+            if self.version > LATEST_3_5_RELEASE:
+                self.untested()
+        elif self.version == (3, 6):
+            if self.version > LATEST_3_6_RELEASE:
+                self.untested()
+        elif self.version == (3, 7):
+            if self.version > LATEST_3_7_RELEASE:
+                self.untested()
+        else:
             self.error("v{0} is not yet supported".format(self.version))
 
         if self.install_host_from_source:
