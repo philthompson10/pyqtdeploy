@@ -42,28 +42,6 @@ class PackagesPage(QWidget):
     # The page's label.
     label = "Packages"
 
-    @property
-    def project(self):
-        """ The project property getter. """
-
-        return self._project
-
-    @project.setter
-    def project(self, value):
-        """ The project property setter. """
-
-        if self._project != value:
-            self._project = value
-
-            self._stdlib_edit.clear()
-            self._others_edit.clear()
-
-            self._toml_edit.set_project(value)
-            self._dir_edit.set_project(value)
-
-            self._project.sysroot_loaded.connect(self._update_page)
-            self._update_page()
-
     def __init__(self):
         """ Initialise the page. """
 
@@ -76,8 +54,8 @@ class PackagesPage(QWidget):
         # Create the page's GUI.
         layout = QVBoxLayout()
 
-        self._stdlib_edit = StdlibEditor()
-        self._others_edit = OthersEditor()
+        self._stdlib_edit = StdlibEditor(self)
+        self._others_edit = OthersEditor(self)
 
         splitter = QSplitter()
         splitter.setSizePolicy(
@@ -104,102 +82,49 @@ class PackagesPage(QWidget):
 
         self.setLayout(layout)
 
-    def _toml_changed(self, value):
-        """ Invoked when the user edits the specification file name. """
+    @property
+    def project(self):
+        """ The project property getter. """
 
-        project = self.project
+        return self._project
 
-        project.sysroot_toml = value
-        project.modified = True
+    @project.setter
+    def project(self, value):
+        """ The project property setter. """
 
-        project.load_sysroot()
+        if self._project != value:
+            self._project = value
 
-    def _dir_changed(self, value):
-        """ Invoked when the user edits the sysroot directory name. """
+            self._stdlib_edit.clear()
+            self._others_edit.clear()
 
-        project = self.project
+            self._toml_edit.set_project(value)
+            self._dir_edit.set_project(value)
 
-        project.sysroot_dir = value
-        project.modified = True
+            self._project.sysroot_loaded.connect(self._update_page)
+            self._update_page()
 
-    def _update_page(self):
-        """ Update the page using the current project. """
+    def update_dependencies(self):
+        """ Update the inter-module dependencies. """
 
-        project = self._project
+        stdlib_blocked = self._stdlib_edit.blockSignals(True)
+        others_blocked = self._others_edit.blockSignals(True)
 
-        self._toml_edit.setText(project.sysroot_toml)
-        self._dir_edit.setText(project.sysroot_dir)
-
-        # Create a non-verified sysroot for each target architecture and
-        # determine the availability of each module.
-        self._module_items.clear()
-        host = Architecture.architecture()
-
-        self._stdlib_edit.blockSignals(True)
-        self._others_edit.blockSignals(True)
-
-        self._has_openssl = False
-
-        for target in Architecture.all_architectures:
-            sysroot = Sysroot(project.sysroot_specification, host, target)
-
-            for component in sysroot.components:
-                if component.name == 'OpenSSL':
-                    self._has_openssl = True
-
-                stdlib = (component.name == 'Python')
-
-                modules = component.modules
-
-                for module_name in modules:
-                    module_item = self._get_module_item(module_name, modules,
-                            stdlib)
-                    if module_item is not None:
-                        module_item.target_count += 1
-
-        # Ensure that any modules explcitly used by the project have an item
-        # even if they are not provided by the sysroot.
-        for module_name in project.standard_library:
-            self._add_project_module(module_name, stdlib=True)
-
-        for module_name in project.other_packages:
-            self._add_project_module(module_name, stdlib=False)
-
-        # Set the availability of each module.
+        # The first pass is to clear any implicit modules.
         for module_item in self._module_items.values():
-            module_item.set_availability()
+            if module_item.checkState(0) == Qt.PartiallyChecked:
+                module_item.setCheckState(0, Qt.Unchecked)
 
-        # Sort module items in each editor.
-        self._stdlib_edit.sortItems(0, Qt.AscendingOrder)
-        self._others_edit.sortItems(0, Qt.AscendingOrder)
+        # The second pass is to set the state of any implicit modules.
+        for module_item in self._module_items.values():
+            if module_item.checkState(0) == Qt.Checked:
+                self._set_implicit(module_item.parent())
+                self._set_implicit_deps(module_item)
+            elif module_item.module is not None and module_item.module.core:
+                self._set_implicit(module_item)
 
-        # Update the dependencies.
-        self._update_dependencies()
-
-        self._stdlib_edit.blockSignals(False)
-        self._others_edit.blockSignals(False)
-
-    def _get_module_item(self, module_name, modules, stdlib):
-        """ Return a ModuleItem object for a module or None if the module is
-        internal.
-        """
-
-        # TODO: is the modules attribute of a module (ie. the list of
-        # sub-modules) used any more?
-
-        # Ignore internal modules.
-        module = modules.get(module_name)
-        if module is not None and module.internal:
-            return None
-
-        # Make sure any parent module items exist.
-        if '.' in module_name:
-            parent_name = '.'.join(module_name.split('.')[:-1])
-            parent = self._get_module_item(parent_name, modules, stdlib)
-        else:
-            parent = (self._stdlib_edit if stdlib else self._others_edit)
-
-        return self._add_module(parent, module_name, module=module)
+        self._stdlib_edit.blockSignals(stdlib_blocked)
+        self._others_edit.blockSignals(others_blocked)
 
     def _add_module(self, parent, module_name, module=None):
         """ Make sure a module appears in the dict of all modules. """
@@ -235,23 +160,35 @@ class PackagesPage(QWidget):
 
         return module_item
 
-    def _update_dependencies(self):
-        """ Update the inter-module dependencies. """
+    def _dir_changed(self, value):
+        """ Invoked when the user edits the sysroot directory name. """
 
-        # The first pass is to clear any implicit modules.
-        for module_item in self._module_items.values():
-            if module_item.checkState(0) == Qt.PartiallyChecked:
-                module_item.setCheckState(0, Qt.Unchecked)
+        project = self.project
 
-        # The second pass is to set the state of any implicit modules.
-        for module_item in self._module_items.values():
-            if module_item.module is not None and module_item.module.core:
-                self._set_implicit(module_item)
-            elif module_item.checkState(0) == Qt.Checked:
-                self._set_implicit(module_item.parent())
-                self._set_implicit_deps(module_item)
-            else:
-                module_item.setCheckState(0, Qt.Unchecked)
+        project.sysroot_dir = value
+        project.modified = True
+
+    def _get_module_item(self, module_name, modules, stdlib):
+        """ Return a ModuleItem object for a module or None if the module is
+        internal.
+        """
+
+        # TODO: is the modules attribute of a module (ie. the list of
+        # sub-modules) used any more?
+
+        # Ignore internal modules.
+        module = modules.get(module_name)
+        if module is not None and module.internal:
+            return None
+
+        # Make sure any parent module items exist.
+        if '.' in module_name:
+            parent_name = '.'.join(module_name.split('.')[:-1])
+            parent = self._get_module_item(parent_name, modules, stdlib)
+        else:
+            parent = (self._stdlib_edit if stdlib else self._others_edit)
+
+        return self._add_module(parent, module_name, module=module)
 
     def _set_implicit(self, module_item):
         """ Set a module's state (and that of all it's parents) to be partially
@@ -291,22 +228,104 @@ class PackagesPage(QWidget):
                 self._set_implicit(dep_module_item)
                 self._set_implicit_deps(dep_module_item)
 
+    def _toml_changed(self, value):
+        """ Invoked when the user edits the specification file name. """
+
+        project = self.project
+
+        project.sysroot_toml = value
+        project.modified = True
+
+        project.load_sysroot()
+
+    def _update_page(self):
+        """ Update the page using the current project. """
+
+        project = self.project
+
+        self._toml_edit.setText(project.sysroot_toml)
+        self._dir_edit.setText(project.sysroot_dir)
+
+        # Create a non-verified sysroot for each target architecture and
+        # determine the availability of each module.
+        self._module_items.clear()
+        host = Architecture.architecture()
+
+        stdlib_blocked = self._stdlib_edit.blockSignals(True)
+        others_blocked = self._others_edit.blockSignals(True)
+
+        self._has_openssl = False
+
+        for target in Architecture.all_architectures:
+            sysroot = Sysroot(project.sysroot_specification, host, target)
+
+            for component in sysroot.components:
+                if component.name == 'OpenSSL':
+                    self._has_openssl = True
+
+                stdlib = (component.name == 'Python')
+
+                modules = component.modules
+
+                for module_name in modules:
+                    module_item = self._get_module_item(module_name, modules,
+                            stdlib)
+                    if module_item is not None:
+                        module_item.target_count += 1
+
+        # Ensure that any modules explcitly used by the project have an item
+        # even if they are not provided by the sysroot.
+        for module_name in project.standard_library:
+            self._add_project_module(module_name, stdlib=True)
+
+        for module_name in project.other_packages:
+            self._add_project_module(module_name, stdlib=False)
+
+        # Set the availability of each module.
+        for module_item in self._module_items.values():
+            module_item.set_availability()
+
+        # Sort module items in each editor.
+        self._stdlib_edit.sortItems(0, Qt.AscendingOrder)
+        self._others_edit.sortItems(0, Qt.AscendingOrder)
+
+        # Update the dependencies.
+        self.update_dependencies()
+
+        self._stdlib_edit.blockSignals(stdlib_blocked)
+        self._others_edit.blockSignals(others_blocked)
+
 
 class ModulesEditor(QTreeWidget):
     """ An editor for selecting a number of interdependent modules and
     packages.
     """
 
-    def __init__(self, title, whats_this):
+    def __init__(self, page, title, whats_this):
         """ Initialise the editor. """
 
-        super().__init__(whatsThis=whats_this)
+        super().__init__(whatsThis=whats_this,
+                itemChanged=self._module_changed)
+
+        self.page = page
 
         self.setHeaderLabels([title])
-        #self.itemChanged.connect(self.module_changed)
 
-    def module_changed(self, itm, col):
+    def _module_changed(self, itm, col):
         """ Invoked when a module changes. """
+
+        page = self.page
+
+        module_name = itm.module_name
+
+        if itm.checkState(col) == Qt.Checked:
+            self.add_module_name(module_name)
+        else:
+            self.remove_module_name(module_name)
+
+        page.update_dependencies()
+
+        page.project.modified = True
 
 
 class OthersEditor(ModulesEditor):
@@ -314,18 +333,25 @@ class OthersEditor(ModulesEditor):
     specified in the sysroot.
     """
 
-    def __init__(self):
+    def __init__(self, page):
         """ Initialise the editor. """
 
-        super().__init__("Other Packages",
+        super().__init__(page, "Other Packages",
                 "This shows the packages and modules that are "
                 "available in the sysroot. Check those packages and modules "
                 "that are explicitly imported by the application. A module "
                 "will be partially checked (and automatically included) if "
                 "another module requires it.")
 
-    def module_changed(self, itm, col):
-        """ Invoked when a module changes. """
+    def add_module_name(self, module_name):
+        """ Add the name of an external module to the project. """
+
+        self.page.project.other_packages.append(module_name)
+
+    def remove_module_name(self, module_name):
+        """ Remove the name of an external module from the project. """
+
+        self.page.project.other_packages.remove(module_name)
 
 
 class StdlibEditor(ModulesEditor):
@@ -333,50 +359,25 @@ class StdlibEditor(ModulesEditor):
     packages.
     """
 
-    def __init__(self):
+    def __init__(self, page):
         """ Initialise the editor. """
 
-        super().__init__("Standard Library",
+        super().__init__(page, "Standard Library",
                 "This shows the packages and modules in the target Python "
                 "version's standard library. Check those packages and modules "
                 "that are explicitly imported by the application. A module "
                 "will be partially checked (and automatically included) if "
                 "another module requires it.")
 
-    def module_changed(self, itm, col):
-        """ Invoked when a module changes. """
+    def add_module_name(self, module_name):
+        """ Add the name of a standard library module to the project. """
 
-        project = self.page.project
+        self.page.project.standard_library.append(module_name)
 
-        # Get all the names to add or remove.
-        names = []
+    def remove_module_name(self, module_name):
+        """ Remove the name of a standard library module from the project. """
 
-        def add_name(subitm):
-            names.append(subitm._name)
-
-            for i in range(subitm.childCount()):
-                add_name(subitm.child(i))
-
-        add_name(itm)
-
-        if itm.checkState(col) == Qt.Checked:
-            # Add the names if they aren't already present.
-            for name in names:
-                if name not in project.standard_library:
-                    project.standard_library.append(name)
-        else:
-            # Remove the names if they are present.
-            for name in names:
-                try:
-                    project.standard_library.remove(name)
-                except ValueError:
-                    pass
-
-            itm.setExpanded(False)
-
-        self._set_dependencies()
-
-        project.modified = True
+        self.page.project.standard_library.remove(module_name)
 
 
 class ModuleItem(QTreeWidgetItem):
@@ -394,8 +395,10 @@ class ModuleItem(QTreeWidgetItem):
         super().__init__(parent, module_name.split('.')[-1:])
 
         self.setFlags(Qt.ItemIsEnabled|Qt.ItemIsUserCheckable)
+        self.setCheckState(0, Qt.Unchecked)
 
         self.module = module
+        self.module_name = module_name
         self.target_count = 0
 
     def set_availability(self):
