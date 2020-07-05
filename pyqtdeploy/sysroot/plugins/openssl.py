@@ -33,12 +33,13 @@ from ... import ComponentOption, SourceComponent
 
 # OpenSSL currently has 3 relevent 'releases': v1.0.2, v1.1.0 and v1.1.1.
 #
-# Python v3.5 and v3.6 use v1.0.2, Python v3.7 uses v1.1.0 and Python v3.8 and
-# later use v1.1.1.  In addition Python v3.6.4 and earlier contain a patch for
-# OpenSSL for macOS which requires an exact version of OpenSSL to ensure the
-# patch doesn't fail.  Specifically, Python v3.5.0 and v3.5.1 requires OpenSSL
-# v1.0.2d, Python v3.5.2 requires OpenSSL v1.0.2f, Python v3.5.3 requires
-# OpenSSL v1.0.2j, and Python v3.5.4 to Python v3.6.4 require OpenSSL v1.0.2k.
+# Python v3.5 and v3.6 use v1.0.2, Python v3.7 uses v1.1.0 (and uses v1.1.1
+# from v3.7.4) and Python v3.8 and later use v1.1.1.  In addition Python v3.6.4
+# and earlier contain a patch for OpenSSL for macOS which requires an exact
+# version of OpenSSL to ensure the patch doesn't fail.  Specifically, Python
+# v3.5.0 and v3.5.1 requires OpenSSL v1.0.2d, Python v3.5.2 requires OpenSSL
+# v1.0.2f, Python v3.5.3 requires OpenSSL v1.0.2j, and Python v3.5.4 to Python
+# v3.6.4 require OpenSSL v1.0.2k.
 #
 # Qt v5.15 requires OpenSSL v1.1.1, earlier versions only require OpenSSL
 # v1.0.0.  The binary installers of Qt v5.12.4 and later are built against
@@ -95,8 +96,8 @@ class OpenSSLComponent(SourceComponent):
     def verify(self):
         """ Verify the component. """
 
-        # We only support v1.0.2 and v1.1.0.
-        if (1, 0, 2) > self.version >= (1, 1, 1):
+        # We only support v1.0.2 and later.
+        if (1, 0, 2) > self.version > (1, 1, 1):
             self.error("v{0} is not supported".format(self.version))
 
         # Make sure any installed version is the one specified.
@@ -155,17 +156,15 @@ class OpenSSLComponent(SourceComponent):
         if self.target_platform_name == self.host_platform_name:
             # We are building natively.
 
-            # TODO: add support for Linux.
-            if self.target_arch_name == 'macos-64':
+            if self.target_platform_name == 'win':
+                self._install_1_1_win(common_options)
+            else:
                 args = ['./config', 'no-shared']
                 args.extend(common_options)
 
                 self.run(*args)
                 self.run(self.host_make)
                 self.run(self.host_make, 'install')
-
-            elif self.target_platform_name == 'win':
-                self._install_1_1_win(common_options)
         else:
             # We are cross-compiling.
 

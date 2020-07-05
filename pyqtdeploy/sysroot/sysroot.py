@@ -189,7 +189,7 @@ class Sysroot:
         self.target.configure()
 
         if component_names:
-            components = self.components_from_names(component_names)
+            components = self._components_from_names(component_names)
             empty_sysroot = False
         else:
             components = self.components
