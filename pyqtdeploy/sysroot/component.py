@@ -512,6 +512,13 @@ class ComponentBase(ABC):
 
         return self._sysroot.target_sitepackages_dir
 
+    def untested(self):
+        """ Issue a warning message that the version of the component is
+        untested.
+        """
+
+        self.warning("v{0} is untested".format(self.version), component=self)
+
     def verify(self):
         """ Verify the component.  This will be called after the options have
         been parsed and the version number resolved.
