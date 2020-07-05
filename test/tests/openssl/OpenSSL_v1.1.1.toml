@@ -1,7 +1,7 @@
-# Build OpenSSL v1.1.0.  The versions of OpenSSL and Python must be compatible.
+# Build OpenSSL v1.1.1.  The versions of OpenSSL and Python must be compatible.
 
 [OpenSSL]
-version = "1.1.0h"
+version = "1.1.1g"
 
 
 [Python]

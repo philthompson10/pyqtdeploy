@@ -148,10 +148,15 @@ class PythonComponent(SourceComponent):
                 self._has_openssl = False
             else:
                 if self.version >= (3, 8):
-                    if openssl.version != (1, 1, 1):
+                    if openssl.version < (1, 1, 1):
                         self.error(
                                 "v{0} requires OpenSSL v1.1.1".format(
                                         self.version))
+                elif self.version >= (3, 7, 4):
+                    if (1, 1, 0) > openssl.version > (1, 1, 1):
+                        self.error(
+                                "v{0} requires OpenSSL v1.1.0 or "
+                                        "v1.1.1".format(self.version))
                 elif self.version == (3, 7):
                     if openssl.version != (1, 1, 0):
                         self.error(
