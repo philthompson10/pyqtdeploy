@@ -254,7 +254,7 @@ standard_library = {
 
     'codeop': (
         PythonModule(max_version=(3, 7, 7), deps='__future__'),
-        PythonModule(min_version=(3, 7, 8), deps='__future__', 'warnings')),
+        PythonModule(min_version=(3, 7, 8), deps=('__future__', 'warnings'))),
 
     'collections': (
         PythonModule(version=(3, 5, 0),
