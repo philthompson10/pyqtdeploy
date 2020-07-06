@@ -107,9 +107,14 @@ class ComponentBase(ABC):
                         "value of '{0}' has an unexpected type".format(
                                 option.name))
             elif option.values:
-                if value not in option.values:
-                    self.error(
-                            "'{0}' must have be one of these values: {1}".format(option.name, ','.join(option.values)))
+                values = value if isinstance(value, list) else [value]
+
+                for v in values:
+                    if v not in option.values:
+                        self.error(
+                                "'{0}' must have one of these values: {1} and "
+                                        "not '{2}'".format(option.name,
+                                                ', '.join(option.values), v))
 
             setattr(self, option.name, value)
 
@@ -244,6 +249,23 @@ class ComponentBase(ABC):
 
         return self._sysroot.get_component(name, required=required,
                 component=self)
+
+    def get_file(self, name):
+        """ Return the pathname of a file in one of the directories specified
+        by the --source-dir command line option.  None is return if it could
+        not be found.
+        """
+
+        for source_dir in self._sysroot.source_dirs:
+            self.verbose("Looking for '{0}' in {1}".format(name, source_dir))
+
+            pathname = os.path.join(source_dir, name)
+            if os.path.isfile(pathname):
+                self.verbose("Found '{0}' in {1}".format(name, source_dir))
+
+                return pathname
+
+        return None
 
     @property
     def modules(self):
@@ -494,12 +516,6 @@ class ComponentBase(ABC):
         return self._sysroot.target.platform.name
 
     @property
-    def target_src_dir(self):
-        """ The name of the directory containing target sources. """
-
-        return self._sysroot.target_src_dir
-
-    @property
     def target_py_include_dir(self):
         """ The name of the directory containing target Python header files.
         """
@@ -507,10 +523,29 @@ class ComponentBase(ABC):
         return self._sysroot.target_py_include_dir
 
     @property
+    def target_py_lib(self):
+        """ The name of the target Python library. """
+
+        return self._sysroot.target_py_lib
+
+    @property
     def target_sitepackages_dir(self):
         """ The name of the target Python site-packages directory. """
 
         return self._sysroot.target_sitepackages_dir
+
+    @property
+    def target_src_dir(self):
+        """ The name of the directory containing target sources. """
+
+        return self._sysroot.target_src_dir
+
+    def unsupported(self):
+        """ Issue an error message that the version of the component is
+        unsupported.
+        """
+
+        self.error("v{0} is unsupported".format(self.version), component=self)
 
     def untested(self):
         """ Issue a warning message that the version of the component is
@@ -528,6 +563,12 @@ class ComponentBase(ABC):
         """ Issue a verbose progress message. """
 
         self._sysroot.verbose(message, component=self)
+
+    @property
+    def verbose_enabled(self):
+        """ True if verbose messages are being displayed. """
+
+        return self._sysroot.verbose_enabled
 
     def verify_host_tools(self, tools):
         """ Verify that a sequence of host tools is available. """
@@ -559,6 +600,9 @@ class SourceComponent(ComponentBase):
     installed from a source package.
     """
 
+    # Set if installing from source is mandatory.
+    must_install_from_source = False
+
     def get_archive(self):
         """ Return the pathname of a local copy of a source archive.  The
         source directories specified by the --source-dir command line option
@@ -569,16 +613,9 @@ class SourceComponent(ComponentBase):
         archive_name = self.get_archive_name()
 
         # Search any source directories.
-        for source_dir in self._sysroot.source_dirs:
-            self.verbose(
-                    "Looking for '{0}' in {1}".format(archive_name,
-                            source_dir))
-
-            archive = os.path.join(source_dir, archive_name)
-            if os.path.isfile(archive):
-                self.verbose(
-                        "Found '{0}' in {1}".format(archive_name, source_dir))
-                return archive
+        archive = self.get_file(archive_name)
+        if archive is not None:
+            return archive
 
         # Search the download cache.
         cache_dir = os.path.join(os.path.expanduser('~'), '.pyqtdeploy',
@@ -633,12 +670,22 @@ class SourceComponent(ComponentBase):
 
         options = super().get_options()
 
-        options.append(
-                ComponentOption('install_from_source', type=bool, default=True,
-                        help="Install from a source package rather an "
-                                "existing installation."))
+        if not self.must_install_from_source:
+            options.append(
+                    ComponentOption('install_from_source', type=bool,
+                            default=True,
+                            help="Install from a source package rather an "
+                                    "existing installation."))
 
         return options
+
+    def get_pypi_urls(self, name):
+        """ Return a list of URLs (excluding the source archive name) where a
+        source archive may be downloaded from a PyPI project.
+        """
+
+        # TODO: scrape the project page.
+        return []
 
     def unpack_archive(self, archive, chdir=True):
         """ An archive is unpacked in the current directory.  If requested its

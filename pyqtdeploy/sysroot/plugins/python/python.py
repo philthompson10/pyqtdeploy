@@ -106,7 +106,7 @@ class PythonComponent(SourceComponent):
         """ Verify the component. """
 
         if self.version < (3, 5):
-            self.error("versions earlier than v3.5 are not supported")
+            self.unsupported()
 
         if self.version == (3, 5):
             if self.version > LATEST_3_5_RELEASE:
@@ -118,7 +118,7 @@ class PythonComponent(SourceComponent):
             if self.version > LATEST_3_7_RELEASE:
                 self.untested()
         else:
-            self.error("v{0} is not yet supported".format(self.version))
+            self.unsupported()
 
         if self.install_host_from_source:
             if self.host_platform_name == 'win':

@@ -2,7 +2,7 @@
 # source version.
 
 [Python]
-version = "3.6.10"
+version = "3.6.11"
 
 
 [Qt]
