@@ -66,8 +66,9 @@ class ComponentOption:
         return value
 
 
-class ComponentBase(ABC):
-    """ The base class for the implementation of a component plugin. """
+class AbstractComponent(ABC):
+    """ The abstract base class for the implementation of a component plugin.
+    """
 
     # The list of components that, if specified, should be installed before
     # this one.
@@ -595,7 +596,7 @@ class ComponentBase(ABC):
                         attr_name))
 
 
-class SourceComponent(ComponentBase):
+class Component(AbstractComponent):
     """ The base class for the implemenation of component plugins that can be
     installed from a source package.
     """

@@ -26,7 +26,7 @@
 
 import os
 
-from ... import ComponentOption, SourceComponent, VersionedModule
+from ... import Component, ComponentOption, VersionedModule
 
 
 # TODO
@@ -83,7 +83,7 @@ _ALL_MODULES = {
 }
 
 
-class PyQtComponent(SourceComponent):
+class PyQtComponent(Component):
     """ The PyQt component. """
 
     # The component must be installed from source.

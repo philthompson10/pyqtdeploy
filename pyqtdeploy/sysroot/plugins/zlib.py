@@ -26,10 +26,10 @@
 
 import os
 
-from ... import ComponentOption, SourceComponent
+from ... import Component, ComponentOption
 
 
-class zlibComponent(SourceComponent):
+class zlibComponent(Component):
     """ The zlib component. """
 
     def get_archive_name(self):
