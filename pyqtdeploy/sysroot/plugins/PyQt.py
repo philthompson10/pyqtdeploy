@@ -99,7 +99,7 @@ class PyQtComponent(SourceComponent):
         if self._license_file is not None:
             return 'PyQt5_commercial-{}.tar.gz'.format(self.version)
 
-        if self.version < (5, 14):
+        if self.version <= (5, 13, 1):
             return 'PyQt5_gpl-{}.tar.gz'.format(self.version)
 
         return 'PyQt5-{}.tar.gz'.format(self.version)
@@ -112,7 +112,7 @@ class PyQtComponent(SourceComponent):
         if self._license_file is not None:
             return super().get_archive_urls()
 
-        if self.version < (5, 14):
+        if self.version <= (5, 14):
             return ['https://www.riverbankcomputing.com/static/Downloads/PyQt5/{}/'.format(self.version)]
 
         return self.get_pypi_urls('PyQt5')
@@ -141,6 +141,9 @@ class PyQtComponent(SourceComponent):
 
     def install(self):
         """ Install for the target. """
+
+        # See if there is a license file.
+        self._license_file = self.get_file('pyqt-commercial.sip')
 
         # Unpack the source.
         self.unpack_archive(self.get_archive())
@@ -182,7 +185,7 @@ pyqt_modules = {6}
             '--no-qml-plugin', '--no-stubs', '--configuration', cfg_name,
             '--sip', sip.host_sip, '--confirm-license', '-c', '-j2']
 
-        if version_nr >= (5, 11):
+        if self.version >= (5, 11):
             args.append('--no-dist-info')
 
         if self.verbose_enabled:
@@ -233,9 +236,24 @@ pyqt_modules = {6}
         if self.version >= (5, 13):
             self.untested()
 
+        # Check the corresponding SIP version.
+        sip_version = self.get_component('SIP').version
+
+        if sip_version < (4, 19, 19):
+            if self.version >= (5, 13, 1):
+                self.error("SIP v4.19.19 or later is required")
+        elif sip_version < (4, 19, 20):
+            if self.version >= (5, 14):
+                self.error("SIP v4.19.20 or later is required")
+        elif sip_version < (4, 19, 23):
+            if self.version >= (5, 15):
+                self.error("SIP v4.19.23 or later is required")
+
+        if self.version >= (5, 13, 1) and sip_version < (4, 19, 19):
+            self.error("SIP v4.19.19 or later is required")
+        elif self.version >= (5, 15) and sip_version < (4, 19, 23):
+            self.error("SIP v4.19.23 or later is required")
+
         # This is needed by dependent components.
         if self.get_component('Qt', required=False) is None:
             self.disabled_features.append('PyQt_SSL')
-
-        # See if there is a license file.
-        self._license_file = self.find_file('pyqt-commercial.sip')
