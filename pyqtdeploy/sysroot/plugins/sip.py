@@ -103,8 +103,9 @@ class SIPComponent(SourceComponent):
     def verify(self):
         """ Verify the component. """
 
-        # v4.19.9-12 have too many problems so it's easier to blacklist them.
-        if (4, 19, 9) <= self.version <= (4, 19, 12):
+        # v4.19.14 is the minimum version required by the earliest supported
+        # version of PyQt.
+        if self.version < (4, 19, 14):
             self.unsupported()
 
         # v5 is not yet supported.
