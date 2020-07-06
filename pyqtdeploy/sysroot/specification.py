@@ -33,7 +33,7 @@ import toml
 from ..platforms import Architecture
 from ..user_exception import UserException
 
-from .component import ComponentBase
+from .component import AbstractComponent
 
 
 class SysrootSpecification:
@@ -173,7 +173,7 @@ class SysrootSpecification:
 
         for component_type in plugin_module.__dict__.values():
             if isinstance(component_type, type):
-                if issubclass(component_type, ComponentBase):
+                if issubclass(component_type, AbstractComponent):
                     # Make sure the type is defined in the plugin and not
                     # imported by it.  Allow for a plugin implemented as a
                     # sub-package.
@@ -211,7 +211,7 @@ class SysrootSpecification:
                         if widths[1] < name_len:
                             widths[1] = name_len
 
-                if cls is ComponentBase:
+                if cls is AbstractComponent:
                     break
 
             options[component.name] = component_options

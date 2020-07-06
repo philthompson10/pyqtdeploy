@@ -28,7 +28,7 @@ import os
 import shutil
 import sys
 
-from .... import ComponentOption, SourceComponent
+from .... import Component, ComponentOption
 
 from .pyconfig import generate_pyconfig_h
 from .standard_library import standard_library
@@ -40,7 +40,7 @@ LATEST_3_6_RELEASE = (3, 6, 11)
 LATEST_3_7_RELEASE = (3, 7, 8)
 
 
-class PythonComponent(SourceComponent):
+class PythonComponent(Component):
     """ The host and target Python component. """
 
     # The list of components that, if specified, should be installed before

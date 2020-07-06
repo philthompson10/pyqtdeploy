@@ -27,10 +27,10 @@
 import os
 import sys
 
-from ... import ComponentOption, SourceComponent
+from ... import Component, ComponentOption
 
 
-class QtComponent(SourceComponent):
+class QtComponent(Component):
     """ The Qt component. """
 
     # The list of components that, if specified, should be installed before

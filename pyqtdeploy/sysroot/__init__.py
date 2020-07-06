@@ -25,6 +25,6 @@
 
 
 # Publish the sub-package's API.
-from .component import ComponentBase, ComponentOption, SourceComponent
+from .component import Component, ComponentOption
 from .specification import SysrootSpecification
 from .sysroot import Sysroot

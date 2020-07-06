@@ -28,7 +28,7 @@ import glob
 import os
 import shutil
 
-from ... import ComponentOption, SourceComponent
+from ... import Component, ComponentOption
 
 
 # OpenSSL currently has 3 relevent 'releases': v1.0.2, v1.1.0 and v1.1.1.
@@ -46,7 +46,7 @@ from ... import ComponentOption, SourceComponent
 # OpenSSL v1.1.1.
 
 
-class OpenSSLComponent(SourceComponent):
+class OpenSSLComponent(Component):
     """ The OpenSSL component. """
 
     def get_archive_name(self):
