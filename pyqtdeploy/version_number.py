@@ -92,17 +92,26 @@ class VersionNumber:
         if self.major < major:
             return False
 
+        if self.major > major:
+            return True
+
         if minor is None:
             return True
 
         if self.minor < minor:
             return False
 
+        if self.minor > minor:
+            return True
+
         if patch is None:
             return True
 
         if self.patch < patch:
             return False
+
+        if self.patch > patch:
+            return True
 
         if suffix is None:
             return True
@@ -152,17 +161,26 @@ class VersionNumber:
         if self.major > major:
             return False
 
+        if self.major < major:
+            return True
+
         if minor is None:
             return True
 
         if self.minor > minor:
             return False
 
+        if self.minor < minor:
+            return True
+
         if patch is None:
             return True
 
         if self.patch > patch:
             return False
+
+        if self.patch < patch:
+            return True
 
         if suffix is None:
             return True
@@ -175,7 +193,6 @@ class VersionNumber:
         other = self._resolve_other(other)
         if other is None:
             return NotImplemented
-        print(self, other)
 
         major, minor, patch, suffix = other
 
