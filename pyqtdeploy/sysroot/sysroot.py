@@ -565,18 +565,6 @@ class Sysroot:
 
         return os.path.join(self.host_bin_dir, self.host_exe('pip'))
 
-    @property
-    def host_sip(self):
-        """ The name of the host sip executable. """
-
-        sip = os.path.join(self.host_bin_dir, self.host_exe('sip'))
-
-        if not os.path.exists(sip):
-            # TODO
-            self._missing_component('sip')
-
-        return sip
-
     def make_symlink(self, src, dst):
         """ Create a host-specific symbolic link. """
 
@@ -657,31 +645,6 @@ class Sysroot:
         return os.path.join(self.target_lib_dir, self._py_subdir)
 
     @property
-    def target_pyqt_platform(self):
-        """ The name of the target Python platform (as known by PyQt's
-        configure.py).
-        """
-
-        # Note that this is a bit of a hack because configure.py doesn't
-        # distinguish between Android and Linux or iOS and macOS.
-        py_platform = self.target_platform_name
-
-        if py_platform == 'android':
-            py_platform = 'linux'
-        elif py_platform in ('ios', 'macos'):
-            py_platform = 'darwin'
-        elif py_platform == 'win':
-            py_platform = 'win32'
-
-        return py_platform
-
-    @property
-    def target_sip_dir(self):
-        """ The name of the directory containing the target .sip files. """
-
-        return os.path.join(self.sysroot_dir, 'share', 'sip')
-
-    @property
     def target_sitepackages_dir(self):
         """ The name of the target Python site-packages directory. """
 
@@ -709,14 +672,6 @@ class Sysroot:
 
         assert self._message_handler is not None
         return self._message_handler.verbose
-
-    def verify_source(self, name):
-        """ Verify that a source file exists and return the VersionNumber
-        object corresponding to the version number embedded in its name.  See
-        find_file() for how the name is interpreted.
-        """
-
-        return self.extract_version(self.find_file(name))
 
     @property
     def _py_subdir(self):

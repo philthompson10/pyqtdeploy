@@ -2,7 +2,7 @@
 
 
 ###############################################################################
-# Copyright (c) 2018 Riverbank Computing Limited.
+# Copyright (c) 2020 Riverbank Computing Limited.
 ###############################################################################
 
 
@@ -13,7 +13,7 @@ from PyQt5.QtCore import PYQT_VERSION_STR, QT_VERSION_STR, QFile, QIODevice
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QApplication, QLabel, QTabWidget, QTreeView,
         QVBoxLayout, QWidget)
-from sip import SIP_VERSION_STR
+from PyQt5.sip import SIP_VERSION_STR
 
 try:
     from pdytools import hexversion as pdy_hexversion

@@ -98,7 +98,7 @@ class OpenSSLComponent(SourceComponent):
 
         # We only support v1.0.2 and later.
         if (1, 0, 2) > self.version > (1, 1, 1):
-            self.error("v{0} is not supported".format(self.version))
+            self.unsupported()
 
         # Make sure any installed version is the one specified.
         if not self.install_from_source:

@@ -61,6 +61,12 @@ class SIPComponent(SourceComponent):
 
         return options
 
+    @property
+    def host_sip(self):
+        """ The name of the host sip executable. """
+
+        return os.path.join(self.host_dir, 'bin', self.host_exe('sip'))
+
     def install(self):
         """ Install for the target. """
 
@@ -88,16 +94,22 @@ class SIPComponent(SourceComponent):
                     libs=self.module_name)
         }
 
+    @property
+    def target_sip_dir(self):
+        """ The name of the directory containing the target .sip files. """
+
+        return os.path.join(self.sysroot_dir, 'share', 'sip')
+
     def verify(self):
         """ Verify the component. """
 
         # v4.19.9-12 have too many problems so it's easier to blacklist them.
         if (4, 19, 9) <= self.version <= (4, 19, 12):
-            self.error("please use SIP v4.19.13 or later")
+            self.unsupported()
 
         # v5 is not yet supported.
         if self.version >= 5:
-            self.error("SIP v{0} is not yet supported".format(self.version))
+            self.unsupported()
 
     def _install_code_generator(self, archive):
         """ Install the code generator for the host. """

@@ -101,10 +101,10 @@ class QtComponent(SourceComponent):
 
         # Do some basic version checks.
         if self.version >= 6:
-            self.error("Qt v6 is not supported")
+            self.unsupported()
 
         if self.version < (5, 12):
-            self.error("Qt v5.12 or later is required")
+            self.unsupported()
 
         if self.version >= (5, 13):
             self.untested()
