@@ -27,15 +27,22 @@
 import os
 import sys
 
-from ... import Component, ComponentOption
+from ... import AbstractQtComponent, ComponentOption
 
 
-class QtComponent(Component):
+class QtComponent(AbstractQtComponent):
     """ The Qt component. """
 
     # The list of components that, if specified, should be installed before
     # this one.
     preinstalls = ['OpenSSL', 'zlib']
+
+    def __init__(self, *args, **kwargs):
+        """ Initialise the component. """
+
+        super().__init__(*args, **kwargs)
+
+        self._host_qmake = None
 
     def get_archive_name(self):
         """ Return the filename of the source archive. """
@@ -89,6 +96,21 @@ class QtComponent(Component):
                                 "linked."))
 
         return options
+
+    @property
+    def host_qmake(self):
+        """ The full pathname of the host qmake executable. """
+
+        if self._host_qmake is None:
+            self._host_qmake = self.find_exe('qmake')
+
+        return self._host_qmake
+
+    @host_qmake.setter
+    def host_qmake(self, value):
+        """ Set the full pathname of the host qmake executable. """
+
+        self._host_qmake = value
 
     def install(self):
         """ Install for the target. """

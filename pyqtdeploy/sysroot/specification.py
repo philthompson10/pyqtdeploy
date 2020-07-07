@@ -33,7 +33,16 @@ import toml
 from ..platforms import Architecture
 from ..user_exception import UserException
 
-from .component import AbstractComponent
+from .abstract_component import AbstractComponent
+from .abstract_qt_component import AbstractQtComponent
+from .abstract_sip_component import AbstractSIPComponent
+
+
+# Certain well known components must implement specific interfaces.
+_COMPONENT_TYPES = {
+    'Qt': AbstractQtComponent,
+    'SIP': AbstractSIPComponent,
+}
 
 
 class SysrootSpecification:
@@ -86,6 +95,13 @@ class SysrootSpecification:
                 else:
                     raise UserException(
                             "unable to find a plugin for '{0}'".format(name))
+
+            # Certain components must implement specific interfaces.
+            plugin_type = _COMPONENT_TYPES.get(name)
+            if plugin_type is not None and not issubclass(plugin, plugin_type):
+                raise UserException(
+                        "The {0} plugin must implement a subclass of "
+                                "{1}.".format(name, plugin_type.__name__))
 
             self._plugins[name] = plugin
 
@@ -199,20 +215,15 @@ class SysrootSpecification:
             # Allow sub-classes to override super-classes.
             component_options = OrderedDict()
 
-            for cls in type(component).__mro__:
-                for option in cls.__dict__.get('options', []):
-                    if option.name not in component_options:
-                        component_options[option.name] = option
+            for option in component.get_options():
+                component_options[option.name] = option
 
-                        name_len = len(option.name)
-                        if option.required:
-                            name_len == 1
+                name_len = len(option.name)
+                if option.required:
+                    name_len == 1
 
-                        if widths[1] < name_len:
-                            widths[1] = name_len
-
-                if cls is AbstractComponent:
-                    break
+                if widths[1] < name_len:
+                    widths[1] = name_len
 
             options[component.name] = component_options
 

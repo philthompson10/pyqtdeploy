@@ -24,11 +24,22 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-# Publish the sub-package's API.
-from .abstract_component import AbstractComponent
-from .abstract_qt_component import AbstractQtComponent
-from .abstract_sip_component import AbstractSIPComponent
+from abc import abstractmethod
+
 from .component import Component
-from .component_option import ComponentOption
-from .specification import SysrootSpecification
-from .sysroot import Sysroot
+
+
+class AbstractSIPComponent(Component):
+    """ The abstract base class for an implementation of a SIP component
+    plugin.
+    """
+
+    @property
+    @abstractmethod
+    def host_sip(self):
+        """ The name of the host sip executable. """
+
+    @property
+    @abstractmethod
+    def target_sip_dir(self):
+        """ The name of the directory containing the target .sip files. """

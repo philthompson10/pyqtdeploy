@@ -24,11 +24,34 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-# Publish the sub-package's API.
-from .abstract_component import AbstractComponent
-from .abstract_qt_component import AbstractQtComponent
-from .abstract_sip_component import AbstractSIPComponent
-from .component import Component
-from .component_option import ComponentOption
-from .specification import SysrootSpecification
-from .sysroot import Sysroot
+class ComponentOption:
+    """ Encapsulate an option for the component in the specification file. """
+
+    def __init__(self, name, type=str, required=False, default=None,
+            values=None, help=''):
+        """ Initialise the object. """
+
+        self.name = name
+        self.type = type
+        self.required = required
+        self.default = default
+        self.values = values
+        self.help = help if help else "None available."
+
+        if values:
+            self.help += " The possible values are: {0}.".format(
+                    ', '.join([self._format_value(v) for v in values]))
+
+        if default is not None:
+            self.help += " The default value is {0}.".format(
+                    self._format_value(default))
+
+    def _format_value(self, value):
+        """ Format a value according to the type of the option. """
+
+        value = str(value)
+
+        if self.type is not int:
+            value = "'" + value + "'"
+
+        return value

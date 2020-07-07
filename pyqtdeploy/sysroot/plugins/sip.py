@@ -26,10 +26,10 @@
 
 import os
 
-from ... import Component, ComponentOption, VersionedModule
+from ... import AbstractSIPComponent, ComponentOption, VersionedModule
 
 
-class SIPComponent(Component):
+class SIPComponent(AbstractSIPComponent):
     """ The SIP component. """
 
     # The list of components that, if specified, should be installed before
