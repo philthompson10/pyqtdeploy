@@ -66,7 +66,6 @@ class Sysroot:
         self.target = target
         self._message_handler = message_handler
         self._host_python = python
-        self._host_qmake = qmake
 
         self._building_for_target = True
         self._python_component = None
@@ -74,6 +73,12 @@ class Sysroot:
 
         self.components = specification.create_components_for_target(target,
                 self)
+
+        # Set any externally specified qmake.
+        if qmake is not None:
+            qt = self.get_component('Qt', required=False)
+            if qt is not None:
+                qt.host_qmake = qmake
 
     @staticmethod
     def error(message, detail='', exception=None, component=None):
@@ -149,23 +154,6 @@ class Sysroot:
         """ Set the name of the host Python executable. """
 
         self._host_python = self.host_exe(os.path.abspath(value)) if value else None
-
-    @property
-    def host_qmake(self):
-        """ The full pathname of the host qmake executable. """
-
-        if self._host_qmake is None:
-            # This will only be the case during the verification of an
-            # installed version of Qt.
-            self._host_qmake = self.find_exe('qmake')
-
-        return self._host_qmake
-
-    @host_qmake.setter
-    def host_qmake(self, value):
-        """ Set the name of the host qmake executable. """
-
-        self._host_qmake = self.host_exe(os.path.abspath(value)) if value else None
 
     def install_components(self, sysroot_dir, component_names, source_dirs,
             no_clean):

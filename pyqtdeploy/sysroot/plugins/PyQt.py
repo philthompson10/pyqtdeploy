@@ -91,7 +91,7 @@ class PyQtComponent(Component):
 
     # The list of components that, if specified, should be installed before
     # this one.
-    preinstalls = ['SIP']
+    preinstalls = ['Qt', 'SIP']
 
     def get_archive_name(self):
         """ Return the filename of the source archive. """
@@ -153,6 +153,7 @@ class PyQtComponent(Component):
             self.copy_file(self._license_file, 'sip')
 
         # Create a configuration file.
+        qt = self.get_component('Qt')
         sip = self.get_component('SIP')
 
         cfg = '''py_platform = {0}
@@ -180,7 +181,7 @@ pyqt_modules = {6}
 
         # Configure, build and install.
         args = [self.host_python, 'configure.py', '--static', '--qmake',
-            self.host_qmake, '--sysroot', self.sysroot_dir, '--no-tools',
+            qt.host_qmake, '--sysroot', self.sysroot_dir, '--no-tools',
             '--no-qsci-api', '--no-designer-plugin', '--no-python-dbus',
             '--no-qml-plugin', '--no-stubs', '--configuration', cfg_name,
             '--sip', sip.host_sip, '--confirm-license', '-c', '-j2']
