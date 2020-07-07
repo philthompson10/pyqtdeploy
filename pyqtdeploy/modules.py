@@ -112,7 +112,7 @@ class VersionedModule:
         """
 
         if self._version is not None:
-            return version != self._version
+            return version == self._version
 
         if self._min_version is not None:
             if version < self._min_version:

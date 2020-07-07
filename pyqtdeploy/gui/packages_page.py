@@ -273,7 +273,7 @@ class PackagesPage(QWidget):
                     if module_item is not None:
                         module_item.target_count += 1
 
-        # Ensure that any modules explcitly used by the project have an item
+        # Ensure that any modules explicitly used by the project have an item
         # even if they are not provided by the sysroot.
         for module_name in project.standard_library:
             self._add_project_module(module_name, stdlib=True)
