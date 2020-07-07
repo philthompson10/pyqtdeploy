@@ -24,41 +24,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from .user_exception import UserException
+from abc import abstractmethod
+
+from .component import Component
 
 
-def get_py_install_path(version, target):
-    """ Return the name of the directory containing the root of the Python
-    installation directory for a particular version and target.  It must not be
-    called on a non-Windows platform.
+class AbstractPythonComponent(Component):
+    """ The abstract base class for an implementation of a Python component
+    plugin.
     """
 
-    from winreg import HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, QueryValue
-
-    reg_version = '{0}.{1}'.format(version.major, version.minor)
-    if version >= (3, 5) and target.name.endswith('-32'):
-        reg_version += '-32'
-
-    sub_key_user = 'Software\\Python\\PythonCore\\{}\\InstallPath'.format(
-            reg_version)
-    sub_key_all_users = 'Software\\Wow6432Node\\Python\\PythonCore\\{}\\InstallPath'.format(
-            reg_version)
-
-    queries = (
-        (HKEY_CURRENT_USER, sub_key_user),
-        (HKEY_LOCAL_MACHINE, sub_key_user),
-        (HKEY_LOCAL_MACHINE, sub_key_all_users))
-
-    for key, sub_key in queries:
-        try:
-            install_path = QueryValue(key, sub_key)
-        except OSError:
-            pass
-        else:
-            break
-    else:
-        raise UserException(
-                "Unable to find an installation of Python v{0}.".format(
-                        reg_version))
-
-    return install_path
+    @property
+    @abstractmethod
+    def host_python(self):
+        """ The name of the host python executable. """

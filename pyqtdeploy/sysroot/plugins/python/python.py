@@ -28,7 +28,7 @@ import os
 import shutil
 import sys
 
-from .... import Component, ComponentOption
+from .... import AbstractPythonComponent, ComponentOption
 
 from .pyconfig import generate_pyconfig_h
 from .standard_library import standard_library
@@ -40,7 +40,7 @@ LATEST_3_6_RELEASE = (3, 6, 11)
 LATEST_3_7_RELEASE = (3, 7, 8)
 
 
-class PythonComponent(Component):
+class PythonComponent(AbstractPythonComponent):
     """ The host and target Python component. """
 
     # The list of components that, if specified, should be installed before
@@ -51,6 +51,13 @@ class PythonComponent(Component):
 
     # The dict of VersionedModule objects provided by the component.
     provides = standard_library
+
+    def __init__(self, *args, **kwargs):
+        """ Initialise the component. """
+
+        super().__init__(*args, **kwargs)
+
+        self._host_python = None
 
     def get_archive_name(self):
         """ Return the filename of the source archive. """
@@ -84,6 +91,26 @@ class PythonComponent(Component):
                                 "rather than an existing installation."))
 
         return options
+
+    @property
+    def host_python(self):
+        """ The full pathname of the host python executable. """
+
+        if self._host_python is None:
+            if self.host_platform_name == 'win':
+                self._host_python = self._get_python_install_path()
+            else:
+                self._host_python = self.find_exe(
+                        'python{}.{}'.format(self.version.major,
+                                self.version.minor))
+
+        return self._host_python
+
+    @host_python.setter
+    def host_python(self, value):
+        """ Set the full pathname of the host python executable. """
+
+        self._host_python = value
 
     def install(self):
         """ Install for the host and target. """
@@ -298,6 +325,42 @@ build_time_vars = {
 ''')
         scd.close()
 
+    def _get_py_install_path(self):
+        """ Return the name of the directory containing the root of the Python
+        installation directory.  It must not be called on a non-Windows
+        platform.
+        """
+
+        from winreg import HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, QueryValue
+
+        reg_version = '{0}.{1}'.format(self.version.major, self.version.minor)
+        if self.target_arch_name.endswith('-32'):
+            reg_version += '-32'
+
+        sub_key_user = 'Software\\Python\\PythonCore\\{}\\InstallPath'.format(
+                reg_version)
+        sub_key_all_users = 'Software\\Wow6432Node\\Python\\PythonCore\\{}\\InstallPath'.format(
+                reg_version)
+
+        queries = (
+            (HKEY_CURRENT_USER, sub_key_user),
+            (HKEY_LOCAL_MACHINE, sub_key_user),
+            (HKEY_LOCAL_MACHINE, sub_key_all_users))
+
+        for key, sub_key in queries:
+            try:
+                install_path = QueryValue(key, sub_key)
+            except OSError:
+                pass
+            else:
+                break
+        else:
+            self.error(
+                    "Unable to find an installation of Python v{0}.".format(
+                            reg_version))
+
+        return install_path
+
     def _install_host_from_source(self):
         """ Install the host Python from source. """
 
@@ -344,7 +407,9 @@ build_time_vars = {
         self._configure_python()
 
         # Do the build.
-        self.run(self.host_qmake, 'SYSROOT=' + self.sysroot_dir)
+        qt = self.get_component('Qt')
+
+        self.run(qt.host_qmake, 'SYSROOT=' + self.sysroot_dir)
         self.run(self.host_make)
         self.run(self.host_make, 'install')
 
