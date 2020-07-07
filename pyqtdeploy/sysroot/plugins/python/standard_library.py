@@ -839,7 +839,7 @@ standard_library = {
                 deps=('encodings.aliases', '_bootlocale', 'codecs'),
                 modules=_encodings_modules + ('encodings.oem', )),
         PythonModule(min_version=(3, 7),
-                deps=('encodings.aliases', 'codecs', '_winapi'),
+                deps=('encodings.aliases', 'codecs', 'win#_winapi'),
                 modules=_encodings_modules + ('encodings.oem', ))),
 
     'encodings.ascii':
