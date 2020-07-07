@@ -102,7 +102,11 @@ class QtComponent(AbstractQtComponent):
         """ The full pathname of the host qmake executable. """
 
         if self._host_qmake is None:
-            self._host_qmake = self.find_exe('qmake')
+            if self.install_from_source:
+                self._host_qmake = os.path.join(self.sysroot_dir, 'Qt', 'bin',
+                        self.host_exe('qmake'))
+            else:
+                self._host_qmake = self.find_exe('qmake')
 
         return self._host_qmake
 
@@ -282,8 +286,6 @@ class QtComponent(AbstractQtComponent):
 
         if original_path is not None:
             os.environ['PATH'] = original_path
-
-        self.host_qmake = os.path.join(target_qt_dir, 'bin', 'qmake')
 
     def _verify_installed_version(self):
         """ Verify that the installed version is compatible with the specified

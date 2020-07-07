@@ -97,10 +97,14 @@ class PythonComponent(AbstractPythonComponent):
         """ The full pathname of the host python executable. """
 
         if self._host_python is None:
-            if self.host_platform_name == 'win':
+            if self.install_host_from_source:
+                self._host_python = os.path.join(self.host_dir, 'bin',
+                        self.host_exe(self._py_subdir))
+            elif self.host_platform_name == 'win':
                 self._host_python = self._get_python_install_path()
             else:
-                self._host_python = self.find_exe(self._py_subdir)
+                self._host_python = self.find_exe(
+                        self.host_exe(self._py_subdir))
 
         return self._host_python
 
@@ -115,16 +119,13 @@ class PythonComponent(AbstractPythonComponent):
 
         # Install the host installation.
         if self.install_host_from_source:
-            interpreter = self._install_host_from_source()
+            self._install_host_from_source()
 
         # Install the target installation.
         if self.install_from_source:
             self._install_target_from_source()
         else:
             self._install_target_from_existing_windows_version()
-
-        self.host_python = os.path.join(self.host_dir, 'bin',
-                'python{}.{}'.format(self.version.major, self.version.minor))
 
     @property
     def target_py_include_dir(self):
