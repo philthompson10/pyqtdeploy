@@ -458,25 +458,6 @@ class AbstractComponent(ABC):
         return self._sysroot.target.platform.name
 
     @property
-    def target_py_include_dir(self):
-        """ The name of the directory containing target Python header files.
-        """
-
-        return self._sysroot.target_py_include_dir
-
-    @property
-    def target_py_lib(self):
-        """ The name of the target Python library. """
-
-        return self._sysroot.target_py_lib
-
-    @property
-    def target_sitepackages_dir(self):
-        """ The name of the target Python site-packages directory. """
-
-        return self._sysroot.target_sitepackages_dir
-
-    @property
     def target_src_dir(self):
         """ The name of the directory containing target sources. """
 

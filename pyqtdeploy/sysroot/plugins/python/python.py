@@ -100,9 +100,7 @@ class PythonComponent(AbstractPythonComponent):
             if self.host_platform_name == 'win':
                 self._host_python = self._get_python_install_path()
             else:
-                self._host_python = self.find_exe(
-                        'python{}.{}'.format(self.version.major,
-                                self.version.minor))
+                self._host_python = self.find_exe(self._py_subdir)
 
         return self._host_python
 
@@ -127,6 +125,39 @@ class PythonComponent(AbstractPythonComponent):
 
         self.host_python = os.path.join(self.host_dir, 'bin',
                 'python{}.{}'.format(self.version.major, self.version.minor))
+
+    @property
+    def target_py_include_dir(self):
+        """ The name of the directory containing target Python header files.
+        """
+
+        return os.path.join(self.target_include_dir, self._py_subdir)
+
+    @property
+    def target_py_lib(self):
+        """ The name of the target Python library. """
+
+        lib = self._py_subdir
+
+        if self.version <= (3, 7):
+            lib += 'm'
+
+        return lib
+
+    @property
+    def target_py_stdlib_dir(self):
+        """ The name of the directory containing target Python standard
+        library.
+        """
+
+        return os.path.join(self.target_lib_dir, self._py_subdir)
+
+    @property
+    def target_sitepackages_dir(self):
+        """ The name of the target Python site-packages directory. """
+
+        return os.path.join(self.target_lib_dir, self._py_subdir,
+                'site-packages')
 
     def verify(self):
         """ Verify the component. """
@@ -548,3 +579,9 @@ build_time_vars = {
 
         for line in orig_file:
             patch_file.write(line.replace('OverlappedType', 'OverlappedType_'))
+
+    @property
+    def _py_subdir(self):
+        """ The name of a version-specific Python sub-directory. """
+
+        return 'python{}.{}'.format(self.version.major, self.version.minor)
