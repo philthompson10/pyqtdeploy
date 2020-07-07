@@ -65,20 +65,22 @@ class Sysroot:
         self.host = host
         self.target = target
         self._message_handler = message_handler
-        self._host_python = python
 
         self._building_for_target = True
-        self._python_component = None
-        self._qt_component = None
 
         self.components = specification.create_components_for_target(target,
                 self)
 
         # Set any externally specified qmake.
+        if python is not None:
+            python_component = self.get_component('Python', required=False)
+            if python_component is not None:
+                python_component.host_python = python
+
         if qmake is not None:
-            qt = self.get_component('Qt', required=False)
-            if qt is not None:
-                qt.host_qmake = qmake
+            qt_component = self.get_component('Qt', required=False)
+            if qt_component is not None:
+                qt_component.host_qmake = qmake
 
     @staticmethod
     def error(message, detail='', exception=None, component=None):
@@ -130,30 +132,6 @@ class Sysroot:
         """ Convert a generic executable name to a host-specific version. """
 
         return self.host.platform.exe(name)
-
-    @property
-    def host_python(self):
-        """ The full pathname of the host Python executable. """
-
-        if self._host_python is None:
-            # This will only be the case during the verification of an
-            # installed version of Python.
-            major = self._python_component.version.major
-            minor = self._python_component.version.minor
-
-            if self.host.platform.name == 'win':
-                self._host_python = self.get_python_install_path(major, minor)
-            else:
-                self._host_python = self.find_exe(
-                        'python{}.{}'.format(major, minor))
-
-        return self._host_python
-
-    @host_python.setter
-    def host_python(self, value):
-        """ Set the name of the host Python executable. """
-
-        self._host_python = self.host_exe(os.path.abspath(value)) if value else None
 
     def install_components(self, sysroot_dir, component_names, source_dirs,
             no_clean):
@@ -248,17 +226,6 @@ class Sysroot:
                             component.version))
 
             component.verify()
-
-            if component.name == 'Python':
-                self._python_component = component
-            elif component.name == 'Qt':
-                self._qt_component = component
-
-        if self._python_component is None:
-            self.error("the 'Python' component has not been specified")
-
-        if self._qt_component is None:
-            self.error("the 'Qt' component has not been specified")
 
     def warning(self, message, component=None):
         """ Issue a warning message. """
@@ -510,23 +477,6 @@ class Sysroot:
 
         return version_nr
 
-    def get_python_install_path(self, major=None, minor=None):
-        """ Return the name of the directory containing the root of the Python
-        installation directory for an existing installation.  It must not be
-        called on a non-Windows platform.
-        """
-        # TODO: review if this is still called outside the class and if the
-        # arguments are optional or not.
-
-        from ..windows import get_py_install_path
-
-        if major is None or minor is None:
-            version_nr = self._python_component.version
-        else:
-            version_nr = VersionNumber(major, minor)
-
-        return get_py_install_path(version_nr, self.target)
-
     @property
     def host_arch_name(self):
         """ The name of the host architecture. """
@@ -552,29 +502,6 @@ class Sysroot:
         self._check_python_component()
 
         return os.path.join(self.host_bin_dir, self.host_exe('pip'))
-
-    def make_symlink(self, src, dst):
-        """ Create a host-specific symbolic link. """
-
-        # Remove any existing destination.
-        try:
-            os.remove(dst)
-        except FileNotFoundError:
-            pass
-
-        if sys.platform == 'win32':
-            # Don't bother with symbolic link privileges on Windows.
-            self.verbose("Copying {0} to {1}".format(src, dst))
-            shutil.copyfile(src, dst)
-        else:
-            # If the source directory is within the same root as the
-            # destination then make the link relative.  This means that the
-            # root directory can be moved and the link will remain valid.
-            if os.path.commonpath((src, dst)).startswith(self.sysroot_dir):
-                src = os.path.relpath(src, os.path.dirname(dst))
-
-            self.verbose("Linking {0} to {1}".format(src, dst))
-            os.symlink(src, dst)
 
     def pip_install(self, package):
         """ Use pip to install a package in the sysroot site-packages

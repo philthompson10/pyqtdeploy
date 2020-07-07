@@ -41,7 +41,6 @@ from ..platforms import Architecture, Platform
 from ..user_exception import UserException
 from ..version import PYQTDEPLOY_HEXVERSION
 from ..version_number import VersionNumber
-from ..windows import get_py_install_path
 
 
 class Builder:

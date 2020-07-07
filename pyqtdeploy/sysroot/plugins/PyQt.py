@@ -91,7 +91,7 @@ class PyQtComponent(Component):
 
     # The list of components that, if specified, should be installed before
     # this one.
-    preinstalls = ['Qt', 'SIP']
+    preinstalls = ['Python', 'Qt', 'SIP']
 
     def get_archive_name(self):
         """ Return the filename of the source archive. """
@@ -153,6 +153,7 @@ class PyQtComponent(Component):
             self.copy_file(self._license_file, 'sip')
 
         # Create a configuration file.
+        python = self.get_component('Python')
         qt = self.get_component('Qt')
         sip = self.get_component('SIP')
 
@@ -180,7 +181,7 @@ pyqt_modules = {6}
             cfg_file.write(cfg)
 
         # Configure, build and install.
-        args = [self.host_python, 'configure.py', '--static', '--qmake',
+        args = [python.host_python, 'configure.py', '--static', '--qmake',
             qt.host_qmake, '--sysroot', self.sysroot_dir, '--no-tools',
             '--no-qsci-api', '--no-designer-plugin', '--no-python-dbus',
             '--no-qml-plugin', '--no-stubs', '--configuration', cfg_name,
@@ -256,5 +257,5 @@ pyqt_modules = {6}
             self.error("SIP v4.19.23 or later is required")
 
         # This is needed by dependent components.
-        if self.get_component('Qt', required=False) is None:
+        if not self.get_component('Qt').ssl:
             self.disabled_features.append('PyQt_SSL')

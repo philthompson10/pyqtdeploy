@@ -391,18 +391,6 @@ class AbstractComponent(ABC):
 
         return self._sysroot.host.platform.name
 
-    @property
-    def host_python(self):
-        """ The full pathname of the host Python executable. """
-
-        return self._sysroot.host_python
-
-    @host_python.setter
-    def host_python(self, value):
-        """ Set the full pathname of the host Python executable. """
-
-        self._sysroot.host_python = value
-
     @abstractmethod
     def install(self):
         """ Install the component. """
