@@ -540,33 +540,6 @@ class Sysroot:
         return os.path.join(self.sysroot_dir, 'lib')
 
     @property
-    def target_py_include_dir(self):
-        """ The name of the directory containing target Python header files.
-        """
-
-        return os.path.join(self.target_include_dir, self._py_subdir)
-
-    @property
-    def target_py_lib(self):
-        """ The name of the target Python library. """
-
-        return self._py_subdir + 'm'
-
-    @property
-    def target_py_stdlib_dir(self):
-        """ The name of the directory containing target Python standard
-        library. """
-
-        return os.path.join(self.target_lib_dir, self._py_subdir)
-
-    @property
-    def target_sitepackages_dir(self):
-        """ The name of the target Python site-packages directory. """
-
-        return os.path.join(self.target_lib_dir, self._py_subdir,
-                'site-packages')
-
-    @property
     def target_src_dir(self):
         """ The name of the directory containing target sources. """
 
@@ -587,16 +560,3 @@ class Sysroot:
 
         assert self._message_handler is not None
         return self._message_handler.verbose
-
-    @property
-    def _py_subdir(self):
-        """ The name of a version-specific Python sub-directory. """
-
-        return 'python{}.{}'.format(self._python_component.version.major,
-                self._python_component.version.minor)
-
-    def _run_error(self, args, e):
-        """ Raise an exception about a sub-process error. """
-
-        self.error("execution of '{0}' failed".format(args[0]),
-                detail=e.stderr, exception=e)

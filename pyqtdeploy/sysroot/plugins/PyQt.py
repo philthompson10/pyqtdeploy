@@ -165,9 +165,9 @@ pyqt_module_dir = {4}
 pyqt_sip_dir = {5}
 [Qt 5.0]
 pyqt_modules = {6}
-'''.format(self.target_pyqt_platform, self.target_py_include_dir,
-                self.target_lib_dir, self.target_py_lib,
-                self.target_sitepackages_dir,
+'''.format(self.target_pyqt_platform, python.target_py_include_dir,
+                self.target_lib_dir, python.target_py_lib,
+                python.target_sitepackages_dir,
                 os.path.join(sip.target_sip_dir, 'PyQt5'),
                 ' '.join(self.installed_modules))
 
