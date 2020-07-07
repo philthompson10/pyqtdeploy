@@ -274,20 +274,18 @@ class AbstractComponent(ABC):
         the modules provided by this version of the component.
         """
 
-        if self._modules is not None:
-            return self._modules
+        if self._modules is None:
+            self._modules = {}
+            provides = self.provides
+            openssl = self.get_component('OpenSSL', required=False)
+            result_cache = {}
 
-        self._modules = {}
-        provides = self.provides
-        openssl = self.get_component('OpenSSL', required=False)
-        result_cache = {}
+            for name in provides:
+                module = self._available_version(name, provides, openssl,
+                        result_cache)
 
-        for name in provides:
-            module = self._available_version(name, provides, openssl,
-                    result_cache)
-
-            if module is not None:
-                self._modules[name] = module
+                if module is not None:
+                    self._modules[name] = module
 
         return self._modules
 
@@ -303,8 +301,7 @@ class AbstractComponent(ABC):
         except KeyError:
             pass
 
-        # Try each version of the module.  Note that there may be multiples
-        # (target-specific) for the same version.
+        # Try each version of the module.
         versions = provides[name]
 
         if not isinstance(versions, tuple):
@@ -339,7 +336,7 @@ class AbstractComponent(ABC):
         """
 
         # Discard modules with missing external dependencies.
-        if module.xdep is not None and self.get_component(module.xdep, required=False) == None:
+        if module.xdep is not None and self.get_component(module.xdep, required=False) is None:
             return False
 
         # Discard modules not applicable to the target architecture.

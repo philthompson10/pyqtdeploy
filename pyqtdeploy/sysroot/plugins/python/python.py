@@ -50,7 +50,6 @@ class PythonComponent(Component):
     preinstalls = ['Qt']
 
     # The dict of VersionedModule objects provided by the component.
-    # TODO: turn into a property so that the modules are target-specific.
     provides = standard_library
 
     def get_archive_name(self):
