@@ -152,6 +152,16 @@ class PyQtComponent(Component):
         if self._license_file is not None:
             self.copy_file(self._license_file, 'sip')
 
+        # Map the target name onto the names used by configure.py.
+        pyqt_platform = self.target_platform_name
+
+        if pyqt_platform == 'android':
+            pyqt_platform = 'linux'
+        elif pyqt_platform in ('ios', 'macos'):
+            pyqt_platform = 'darwin'
+        elif pyqt_platform == 'win':
+            pyqt_platform = 'win32'
+
         # Create a configuration file.
         python = self.get_component('Python')
         qt = self.get_component('Qt')
@@ -165,9 +175,8 @@ pyqt_module_dir = {4}
 pyqt_sip_dir = {5}
 [Qt 5.0]
 pyqt_modules = {6}
-'''.format(self.target_pyqt_platform, python.target_py_include_dir,
-                self.target_lib_dir, python.target_py_lib,
-                python.target_sitepackages_dir,
+'''.format(pyqt_platform, python.target_py_include_dir, self.target_lib_dir,
+                python.target_py_lib, python.target_sitepackages_dir,
                 os.path.join(sip.target_sip_dir, 'PyQt5'),
                 ' '.join(self.installed_modules))
 
@@ -177,7 +186,7 @@ pyqt_modules = {6}
 
         cfg_name = 'pyqt5-' + self.target_arch_name + '.cfg'
 
-        with open(cfg_name, 'wt') as cfg_file:
+        with self.create_file(cfg_name) as cfg_file:
             cfg_file.write(cfg)
 
         # Configure, build and install.
@@ -185,10 +194,8 @@ pyqt_modules = {6}
             qt.host_qmake, '--sysroot', self.sysroot_dir, '--no-tools',
             '--no-qsci-api', '--no-designer-plugin', '--no-python-dbus',
             '--no-qml-plugin', '--no-stubs', '--configuration', cfg_name,
-            '--sip', sip.host_sip, '--confirm-license', '-c', '-j2']
-
-        if self.version >= (5, 11):
-            args.append('--no-dist-info')
+            '--sip', sip.host_sip, '--confirm-license', '-c', '-j2',
+            '--no-dist-info']
 
         if self.verbose_enabled:
             args.append('--verbose')
@@ -208,25 +215,6 @@ pyqt_modules = {6}
             modules[name] = _ALL_MODULES[name]
 
         return modules
-
-    @property
-    def target_pyqt_platform(self):
-        """ The name of the target Python platform (as known by PyQt's
-        configure.py).
-        """
-
-        # Note that this is a bit of a hack because configure.py doesn't
-        # distinguish between Android and Linux or iOS and macOS.
-        py_platform = self.target_platform_name
-
-        if py_platform == 'android':
-            py_platform = 'linux'
-        elif py_platform in ('ios', 'macos'):
-            py_platform = 'darwin'
-        elif py_platform == 'win':
-            py_platform = 'win32'
-
-        return py_platform
 
     def verify(self):
         """ Verify the component. """
