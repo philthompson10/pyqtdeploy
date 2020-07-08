@@ -426,7 +426,10 @@ class AbstractComponent(ABC):
             pass
 
         # Try each version of the module.
-        versions = provides[name]
+        try:
+            versions = provides[name]
+        except KeyError:
+            self.error("'{0}' is not provided by this component.".format(name))
 
         if not isinstance(versions, tuple):
             versions = (versions, )
