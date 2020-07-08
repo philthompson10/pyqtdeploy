@@ -34,6 +34,10 @@ class AbstractPythonComponent(Component):
     plugin.
     """
 
+    ###########################################################################
+    # The following make up the public API to be used by component plugins.
+    ###########################################################################
+
     @property
     @abstractmethod
     def host_python(self):

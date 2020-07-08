@@ -33,6 +33,10 @@ class AbstractQtComponent(Component):
     """ The abstract base class for an implementation of a Qt component plugin.
     """
 
+    ###########################################################################
+    # The following make up the public API to be used by component plugins.
+    ###########################################################################
+
     @property
     @abstractmethod
     def host_qmake(self):
