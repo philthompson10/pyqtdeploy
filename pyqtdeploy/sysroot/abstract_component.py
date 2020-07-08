@@ -28,9 +28,6 @@ from abc import ABC, abstractmethod
 import os
 import shutil
 
-from ..file_utilities import (create_file as fu_create_file,
-        open_file as fu_open_file)
-
 from .component_option import ComponentOption
 
 
@@ -38,12 +35,272 @@ class AbstractComponent(ABC):
     """ The abstract base class for the implementation of a component plugin.
     """
 
+    ###########################################################################
+    # The following make up the public API to be used by component plugins.
+    ###########################################################################
+
     # The list of components that, if specified, should be installed before
     # this one.
     preinstalls = []
 
     # The dict of VersionedModule objects provided by the component.
     provides = {}
+
+    @property
+    def building_for_target(self):
+        """ This is set if building (ie. compiling and linking) for the target
+        architecture.  Otherwise build for the host.  The default is True.
+        """
+
+        return self._sysroot.building_for_target
+
+    @building_for_target.setter
+    def building_for_target(self, value):
+        """ Set to build (ie. compile and link) for the target architecture.
+        Otherwise build for the host.
+        """
+
+        self._sysroot.building_for_target = value
+
+    def copy_file(self, src, dst, macros=None):
+        """ Copy a file while expanding an optional dict of macros. """
+
+        self.verbose("Copying {0} to {1}".format(src, os.path.abspath(dst)))
+
+        if macros is None:
+            try:
+                shutil.copy(src, dst)
+            except Exception as e:
+                self.error("unable to copy {0}".format(src), detail=str(e))
+        else:
+            try:
+                with open(src) as f:
+                    contents = f.read()
+            except Exception as e:
+                self.error("unable to open {0} for reading".format(src),
+                        detail=str(e))
+
+            for key, value in macros.items():
+                contents = contents.replace(key, value)
+
+            try:
+                with open(dst, 'w') as f:
+                    f.write(contents)
+            except Exception as e:
+                self.error("unable to create {0} for writing".format(dst),
+                        detail=str(e))
+
+    def create_dir(self, name, empty=False):
+        """ Ensure a directory exists and optionally delete its contents. """
+
+        self._sysroot.create_dir(name, empty=empty, component=self)
+
+    def create_file(name):
+        """ Create a text file and return the file object. """
+
+        self._sysroot.create_file(name, component=self)
+
+    def error(self, message, detail=''):
+        """ Issue an error message.  This method will not return. """
+
+        self._sysroot.error(message, detail=detail, component=self)
+
+    def find_exe(self, name, required=True):
+        """ Return the absolute pathname of an executable located on PATH. """
+
+        return self._sysroot.find_exe(name, required=required, component=self)
+
+    def get_component(self, name, required=True):
+        """ Return the component object for the given name or None if the
+        component hasn't been specified.  If it has not been specified and it
+        is required then raise an exception.
+        """
+
+        return self._sysroot.get_component(name, required=required,
+                component=self)
+
+    def get_file(self, name):
+        """ Return the pathname of a file in one of the directories specified
+        by the --source-dir command line option.  None is return if it could
+        not be found.
+        """
+
+        for source_dir in self._sysroot.source_dirs:
+            self.verbose("Looking for '{0}' in {1}".format(name, source_dir))
+
+            pathname = os.path.join(source_dir, name)
+            if os.path.isfile(pathname):
+                self.verbose("Found '{0}' in {1}".format(name, source_dir))
+
+                return pathname
+
+        return None
+
+    def get_options(self):
+        """ Return a list of ComponentOption objects that define the components
+        configurable options.
+        """
+
+        return [ComponentOption('version', required=True,
+                help="The version number of the component.")]
+
+    def get_version_from_file(self, identifier, filename):
+        """ Return the stripped line from a file containing an identifier
+        (typically a pre-processor macro defining a version number).
+        """
+
+        self.verbose(
+                "Determining installed version from '{0}'".format(filename))
+
+        if os.path.isfile(filename):
+            with open(filename) as f:
+                for line in f:
+                    if identifier in line:
+                        version_line = line.strip()
+                        break
+                else:
+                    self.error(
+                            "Unable to find '{0}' in {1}.".format(identifier,
+                                    filename))
+
+        return version_line
+
+    @property
+    def host_dir(self):
+        """ The directory containing any host installations. """
+
+        return self._sysroot.host_dir
+
+    def host_exe(self, name):
+        """ Convert a generic executable name to a host-specific version. """
+
+        return self._sysroot.host_exe(name)
+
+    @property
+    def host_make(self):
+        """ The name of the host make executable. """
+
+        return self._sysroot.host_make
+
+    @property
+    def host_platform_name(self):
+        """ The name of the host platform. """
+
+        return self._sysroot.host.platform.name
+
+    @abstractmethod
+    def install(self):
+        """ Install the component. """
+
+    def open_file(name):
+        """ Open an existing text file and return the file object. """
+
+        return self._sysroot.open_file(name, component=self)
+
+    @staticmethod
+    def parse_version_number(version_str):
+        """ Return the VersionNumber object corresponding to a version number
+        as a string.  UserException is raised if it couldn't be parsed.
+
+        The version number format is M[.m[.p]][suffix] where M is the int major
+        version, m is the int minor version, p is the int patch version and
+        suffix is a str suffix.
+        """
+
+        from ..version_number import VersionNumber
+
+        return VersionNumber.parse_version_number(version_str)
+
+    def progress(self, message):
+        """ Issue a progress message. """
+
+        self._sysroot.progress(message, component=self)
+
+    def run(self, *args, capture=False):
+        """ Run a command, optionally capturing stdout. """
+
+        return self._sysroot.run(*args, capture=capture)
+
+    @property
+    def sysroot_dir(self):
+        """ The name of the sysroot directory. """
+
+        return self._sysroot.sysroot_dir
+
+    @property
+    def target_arch_name(self):
+        """ The name of the target architecture. """
+
+        return self._sysroot.target.name
+
+    @property
+    def target_include_dir(self):
+        """ The name of the directory containing target header files. """
+
+        return self._sysroot.target_include_dir
+
+    @property
+    def target_lib_dir(self):
+        """ The name of the directory containing target libraries. """
+
+        return self._sysroot.target_lib_dir
+
+    @property
+    def target_platform_name(self):
+        """ The name of the target platform. """
+
+        return self._sysroot.target.platform.name
+
+    @property
+    def target_src_dir(self):
+        """ The name of the directory containing target sources. """
+
+        return self._sysroot.target_src_dir
+
+    def unsupported(self):
+        """ Issue an error message that the version of the component is
+        unsupported.
+        """
+
+        self.error("v{0} is unsupported".format(self.version))
+
+    def untested(self):
+        """ Issue a warning message that the version of the component is
+        untested.
+        """
+
+        self.warning("v{0} is untested".format(self.version))
+
+    def verify(self):
+        """ Verify the component.  This will be called after the options have
+        been parsed and the version number resolved.
+        """
+
+    def verbose(self, message):
+        """ Issue a verbose progress message. """
+
+        self._sysroot.verbose(message, component=self)
+
+    @property
+    def verbose_enabled(self):
+        """ True if verbose messages are being displayed. """
+
+        return self._sysroot.verbose_enabled
+
+    def verify_host_tools(self, tools):
+        """ Verify that a sequence of host tools is available. """
+
+        for tool in tools:
+            self.find_exe(tool)
+
+    def warning(self, message):
+        """ Issue a warning message. """
+
+        self._sysroot.warning(message, component=self)
+
+    ###########################################################################
+    # The following are not part of the public API used by component plugins.
+    ###########################################################################
 
     # The installation status.
     _IS_NOT_INSTALLED, _IS_IN_PROGRESS, _IS_INSTALLED = range(3)
@@ -115,63 +372,6 @@ class AbstractComponent(ABC):
 
         return self._sysroot.apple_sdk
 
-    @property
-    def building_for_target(self):
-        """ This is set if building (ie. compiling and linking) for the target
-        architecture.  Otherwise build for the host.  The default is True.
-        """
-
-        return self._sysroot.building_for_target
-
-    @building_for_target.setter
-    def building_for_target(self, value):
-        """ Set to build (ie. compile and link) for the target architecture.
-        Otherwise build for the host.
-        """
-
-        self._sysroot.building_for_target = value
-
-    def copy_file(self, src, dst, macros=None):
-        """ Copy a file while expanding an optional dict of macros. """
-
-        self.verbose("Copying {0} to {1}".format(src, os.path.abspath(dst)))
-
-        if macros is None:
-            try:
-                shutil.copy(src, dst)
-            except Exception as e:
-                self.error("unable to copy {0}".format(src), detail=str(e))
-        else:
-            try:
-                with open(src) as f:
-                    contents = f.read()
-            except Exception as e:
-                self.error("unable to open {0} for reading".format(src),
-                        detail=str(e))
-
-            for key, value in macros.items():
-                contents = contents.replace(key, value)
-
-            try:
-                with open(dst, 'w') as f:
-                    f.write(contents)
-            except Exception as e:
-                self.error("unable to create {0} for writing".format(dst),
-                        detail=str(e))
-
-    def create_dir(self, name, empty=False):
-        """ Ensure a directory exists and optionally delete its contents. """
-
-        self._sysroot.create_dir(name, empty=empty, component=self)
-
-    @staticmethod
-    def create_file(name):
-        """ Create a text file and return the file object.  A UserException is
-        raised if there was an error.
-        """
-
-        return fu_create_file(name)
-
     def ensure_installed(self):
         """ Ensure the component is installed. """
 
@@ -191,50 +391,6 @@ class AbstractComponent(ABC):
 
         elif self._install_status == self._IS_IN_PROGRESS:
             self.error("the component is part of a circular dependency")
-
-    def error(self, message, detail=''):
-        """ Issue an error message.  This method will not return. """
-
-        self._sysroot.error(message, detail=detail, component=self)
-
-    def find_exe(self, name, required=True):
-        """ Return the absolute pathname of an executable located on PATH. """
-
-        return self._sysroot.find_exe(name, required=required, component=self)
-
-    def get_options(self):
-        """ Return a list of ComponentOption objects that define the components
-        configurable options.
-        """
-
-        return [ComponentOption('version', required=True,
-                help="The version number of the component.")]
-
-    def get_component(self, name, required=True):
-        """ Return the component object for the given name or None if the
-        component hasn't been specified.  If it has not been specified and it
-        is required then raise an exception.
-        """
-
-        return self._sysroot.get_component(name, required=required,
-                component=self)
-
-    def get_file(self, name):
-        """ Return the pathname of a file in one of the directories specified
-        by the --source-dir command line option.  None is return if it could
-        not be found.
-        """
-
-        for source_dir in self._sysroot.source_dirs:
-            self.verbose("Looking for '{0}' in {1}".format(name, source_dir))
-
-            pathname = os.path.join(source_dir, name)
-            if os.path.isfile(pathname):
-                self.verbose("Found '{0}' in {1}".format(name, source_dir))
-
-                return pathname
-
-        return None
 
     @property
     def modules(self):
@@ -346,163 +502,6 @@ class AbstractComponent(ABC):
                 return False
 
         return True
-
-    def get_version_from_file(self, identifier, filename):
-        """ Return the stripped line from a file containing an identifier
-        (typically a pre-processor macro defining a version number).
-        """
-
-        self.verbose(
-                "Determining installed version from '{0}'".format(filename))
-
-        if os.path.isfile(filename):
-            with open(filename) as f:
-                for line in f:
-                    if identifier in line:
-                        version_line = line.strip()
-                        break
-                else:
-                    self.error(
-                            "Unable to find '{0}' in {1}.".format(identifier,
-                                    filename))
-
-        return version_line
-
-    @property
-    def host_dir(self):
-        """ The directory containing any host installations. """
-
-        return self._sysroot.host_dir
-
-    def host_exe(self, name):
-        """ Convert a generic executable name to a host-specific version. """
-
-        return self._sysroot.host_exe(name)
-
-    @property
-    def host_make(self):
-        """ The name of the host make executable. """
-
-        return self._sysroot.host_make
-
-    @property
-    def host_platform_name(self):
-        """ The name of the host platform. """
-
-        return self._sysroot.host.platform.name
-
-    @abstractmethod
-    def install(self):
-        """ Install the component. """
-
-    @staticmethod
-    def open_file(name):
-        """ Open an existing text file and return the file object.  A
-        UserException is raised if there was an error.
-        """
-
-        return fu_open_file(name)
-
-    @staticmethod
-    def parse_version_number(version_str):
-        """ Return the VersionNumber object corresponding to a version number
-        as a string.  UserException is raised if it couldn't be parsed.
-
-        The version number format is M[.m[.p]][suffix] where M is the int major
-        version, m is the int minor version, p is the int patch version and
-        suffix is a str suffix.
-        """
-
-        from ..version_number import VersionNumber
-
-        return VersionNumber.parse_version_number(version_str)
-
-    def progress(self, message):
-        """ Issue a progress message. """
-
-        self._sysroot.progress(message, component=self)
-
-    def run(self, *args, capture=False):
-        """ Run a command, optionally capturing stdout. """
-
-        return self._sysroot.run(*args, capture=capture)
-
-    @property
-    def sysroot_dir(self):
-        """ The name of the sysroot directory. """
-
-        return self._sysroot.sysroot_dir
-
-    @property
-    def target_arch_name(self):
-        """ The name of the target architecture. """
-
-        return self._sysroot.target.name
-
-    @property
-    def target_include_dir(self):
-        """ The name of the directory containing target header files. """
-
-        return self._sysroot.target_include_dir
-
-    @property
-    def target_lib_dir(self):
-        """ The name of the directory containing target libraries. """
-
-        return self._sysroot.target_lib_dir
-
-    @property
-    def target_platform_name(self):
-        """ The name of the target platform. """
-
-        return self._sysroot.target.platform.name
-
-    @property
-    def target_src_dir(self):
-        """ The name of the directory containing target sources. """
-
-        return self._sysroot.target_src_dir
-
-    def unsupported(self):
-        """ Issue an error message that the version of the component is
-        unsupported.
-        """
-
-        self.error("v{0} is unsupported".format(self.version), component=self)
-
-    def untested(self):
-        """ Issue a warning message that the version of the component is
-        untested.
-        """
-
-        self.warning("v{0} is untested".format(self.version), component=self)
-
-    def verify(self):
-        """ Verify the component.  This will be called after the options have
-        been parsed and the version number resolved.
-        """
-
-    def verbose(self, message):
-        """ Issue a verbose progress message. """
-
-        self._sysroot.verbose(message, component=self)
-
-    @property
-    def verbose_enabled(self):
-        """ True if verbose messages are being displayed. """
-
-        return self._sysroot.verbose_enabled
-
-    def verify_host_tools(self, tools):
-        """ Verify that a sequence of host tools is available. """
-
-        for tool in tools:
-            self.find_exe(tool)
-
-    def warning(self, message):
-        """ Issue a warning message. """
-
-        self._sysroot.warning(message, component=self)
 
     def _android_only(self, attr_name):
         """ Issue an error message about an Android-only attribute. """
