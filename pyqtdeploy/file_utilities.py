@@ -133,7 +133,9 @@ def create_file(file_name):
 
 
 def open_file(file_name):
-    """ Open a text file.  file_name is the name of the file. """
+    """ Open a text file and return the file object.  file_name is the name of
+    the file.
+    """
 
     try:
         return open(file_name, 'rt')

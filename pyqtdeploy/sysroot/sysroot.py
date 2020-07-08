@@ -29,10 +29,8 @@ import os
 import shutil
 import sys
 
-from ..file_utilities import (copy_embedded_file as fu_copy_embedded_file,
-        extract_version as fu_extract_version,
-        get_embedded_dir as fu_get_embedded_dir,
-        get_embedded_file_for_version as fu_get_embedded_file_for_version)
+from ..file_utilities import (create_file as fu_create_file,
+        open_file as fu_open_file)
 from ..platforms import Architecture, Platform
 from ..user_exception import UserException
 from ..version_number import VersionNumber
@@ -251,47 +249,6 @@ class Sysroot:
 
         return components
 
-    ###########################################################################
-    # The following are part of the public API for component plugins that are
-    # distributed as part of pyqtdeploy.  Therefore they are not documented.
-    ###########################################################################
-
-    @staticmethod
-    def copy_embedded_file(src_name, dst_name, macros={}):
-        """ Copy an embedded text file to a destination file.  src_name is the
-        name of the source file.  dst_name is the name of the destination file.
-        macros is an optional dictionary of key/value string macros and
-        instances of each key are replaced by the corresponding value.  A
-        UserException is raised if there was an error.
-        """
-
-        fu_copy_embedded_file(src_name, dst_name, macros)
-
-    @staticmethod
-    def get_embedded_dir(root, *subdirs):
-        """ Return a QDir corresponding to an embedded directory.  root is the
-        root directory and will be the __file__ attribute of a pyqtdeploy
-        module.  subdirs is a sequence of sub-directories from the root.
-        Return None if no such directory exists.
-        """
-
-        return fu_get_embedded_dir(root, *subdirs)
-
-    @staticmethod
-    def get_embedded_file_for_version(version, root, *subdirs):
-        """ Return the absolute file name in an embedded directory of a file
-        that is the most appropriate for a particular version.  version is the
-        version.  root is the root directory and will be the __file__ attribute
-        of a pyqtdeploy module.  subdirs is a sequence of sub-directories from
-        the root.  An empty string is returned if the version is not supported.
-        """
-
-        return fu_get_embedded_file_for_version(version, root, *subdirs)
-
-    ###########################################################################
-    # The following make up the public API to be used by component plugins.
-    ###########################################################################
-
     @staticmethod
     def add_to_path(name):
         """ Add the name of a directory to the start of PATH if it isn't
@@ -442,6 +399,14 @@ class Sysroot:
                 self.error("unable to create directory {0}".format(name),
                         detail=str(e), component=component)
 
+    def create_file(name, component=None):
+        """ Create a text file and return the file object. """
+
+        try:
+            return fu_create_file(name)
+        except UserException as e:
+            self.error(str(e), component=component)
+
     def delete_dir(self, name):
         """ Delete a directory and its contents. """
 
@@ -461,21 +426,6 @@ class Sysroot:
             except Exception as e:
                 self.error("unable to remove directory {0}.".format(name),
                         detail=str(e))
-
-    def extract_version(self, name):
-        """ Return a VersionNumber object from the name of a file or directory.
-        name is the name of the file or directory.  An exception is raised if a
-        version number could not be extracted.
-        """
-
-        version_nr = fu_extract_version(name)
-
-        if version_nr is None:
-            self.error(
-                    "unable to extract a version number from '{0}'".format(
-                            name))
-
-        return version_nr
 
     @property
     def host_arch_name(self):
@@ -502,6 +452,14 @@ class Sysroot:
         self._check_python_component()
 
         return os.path.join(self.host_bin_dir, self.host_exe('pip'))
+
+    def open_file(name, component=None):
+        """ Open an existing text file and return the file object. """
+
+        try:
+            return fu_open_file(name)
+        except UserException as e:
+            self.error(str(e), component=component)
 
     def pip_install(self, package):
         """ Use pip to install a package in the sysroot site-packages

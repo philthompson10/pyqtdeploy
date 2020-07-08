@@ -37,6 +37,10 @@ class Component(AbstractComponent):
     installed from a source package.
     """
 
+    ###########################################################################
+    # The following make up the public API to be used by component plugins.
+    ###########################################################################
+
     # Set if installing from source is mandatory.
     must_install_from_source = False
 
@@ -100,22 +104,6 @@ class Component(AbstractComponent):
         # This default implementation does not support downloads.
         return []
 
-    def get_options(self):
-        """ Return a list of ComponentOption objects that define the components
-        configurable options.
-        """
-
-        options = super().get_options()
-
-        if not self.must_install_from_source:
-            options.append(
-                    ComponentOption('install_from_source', type=bool,
-                            default=True,
-                            help="Install from a source package rather an "
-                                    "existing installation."))
-
-        return options
-
     def get_pypi_urls(self, name):
         """ Return a list of URLs (excluding the source archive name) where a
         source archive may be downloaded from a PyPI project.
@@ -174,3 +162,23 @@ class Component(AbstractComponent):
             os.chdir(archive_root)
 
         return archive_root
+
+    ###########################################################################
+    # The following are not part of the public API used by component plugins.
+    ###########################################################################
+
+    def get_options(self):
+        """ Return a list of ComponentOption objects that define the components
+        configurable options.
+        """
+
+        options = super().get_options()
+
+        if not self.must_install_from_source:
+            options.append(
+                    ComponentOption('install_from_source', type=bool,
+                            default=True,
+                            help="Install from a source package rather an "
+                                    "existing installation."))
+
+        return options
