@@ -192,7 +192,7 @@ class AbstractComponent(ABC):
     def install(self):
         """ Install the component. """
 
-    def open_file(name):
+    def open_file(self, name):
         """ Open an existing text file and return the file object. """
 
         return self._sysroot.open_file(name, component=self)

@@ -56,7 +56,7 @@ def main():
             help="the qmake executable when using an existing Qt installation",
             metavar="FILE")
     parser.add_argument('--source-dir',
-            help="a directory containing the source archives",
+            help="a directory containing source archives",
             metavar="DIR", dest='source_dirs', action='append')
     parser.add_argument('--sysroot', help="the system image root directory",
             metavar="DIR")

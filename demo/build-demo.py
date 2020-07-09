@@ -46,44 +46,39 @@ def run(args):
 
 # Parse the command line.
 parser = argparse.ArgumentParser()
-parser.add_argument('--installed-qt-dir',
-        help="the name of a directory containing pre-built Qt installations",
-        metavar="DIR")
-parser.add_argument('--no-sysroot', help="do not build the sysroot",
+parser.add_argument('--build-sysroot', help="always build the sysroot",
         action='store_true')
-parser.add_argument('--source-dir',
-        help="a directory containing the source packages", metavar="DIR",
-        dest='source_dirs', action='append')
-parser.add_argument('--target', help="the target platform", default='')
+parser.add_argument('--qmake',
+        help="the qmake executable when using an existing Qt installation",
+        metavar="FILE")
+parser.add_argument('--target', help="the target architecture", default='')
 parser.add_argument('--quiet', help="disable progress messages",
         action='store_true')
 parser.add_argument('--verbose', help="enable verbose progress messages",
         action='store_true')
-parser.add_argument('--no-warnings-as-errors',
-        help="warnings are not treated as errors", dest='warnings_are_errors',
-        default=True, action='store_false')
 cmd_line_args = parser.parse_args()
-build_sysroot = not cmd_line_args.no_sysroot
-installed_qt_dir = cmd_line_args.installed_qt_dir
-source_dirs = cmd_line_args.source_dirs
+build_sysroot = cmd_line_args.build_sysroot
+qmake = os.path.abspath(cmd_line_args.qmake) if cmd_line_args.qmake else None
 target = cmd_line_args.target
 quiet = cmd_line_args.quiet
 verbose = cmd_line_args.verbose
-warnings_are_errors = cmd_line_args.warnings_are_errors
 
 # Pick a default target if none is specified.
 if not target:
     if sys.platform == 'win32':
-        # MSVC2015 is v14, MSVC2017 is v15.
+        # MSVC2015 is v14, MSVC2017 is v15, MSVC2019 is v16.
         vs_major = os.environ.get('VisualStudioVersion', '0.0').split('.')[0]
 
-        if vs_major == '15':
-            is_32 = (os.environ.get('VSCMD_ARG_TGT_ARCH') != 'x64')
+        if vs_major == '0':
+            # If there is no development environment then use the host
+            # platform.
+            from distutils.util import get_platform
+
+            is_32 = (get_platform() == 'win32')
         elif vs_major == '14':
             is_32 = (os.environ.get('Platform') != 'X64')
         else:
-            # Default to 64 bits.
-            is_32 = False
+            is_32 = (os.environ.get('VSCMD_ARG_TGT_ARCH') != 'x64')
 
         target = 'win-' + ('32' if is_32 else '64')
     elif sys.platform == 'darwin':
@@ -96,19 +91,10 @@ if not target:
         print("Unsupported platform:", sys.platform, file=sys.stderr)
         sys.exit(2)
 
-# Make sure the Qt directory was specified if it is needed.
-if target in ('android-32', 'android-64', 'ios-64') and not installed_qt_dir:
-    print("--installed-qt-dir must be specified for", target, file=sys.stderr)
+# Make sure qmake was specified if it is needed.
+if target in ('android-32', 'android-64', 'ios-64') and not qmake:
+    print("--qmake must be specified for", target, file=sys.stderr)
     sys.exit(2)
-
-# Create the list of directories to search for source packages and Qt.
-if not source_dirs:
-    source_dirs = ['.']
-
-if installed_qt_dir:
-    source_dirs.insert(0, installed_qt_dir)
-
-source_dirs = [os.path.abspath(s) for s in source_dirs]
 
 # Anchor everything from the directory containing this script.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -117,22 +103,26 @@ sysroot_dir = 'sysroot-' + target
 build_dir = 'build-' + target
 host_bin_dir = os.path.abspath(os.path.join(sysroot_dir, 'host', 'bin'))
 
-# Build sysroot.
-if build_sysroot:
+# Build sysroot if required.
+if build_sysroot and os.path.isdir(sysroot_dir):
+    try:
+        shutil.rmtree(sysroot_dir)
+    except:
+        print("There was an error removing", sysroot_dir, file=sys.stderr)
+        sys.exit(1)
+
+if not os.path.isdir(sysroot_dir):
     args = ['pyqtdeploy-sysroot', '--target', target, '--sysroot', sysroot_dir]
 
-    for s in source_dirs:
-        args.append('--source-dir')
-        args.append(s)
+    if qmake:
+        args.append('--qmake')
+        args.append(qmake)
 
     if quiet:
         args.append('--quiet')
 
     if verbose:
         args.append('--verbose')
-
-    if not warnings_are_errors:
-        args.append('--no-warnings-are-errors')
 
     args.append('sysroot.toml')
 
@@ -141,11 +131,7 @@ if build_sysroot:
 # Build the demo.
 shutil.copy('pyqt-demo.py', os.path.join('data', 'pyqt-demo.py.dat'))
 
-args = ['pyqtdeploy-build', '--target', target, '--sysroot', sysroot_dir,
-            '--build-dir', build_dir]
-
-if not warnings_are_errors:
-    args.append('--no-warnings-are-errors')
+args = ['pyqtdeploy-build', '--target', target, '--sysroot', sysroot_dir]
 
 args.append('pyqt-demo.pdy')
 
