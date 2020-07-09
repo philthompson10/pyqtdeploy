@@ -453,7 +453,7 @@ class Sysroot:
 
         return os.path.join(self.host_bin_dir, self.host_exe('pip'))
 
-    def open_file(name, component=None):
+    def open_file(self, name, component=None):
         """ Open an existing text file and return the file object. """
 
         try:
