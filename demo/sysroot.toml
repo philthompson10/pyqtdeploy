@@ -51,6 +51,12 @@ installed_modules = ["QtCore", "QtGui", "QtNetwork", "QtWidgets",
         "QtWinExtras"]
 
 
+# PyQt3D ######################################################################
+
+[PyQt3D]
+version = "5.12.0"
+
+
 # PyQtChart ###################################################################
 
 [PyQtChart]
