@@ -26,31 +26,76 @@
 
 import os
 
-from ... import ComponentBase, ComponentOption
+from ... import Component, ComponentOption, VersionedModule
 
 
-class PyQtDataVisualizationComponent(ComponentBase):
+class PyQtDataVisualizationComponent(Component):
     """ The PyQtDataVisualization component. """
 
-    # The component options.
-    options = [
-        ComponentOption('source', required=True,
-                help="The archive containing the PyQtDataVisualization source code."),
-    ]
+    # The component must be installed from source.
+    must_install_from_source = True
 
-    def build(self, sysroot):
-        """ Build PyQtDataVisualization for the target. """
+    # The list of components that, if specified, should be installed before
+    # this one.
+    preinstalls = ['Python', 'PyQt', 'Qt', 'SIP']
 
-        # Get the PyQt version number.
-        pyqt5_version_nr = sysroot.verify_source(self._pyqt5.source)
+    # The dict of VersionedModule objects provided by the component.
+    # TODO
+    provides = {
+        'PyQt5.QtDataVisualization': VersionedModule(deps='PyQt:PyQt5.QtGui')
+    }
 
-        # Get this package's source and version number.
-        archive = sysroot.find_file(self.source)
-        version_nr = sysroot.extract_version(archive)
+    def get_archive_name(self):
+        """ Return the filename of the source archive. """
 
-        sysroot.unpack_archive(archive)
+        if self._commercial:
+            return 'PyQtDataVisualization_commercial-{}.tar.gz'.format(
+                    self._version_str)
+
+        if self.version <= (5, 13, 0):
+            return 'PyQtDataVisualization_gpl-{}.tar.gz'.format(
+                    self._version_str)
+
+        return 'PyQtDataVisualization-{}.tar.gz'.format(self._version_str)
+
+    def get_archive_urls(self):
+        """ Return the list of URLs where the source archive might be
+        downloaded from.
+        """
+
+        if self._commercial:
+            return super().get_archive_urls()
+
+        if self.version <= (5, 14):
+            return ['https://www.riverbankcomputing.com/static/Downloads/PyQtDataVisualization/{}/'.format(self._version_str)]
+
+        return self.get_pypi_urls('PyQtDataVisualization')
+
+    def install(self):
+        """ Install for the target. """
+
+        # See if it is the commercial version.
+        self._commercial = (self.get_file('pyqt-commercial.sip') is not None)
+
+        # Unpack the source.
+        self.unpack_archive(self.get_archive())
+
+        # Map the target name onto the names used by configure.py.
+        pyqt_platform = self.target_platform_name
+
+        if pyqt_platform == 'android':
+            pyqt_platform = 'linux'
+        elif pyqt_platform in ('ios', 'macos'):
+            pyqt_platform = 'darwin'
+        elif pyqt_platform == 'win':
+            pyqt_platform = 'win32'
 
         # Create a configuration file.
+        python = self.get_component('Python')
+        pyqt = self.get_component('PyQt')
+        qt = self.get_component('Qt')
+        sip = self.get_component('SIP')
+
         cfg = '''py_platform = {0}
 py_inc_dir = {1}
 py_pylib_dir = {2}
@@ -58,42 +103,47 @@ py_pylib_lib = {3}
 py_sip_dir = {4}
 [PyQt 5]
 module_dir = {5}
-'''.format(sysroot.target_pyqt_platform, sysroot.target_py_include_dir,
-                sysroot.target_lib_dir, sysroot.target_py_lib,
-                sysroot.target_sip_dir,
-                os.path.join(sysroot.target_sitepackages_dir, 'PyQt5'))
+sip_module = PyQt5.sip
+'''.format(pyqt_platform, python.target_py_include_dir, self.target_lib_dir,
+                python.target_py_lib, sip.target_sip_dir,
+                os.path.join(python.target_sitepackages_dir, 'PyQt5'))
 
-        if self._pyqt5.disabled_features:
+        if pyqt.disabled_features:
             cfg += 'pyqt_disabled_features = {0}\n'.format(
-                    ' '.join(self._pyqt5.disabled_features))
+                    ' '.join(pyqt.disabled_features))
 
-        if pyqt5_version_nr >= (5, 11):
-            cfg += 'sip_module = PyQt5.sip\n'
+        cfg_name = 'pyqtdatavisualization-' + self.target_arch_name + '.cfg'
 
-        cfg_name = 'pyqtdatavisualization-' + sysroot.target_arch_name + '.cfg'
-
-        with open(cfg_name, 'wt') as cfg_file:
+        with self.create_file(cfg_name) as cfg_file:
             cfg_file.write(cfg)
 
         # Configure, build and install.
-        args = [sysroot.host_python, 'configure.py', '--static', '--qmake',
-            sysroot.host_qmake, '--sysroot', sysroot.sysroot_dir,
-            '--no-qsci-api', '--no-sip-files', '--no-stubs', '--configuration',
-            cfg_name, '--sip', sysroot.host_sip, '-c']
+        args = [python.host_python, 'configure.py', '--static', '--qmake',
+            qt.host_qmake, '--sysroot', self.sysroot_dir, '--no-qsci-api',
+            '--no-sip-files', '--no-stubs', '--configuration', cfg_name,
+            '--sip', sip.host_sip, '-c', '--no-dist-info']
 
-        if version_nr >= (5, 11):
-            args.append('--no-dist-info')
-
-        if sysroot.verbose_enabled:
+        if self.verbose_enabled:
             args.append('--verbose')
 
-        sysroot.run(*args)
-        sysroot.run(sysroot.host_make)
-        sysroot.run(sysroot.host_make, 'install')
+        self.run(*args)
+        self.run(self.host_make)
+        self.run(self.host_make, 'install')
 
-    def configure(self, sysroot):
-        """ Complete the configuration of the component. """
+    def verify(self):
+        """ Verify the component. """
 
-        sysroot.verify_source(self.source)
+        # Check that the version of PyQt has the same major.minor version.
+        pyqt = self.get_component('PyQt')
 
-        self._pyqt5 = sysroot.find_component('pyqt5')
+        if (self.version.major, self.version.minor) != (pyqt.version.major, pyqt.version.minor):
+            self.error(
+                    "PyQt v{}.{} is required".format(self.version.major,
+                            self.version.minor))
+
+    @property
+    def _version_str(self):
+        """ Return the version number as a string. """
+
+        # The current convention for .0 releases began with v5.13.0.
+        return '5.12' if self.version == (5, 12, 0) else str(self.version)

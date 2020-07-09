@@ -57,6 +57,12 @@ installed_modules = ["QtCore", "QtGui", "QtNetwork", "QtWidgets",
 version = "5.12.0"
 
 
+# PyQtDataVisualization #######################################################
+
+[PyQtDataVisualization]
+version = "5.12.0"
+
+
 # PyQtPurchasing ##############################################################
 
 [PyQtPurchasing]
