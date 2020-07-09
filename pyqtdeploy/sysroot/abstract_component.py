@@ -95,10 +95,10 @@ class AbstractComponent(ABC):
 
         self._sysroot.create_dir(name, empty=empty, component=self)
 
-    def create_file(name):
+    def create_file(self, name):
         """ Create a text file and return the file object. """
 
-        self._sysroot.create_file(name, component=self)
+        return self._sysroot.create_file(name, component=self)
 
     def error(self, message, detail=''):
         """ Issue an error message.  This method will not return. """

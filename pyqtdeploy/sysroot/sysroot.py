@@ -399,7 +399,7 @@ class Sysroot:
                 self.error("unable to create directory {0}".format(name),
                         detail=str(e), component=component)
 
-    def create_file(name, component=None):
+    def create_file(self, name, component=None):
         """ Create a text file and return the file object. """
 
         try:
