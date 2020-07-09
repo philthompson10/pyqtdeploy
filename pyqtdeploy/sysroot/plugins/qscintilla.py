@@ -26,36 +26,61 @@
 
 import os
 
-from ... import ComponentBase, ComponentOption
+from ... import Component, ComponentOption, VersionedModule
 
 
-class QScintillaComponent(ComponentBase):
+class QScintillaComponent(Component):
     """ The QScintilla component. """
 
-    # The component options.
-    options = [
-        ComponentOption('source', required=True,
-                help="The archive containing the QScintilla source code."),
-    ]
+    # The component must be installed from source.
+    must_install_from_source = True
 
-    def build(self, sysroot):
-        """ Build QScintilla for the target. """
+    # The list of components that, if specified, should be installed before
+    # this one.
+    preinstalls = ['Python', 'PyQt', 'Qt', 'SIP']
 
-        # Get the PyQt version number.
-        pyqt5_version_nr = sysroot.verify_source(self._pyqt5.source)
+    def get_archive_name(self):
+        """ Return the filename of the source archive. """
 
-        # Get this package's source and version number.
-        archive = sysroot.find_file(self.source)
-        version_nr = sysroot.extract_version(archive)
+        if self._commercial:
+            return 'QScintilla_commercial-{}.tar.gz'.format(
+                    self._version_str)
 
-        sysroot.unpack_archive(archive)
+        if self.version <= (2, 11, 2):
+            return 'QScintilla_gpl-{}.tar.gz'.format(self._version_str)
+
+        return 'QScintilla-{}.tar.gz'.format(self._version_str)
+
+    def get_archive_urls(self):
+        """ Return the list of URLs where the source archive might be
+        downloaded from.
+        """
+
+        if self._commercial:
+            return super().get_archive_urls()
+
+        return ['https://www.riverbankcomputing.com/static/Downloads/QScintilla/{}/'.format(self._version_str)]
+
+    def install(self):
+        """ Install for the target. """
+
+        # See if it is the commercial version.
+        self._commercial = (self.get_file('pyqt-commercial.sip') is not None)
+
+        # Unpack the source.
+        self.unpack_archive(self.get_archive())
+
+        # Get the required components.
+        python = self.get_component('Python')
+        pyqt = self.get_component('PyQt')
+        qt = self.get_component('Qt')
+        sip = self.get_component('SIP')
 
         # Build the static C++ library.
         os.chdir('Qt4Qt5')
-        sysroot.run(sysroot.host_qmake, 'CONFIG+=staticlib',
-                'DEFINES+=SCI_NAMESPACE')
-        sysroot.run(sysroot.host_make)
-        sysroot.run(sysroot.host_make, 'install')
+        self.run(qt.host_qmake, 'CONFIG+=staticlib', 'DEFINES+=SCI_NAMESPACE')
+        self.run(self.host_make)
+        self.run(self.host_make, 'install')
         os.chdir('..')
 
         # Build the static Python bindings.
@@ -68,47 +93,63 @@ py_pylib_lib = {2}
 py_sip_dir = {3}
 [PyQt 5]
 module_dir = {4}
-'''.format(sysroot.target_py_include_dir, sysroot.target_lib_dir,
-                sysroot.target_py_lib, sysroot.target_sip_dir,
-                os.path.join(sysroot.target_sitepackages_dir, 'PyQt5'))
+sip_module = PyQt5.sip
+'''.format(python.target_py_include_dir, self.target_lib_dir,
+                python.target_py_lib, sip.target_sip_dir,
+                os.path.join(python.target_sitepackages_dir, 'PyQt5'))
 
-        if self._pyqt5.disabled_features:
+        if pyqt.disabled_features:
             cfg += 'pyqt_disabled_features = {0}\n'.format(
-                    ' '.join(self._pyqt5.disabled_features))
+                    ' '.join(pyqt.disabled_features))
 
-        if pyqt5_version_nr >= (5, 11):
-            cfg += 'sip_module = PyQt5.sip\n'
+        cfg_name = 'qscintilla-' + self.target_arch_name + '.cfg'
 
-        cfg_name = 'qscintilla-' + sysroot.target_arch_name + '.cfg'
-
-        with open(cfg_name, 'wt') as cfg_file:
+        with self.create_file(cfg_name) as cfg_file:
             cfg_file.write(cfg)
 
         # Configure, build and install.
-        args = [sysroot.host_python, 'configure.py', '--static', '--qmake',
-            sysroot.host_qmake, '--sysroot', sysroot.sysroot_dir,
-            '--no-qsci-api', '--no-sip-files', '--no-stubs', '--configuration',
-            cfg_name, '--sip', sysroot.host_sip, '-c', '--pyqt', 'PyQt5']
+        args = [python.host_python, 'configure.py', '--static', '--qmake',
+            qt.host_qmake, '--sysroot', self.sysroot_dir, '--no-qsci-api',
+            '--no-sip-files', '--no-stubs', '--configuration', cfg_name,
+            '--sip', sip.host_sip, '-c', '--pyqt', 'PyQt5', '--no-dist-info']
 
-        if version_nr >= (2, 10, 5):
-            args.append('--no-dist-info')
-
-        if sysroot.verbose_enabled:
+        if self.verbose_enabled:
             args.append('--verbose')
 
-        sysroot.run(*args)
-        sysroot.run(sysroot.host_make)
-        sysroot.run(sysroot.host_make, 'install')
+        self.run(*args)
+        self.run(self.host_make)
+        self.run(self.host_make, 'install')
 
-    def configure(self, sysroot):
-        """ Complete the configuration of the component. """
+    @property
+    def provides(self):
+        """ The dict of VersionedModule objects provided by the component. """
 
-        version_nr = sysroot.verify_source(self.source)
+        deps = 'PyQt:PyQt5.QtWidgets'
 
-        # The Scintilla code in v2.11 uses C++ library functions that are
-        # missing prior to NDK v14.
-        if sysroot.target_platform_name == 'android' and version_nr >= (2, 11) and sysroot.android_ndk_version < 14:
-            sysroot.error(
-                    "QScintilla v2.11 and later require NDK r14 or later")
+        if 'QtPrintSupport' in self.get_component('PyQt').installed_modules:
+            deps = (deps, 'PyQt:PyQt5.QtPrintSupport')
 
-        self._pyqt5 = sysroot.find_component('pyqt5')
+        # TODO
+        return {'PyQt5.Qsci': VersionedModule(deps=deps)}
+
+    def verify(self):
+        """ Verify the component. """
+
+        # We don't want to support old versions.
+        if self.version < (2, 11):
+            self.unsupported()
+
+        if self.version > (2, 11, 5):
+            self.untested()
+
+        # The Scintilla code uses C++ library functions that are missing prior
+        # to NDK v14.
+        if self.target_platform_name == 'android' and self.android_ndk_version < 14:
+            self.error("Android NDK r14 or later is required.")
+
+    @property
+    def _version_str(self):
+        """ Return the version number as a string. """
+
+        # The current convention for .0 releases began after v2.11.0.
+        return '2.11' if self.version == (2, 11, 0) else str(self.version)

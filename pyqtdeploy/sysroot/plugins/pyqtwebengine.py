@@ -135,7 +135,7 @@ sip_module = PyQt5.sip
         widgets_deps = ('PyQt5.QtWebEngineCore', 'PyQt:PyQt5.QtNetwork',
                 'PyQt:PyQt5.QtPrintSupport', 'PyQt:PyQt5.QtWidgets')
 
-        if 'QtWebChannel' in self.get_component('Qt').installed_modules:
+        if 'QtWebChannel' in self.get_component('PyQt').installed_modules:
             widgets_deps += ('PyQt:PyQt5.QtWebChannel', )
 
         # TODO
