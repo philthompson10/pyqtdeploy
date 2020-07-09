@@ -118,9 +118,9 @@ sip_module = PyQt5.sip
 
         # Configure, build and install.
         args = [python.host_python, 'configure.py', '--static', '--qmake',
-            qt.host_qmake, '--sysroot', self.sysroot_dir,
-            '--no-qsci-api', '--no-sip-files', '--no-stubs', '--configuration',
-            cfg_name, '--sip', sip.host_sip, '-c', '--no-dist-info']
+            qt.host_qmake, '--sysroot', self.sysroot_dir, '--no-qsci-api',
+            '--no-sip-files', '--no-stubs', '--configuration', cfg_name,
+            '--sip', sip.host_sip, '-c', '--no-dist-info']
 
         if self.verbose_enabled:
             args.append('--verbose')
