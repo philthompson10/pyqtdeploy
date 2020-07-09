@@ -97,12 +97,12 @@ class PyQtComponent(Component):
         """ Return the filename of the source archive. """
 
         if self._license_file is not None:
-            return 'PyQt5_commercial-{}.tar.gz'.format(self.version)
+            return 'PyQt5_commercial-{}.tar.gz'.format(self._version_str)
 
         if self.version <= (5, 13, 1):
-            return 'PyQt5_gpl-{}.tar.gz'.format(self.version)
+            return 'PyQt5_gpl-{}.tar.gz'.format(self._version_str)
 
-        return 'PyQt5-{}.tar.gz'.format(self.version)
+        return 'PyQt5-{}.tar.gz'.format(self._version_str)
 
     def get_archive_urls(self):
         """ Return the list of URLs where the source archive might be
@@ -113,7 +113,7 @@ class PyQtComponent(Component):
             return super().get_archive_urls()
 
         if self.version <= (5, 14):
-            return ['https://www.riverbankcomputing.com/static/Downloads/PyQt5/{}/'.format(self.version)]
+            return ['https://www.riverbankcomputing.com/static/Downloads/PyQt5/{}/'.format(self._version_str)]
 
         return self.get_pypi_urls('PyQt5')
 
@@ -247,3 +247,10 @@ pyqt_modules = {6}
         # This is needed by dependent components.
         if not self.get_component('Qt').ssl:
             self.disabled_features.append('PyQt_SSL')
+
+    @property
+    def _version_str(self):
+        """ Return the version number as a string. """
+
+        # The current convention for .0 releases began with v5.13.0.
+        return '5.12' if self.version == (5, 12, 0) else str(self.version)

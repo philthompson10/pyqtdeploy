@@ -49,12 +49,13 @@ class PyQtPurchasingComponent(Component):
         """ Return the filename of the source archive. """
 
         if self._commercial:
-            return 'PyQtPurchasing_commercial-{}.tar.gz'.format(self.version)
+            return 'PyQtPurchasing_commercial-{}.tar.gz'.format(
+                    self._version_str)
 
         if self.version <= (5, 13, 0):
-            return 'PyQtPurchasing_gpl-{}.tar.gz'.format(self.version)
+            return 'PyQtPurchasing_gpl-{}.tar.gz'.format(self._version_str)
 
-        return 'PyQtPurchasing-{}.tar.gz'.format(self.version)
+        return 'PyQtPurchasing-{}.tar.gz'.format(self._version_str)
 
     def get_archive_urls(self):
         """ Return the list of URLs where the source archive might be
@@ -65,7 +66,7 @@ class PyQtPurchasingComponent(Component):
             return super().get_archive_urls()
 
         if self.version <= (5, 14):
-            return ['https://www.riverbankcomputing.com/static/Downloads/PyQtPurchasing/{}/'.format(self.version)]
+            return ['https://www.riverbankcomputing.com/static/Downloads/PyQtPurchasing/{}/'.format(self._version_str)]
 
         return self.get_pypi_urls('PyQtPurchasing')
 
@@ -121,7 +122,7 @@ sip_module = PyQt5.sip
             '--no-qsci-api', '--no-sip-files', '--no-stubs', '--configuration',
             cfg_name, '--sip', sip.host_sip, '-c', '--no-dist-info']
 
-        if sysroot.verbose_enabled:
+        if self.verbose_enabled:
             args.append('--verbose')
 
         self.run(*args)
@@ -138,3 +139,10 @@ sip_module = PyQt5.sip
             self.error(
                     "PyQt v{}.{} is required".format(self.version.major,
                             self.version.minor))
+
+    @property
+    def _version_str(self):
+        """ Return the version number as a string. """
+
+        # The current convention for .0 releases began with v5.13.0.
+        return '5.12' if self.version == (5, 12, 0) else str(self.version)

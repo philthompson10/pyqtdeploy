@@ -118,13 +118,14 @@ class SIPComponent(AbstractSIPComponent):
         self.building_for_target = False
 
         self.unpack_archive(archive)
+        python = self.get_component('Python')
 
-        args = [self.host_python, 'configure.py', '--bindir',
+        args = [python.host_python, 'configure.py', '--bindir',
                 os.path.join(self.host_dir, 'bin')]
 
         if self.version >= (4, 19, 12):
             # From v4.19.12 sip.h is considered part of the tools.
-            args.extend(['--incdir', self.target_py_include_dir,
+            args.extend(['--incdir', python.target_py_include_dir,
                     '--no-module'])
 
         self.run(*args)
@@ -138,13 +139,15 @@ class SIPComponent(AbstractSIPComponent):
         """ Install the static module for the target. """
 
         self.unpack_archive(archive)
+        python = self.get_component('Python')
+        qt = self.get_component('Qt')
 
         # Create a configuration file.
         cfg = '''py_inc_dir = {0}
 py_pylib_dir = {1}
 sip_module_dir = {2}
-'''.format(self.target_py_include_dir, self.target_lib_dir,
-                self.target_sitepackages_dir)
+'''.format(python.target_py_include_dir, self.target_lib_dir,
+                python.target_sitepackages_dir)
 
         cfg_name = 'sip-' + self.target_arch_name + '.cfg'
 
@@ -152,7 +155,7 @@ sip_module_dir = {2}
             cfg_file.write(cfg)
 
         # Configure, build and install.
-        args = [self.host_python, 'configure.py', '--static', '--sysroot',
+        args = [python.host_python, 'configure.py', '--static', '--sysroot',
                 self.sysroot_dir, '--no-pyi', '--no-tools', '--use-qmake',
                 '--configuration', cfg_name]
 
@@ -163,6 +166,6 @@ sip_module_dir = {2}
             args.extend(['--sip-module', self.module_name])
 
         self.run(*args)
-        self.run(self.host_qmake)
+        self.run(qt.host_qmake)
         self.run(self.host_make)
         self.run(self.host_make, 'install')
