@@ -152,16 +152,19 @@ class AbstractComponent(ABC):
         self.verbose(
                 "Determining installed version from '{0}'".format(filename))
 
+        version_line = None
+
         if os.path.isfile(filename):
             with open(filename) as f:
                 for line in f:
                     if identifier in line:
                         version_line = line.strip()
                         break
-                else:
-                    self.error(
-                            "Unable to find '{0}' in {1}.".format(identifier,
-                                    filename))
+
+        if version_line is None:
+            self.error(
+                    "Unable to find '{0}' in {1}.".format(identifier,
+                            filename))
 
         return version_line
 
@@ -369,14 +372,73 @@ class AbstractComponent(ABC):
         self.version = self.parse_version_number(
                 os.path.expandvars(self.version))
 
+    @staticmethod
+    def add_to_path(name):
+        """ Add the name of a directory to the start of PATH if it isn't
+        already present.  The original PATH is returned.
+        """
+
+        original_path = os.environ['PATH']
+        path = original_path.split(os.pathsep)
+
+        if name not in path:
+            path.insert(0, name)
+            os.environ['PATH'] = os.pathsep.join(path)
+
+        return original_path
+
     @property
     def android_api(self):
         """ The Android API to use. """
 
-        try:
-            return self._sysroot.target.platform.android_api
-        except AttributeError:
-            self._android_only('android_api')
+        return self._sysroot.target.platform.android_api
+
+    @property
+    def android_ndk_sysroot(self):
+        """ The path of the Android NDK's sysroot directory. """
+
+        return self._sysroot.android_ndk_sysroot
+
+    @property
+    def android_ndk_version(self):
+        """ The VersionNumber object representing the version number of the
+        Android NDK.
+        """
+
+        return self._sysroot.android_ndk_version
+
+    @property
+    def android_sdk_version(self):
+        """ The VersionNumber object representing the version number of the
+        Android SDK.
+        """
+
+        return self._sysroot.android_sdk_version
+
+    @property
+    def android_toolchain_bin(self):
+        """ The path of the Android toolchain's bin directory. """
+
+        return self._sysroot.android_toolchain_bin
+
+    @property
+    def android_toolchain_cc(self):
+        """ The name of the Android toolchain's C compiler. """
+
+        return self._sysroot.android_toolchain_cc
+
+    @property
+    def android_toolchain_cflags(self):
+        """ The list of the Android toolchain's C compiler's recommended flags.
+        """
+
+        return self._sysroot.android_toolchain_cflags
+
+    @property
+    def android_toolchain_prefix(self):
+        """ The name of the Android toolchain's prefix. """
+
+        return self.target.android_toolchain_prefix
 
     @property
     def apple_sdk(self):
@@ -517,17 +579,3 @@ class AbstractComponent(ABC):
                 return False
 
         return True
-
-    def _android_only(self, attr_name):
-        """ Issue an error message about an Android-only attribute. """
-
-        self.error(
-                "the '{0}' attribute is only supported for Android "
-                        "targets".format(attr_name))
-
-    def _apple_only(self, attr_name):
-        """ Issue an error message about an Apple-only attribute. """
-
-        self.error(
-                "the '{0}' attribute is only supported for Apple "
-                        "targets".format(attr_name))

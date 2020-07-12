@@ -451,7 +451,7 @@ class Android(Platform):
             message_handler.warning("NDK r{0} is untested.".format(revision))
 
         # Verify the SDK version.
-        self.android_sdk_veraion = self._get_sdk_version()
+        self.android_sdk_version = self._get_sdk_version()
 
         # Verify the API.
         self.android_api = self._get_api()
@@ -614,9 +614,6 @@ class macOS(ApplePlatform):
         """ Initialise the object. """
         
         super().__init__("macOS", 'macos', [('macos-64', macOS_x86_64)])
-
-        self._original_deployment_target = os.environ.get(
-                'MACOSX_DEPLOYMENT_TARGET')
 
 macOS()
 
