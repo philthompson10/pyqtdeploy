@@ -559,24 +559,6 @@ class iOS(ApplePlatform):
         
         super().__init__("iOS", 'ios', [('ios-64', iOS_arm_64)])
 
-        self._original_deployment_target = os.environ.get(
-                'IPHONEOS_DEPLOYMENT_TARGET')
-
-    def configure(self):
-        """ Configure the platform for building. """
-
-        if self._original_deployment_target is None:
-            # If not set then use the value that Qt uses.
-            os.environ['IPHONEOS_DEPLOYMENT_TARGET'] = '8.0'
-
-    def deconfigure(self):
-        """ Deconfigure the platform for building. """
-
-        if self._original_deployment_target is None:
-            del os.environ['IPHONEOS_DEPLOYMENT_TARGET']
-        else:
-            os.environ['IPHONEOS_DEPLOYMENT_TARGET'] = self._original_deployment_target
-
 iOS()
 
 
@@ -635,22 +617,6 @@ class macOS(ApplePlatform):
 
         self._original_deployment_target = os.environ.get(
                 'MACOSX_DEPLOYMENT_TARGET')
-
-    def configure(self):
-        """ Configure the platform for building. """
-
-        if self._original_deployment_target is None:
-            # If not set then use the value that Qt uses.
-            # TODO: It depends on the version of Qt.
-            os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
-
-    def deconfigure(self):
-        """ Deconfigure the platform for building. """
-
-        if self._original_deployment_target is None:
-            del os.environ['MACOSX_DEPLOYMENT_TARGET']
-        else:
-            os.environ['MACOSX_DEPLOYMENT_TARGET'] = self._original_deployment_target
 
 macOS()
 

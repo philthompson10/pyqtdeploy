@@ -64,8 +64,6 @@ class Sysroot:
         self.target = target
         self._message_handler = message_handler
 
-        self._building_for_target = True
-
         self.components = specification.create_components_for_target(target,
                 self)
 
@@ -79,6 +77,8 @@ class Sysroot:
             qt_component = self.get_component('Qt', required=False)
             if qt_component is not None:
                 qt_component.host_qmake = qmake
+
+        self.building_for_target = True
 
     @staticmethod
     def error(message, detail='', exception=None, component=None):
@@ -351,11 +351,25 @@ class Sysroot:
         """
 
         if value:
+            for component in self.components:
+                component.sdk_deconfigure(self.host.platform.name)
+
             self.host.deconfigure()
+
             self.target.configure()
+
+            for component in self.components:
+                component.sdk_configure(self.target.platform.name)
         else:
+            for component in self.components:
+                component.sdk_deconfigure(self.target.platform.name)
+
             self.target.deconfigure()
+
             self.host.configure()
+
+            for component in self.components:
+                component.sdk_configure(self.host.platform.name)
 
         self._building_for_target = value
 
