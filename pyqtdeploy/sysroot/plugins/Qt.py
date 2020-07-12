@@ -122,6 +122,44 @@ class QtComponent(AbstractQtComponent):
         if self.install_from_source:
             self._install_from_source()
 
+    def sdk_configure(self, platform_name):
+        """ Perform any platform-specific SDK configuration. """
+
+        if platform_name == 'ios':
+            if 'IPHONEOS_DEPLOYMENT_TARGET' not in os.environ:
+                if self.version >= (5, 14):
+                    dep_target = '12.0'
+                else:
+                    dep_target = '11.0'
+
+                os.environ['IPHONEOS_DEPLOYMENT_TARGET'] = dep_target
+                setattr(self, '_ios_dep_target_set', True)
+
+        elif self.target_platform_name == 'macos':
+            if 'MACOSX_DEPLOYMENT_TARGET' not in os.environ:
+                if self.version >= (5, 14):
+                    dep_target = '10.13'
+                else:
+                    dep_target = '10.12'
+
+                os.environ['MACOSX_DEPLOYMENT_TARGET'] = dep_target
+                setattr(self, '_macos_dep_target_set', True)
+
+    def sdk_deconfigure(self, platform_name):
+        """ Remove any platform-specific SDK configuration applied by a
+        previous call to sdk_configure().
+        """
+
+        if platform_name == 'ios':
+            if getattr(self, '_ios_dep_target_set', False):
+                del os.environ['IPHONEOS_DEPLOYMENT_TARGET']
+                delattr(self, '_ios_dep_target_set')
+
+        elif platform_name == 'macos':
+            if getattr(self, '_macos_dep_target_set', False):
+                del os.environ['MACOSX_DEPLOYMENT_TARGET']
+                delattr(self, '_macos_dep_target_set')
+
     def verify(self):
         """ Verify the component. """
 

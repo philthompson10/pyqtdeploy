@@ -221,6 +221,18 @@ class AbstractComponent(ABC):
 
         return self._sysroot.run(*args, capture=capture)
 
+    def sdk_configure(self, platform_name):
+        """ Perform any platform-specific SDK configuration. """
+
+        pass
+
+    def sdk_deconfigure(self, platform_name):
+        """ Remove any platform-specific SDK configuration applied by a
+        previous call to sdk_configure().
+        """
+
+        pass
+
     @property
     def sysroot_dir(self):
         """ The name of the sysroot directory. """
