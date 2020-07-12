@@ -219,19 +219,19 @@ class QtComponent(AbstractQtComponent):
 
         # Android-specific checks.
         if self.target_platform_name == 'android':
-            if sysroot.android_sdk_version < (26, 1, 1):
+            if self.android_sdk_version < (26, 1, 1):
                 self.warning(
                         "versions of the SDK earlier than v26.1.1 are untested")
 
-            if sysroot.android_sdk_version > (26, 1, 1):
+            if self.android_sdk_version > (26, 1, 1):
                 self.warning(
                         "versions of the SDK later than v26.1.1 are untested")
 
-            if sysroot.android_ndk_version < 19:
+            if self.android_ndk_version < 19:
                 self.warning(
                         "versions of the NDK earlier than r19 are untested")
 
-            if sysroot.android_ndk_version > 19:
+            if self.android_ndk_version > 19:
                 self.warning(
                         "versions of the NDK later than r19 are untested")
 
@@ -247,7 +247,7 @@ class QtComponent(AbstractQtComponent):
                     '%DXSDK_DIR%\\Utilities\\bin\\dx_setenv.cmd')
 
             if os.path.exists(dx_setenv):
-                sysroot.run(dx_setenv)
+                self.run(dx_setenv)
 
             original_path = os.environ['PATH']
             new_path = [original_path]

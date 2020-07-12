@@ -24,7 +24,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-import functools
 import os
 import shutil
 import sys
@@ -36,20 +35,6 @@ from ..user_exception import UserException
 from ..version_number import VersionNumber
 
 from .specification import SysrootSpecification
-
-
-def android_only(f):
-    """ Raise an exception if a method is called for a non-Android target. """
-
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        try:
-            return f(*args, **kwargs)
-        except AttributeError:
-            Sysroot.error(
-                    "plugin error: attribute is only available for Android targets")
-
-    return wrapper
 
 
 class Sysroot:
@@ -64,6 +49,8 @@ class Sysroot:
         self.target = target
         self._message_handler = message_handler
 
+        self._building_for_target = True
+
         self.components = specification.create_components_for_target(target,
                 self)
 
@@ -77,8 +64,6 @@ class Sysroot:
             qt_component = self.get_component('Qt', required=False)
             if qt_component is not None:
                 qt_component.host_qmake = qmake
-
-        self.building_for_target = True
 
     @staticmethod
     def error(message, detail='', exception=None, component=None):
@@ -171,6 +156,8 @@ class Sysroot:
         cwd = os.getcwd()
 
         # Install the components.
+        self.building_for_target = True
+
         for component in components:
             os.chdir(build_dir)
             component.ensure_installed()
@@ -249,30 +236,13 @@ class Sysroot:
 
         return components
 
-    @staticmethod
-    def add_to_path(name):
-        """ Add the name of a directory to the start of PATH if it isn't
-        already present.  The original PATH is returned.
-        """
-
-        original_path = os.environ['PATH']
-        path = original_path.split(os.pathsep)
-
-        if name not in path:
-            path.insert(0, name)
-            os.environ['PATH'] = os.pathsep.join(path)
-
-        return original_path
-
     @property
-    @android_only
     def android_ndk_sysroot(self):
         """ The path of the Android NDK's sysroot directory. """
 
         return self.target.android_ndk_sysroot
 
     @property
-    @android_only
     def android_ndk_version(self):
         """ The VersionNumber object representing the version number of the
         Android NDK.
@@ -286,7 +256,6 @@ class Sysroot:
         return ndk_version
 
     @property
-    @android_only
     def android_sdk_version(self):
         """ The VersionNumber object representing the version number of the
         Android SDK.
@@ -300,21 +269,18 @@ class Sysroot:
         return sdk_version
 
     @property
-    @android_only
     def android_toolchain_bin(self):
         """ The path of the Android toolchain's bin directory. """
 
         return self.target.android_toolchain_bin
 
     @property
-    @android_only
     def android_toolchain_cc(self):
         """ The name of the Android toolchain's C compiler. """
 
         return self.target.android_toolchain_cc
 
     @property
-    @android_only
     def android_toolchain_cflags(self):
         """ The list of the Android toolchain's C compiler's recommended flags.
         """
@@ -322,7 +288,6 @@ class Sysroot:
         return self.target.android_toolchain_cflags
 
     @property
-    @android_only
     def android_toolchain_prefix(self):
         """ The name of the Android toolchain's prefix. """
 
