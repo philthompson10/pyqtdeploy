@@ -237,10 +237,16 @@ class Sysroot:
         return components
 
     @property
+    def android_ndk_root(self):
+        """ The path of the root of the Android NDK. """
+
+        return self.target.platform.android_ndk_root
+
+    @property
     def android_ndk_sysroot(self):
         """ The path of the Android NDK's sysroot directory. """
 
-        return self.target.android_ndk_sysroot
+        return self.target.platform.android_ndk_sysroot
 
     @property
     def android_ndk_version(self):
