@@ -394,6 +394,12 @@ class AbstractComponent(ABC):
         return self._sysroot.target.platform.android_api
 
     @property
+    def android_ndk_root(self):
+        """ The path of the root of the Android NDK. """
+
+        return self._sysroot.android_ndk_root
+
+    @property
     def android_ndk_sysroot(self):
         """ The path of the Android NDK's sysroot directory. """
 
@@ -438,7 +444,7 @@ class AbstractComponent(ABC):
     def android_toolchain_prefix(self):
         """ The name of the Android toolchain's prefix. """
 
-        return self.target.android_toolchain_prefix
+        return self._sysroot.android_toolchain_prefix
 
     @property
     def apple_sdk(self):

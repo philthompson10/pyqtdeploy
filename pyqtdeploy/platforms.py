@@ -299,16 +299,17 @@ class AndroidArchitecture(Architecture):
         super().verify_as_target(message_handler)
 
         # Set the various property values.
-        ndk_root = self.platform.ndk_root
+        ndk_root = self.platform.android_ndk_root
         android_api = self.platform.android_api
         toolchain_prefix = self.android_toolchain_prefix
         android_host = '{}-x86_64'.format(
                 'darwin' if sys.platform == 'darwin' else 'linux')
 
-        self.android_ndk_sysroot = os.path.join(ndk_root, 'platforms',
-                'android-{}'.format(android_api), self.android_platform_arch)
+        # TODO: confirm the commented out value is wrong.
+        #self.android_ndk_sysroot = os.path.join(ndk_root, 'platforms',
+        #        'android-{}'.format(android_api), self.android_platform_arch)
 
-        self._check_exists(self.android_ndk_sysroot)
+        #self._check_exists(self.android_ndk_sysroot)
 
         # We use clang for r16 and later.
         cflags = []
@@ -333,10 +334,10 @@ class AndroidArchitecture(Architecture):
         self.android_toolchain_bin = os.path.join(ndk_root, 'toolchains',
                 toolchain_dir, 'prebuilt', android_host, 'bin')
 
-        self._check_exists(self.android_toolchain_bin)
+        self.platform.android_check_exists(self.android_toolchain_bin)
 
         # Check the compiler.
-        self._check_exists(
+        self.platform.android_check_exists(
                 os.path.join(self.android_toolchain_bin,
                         self.android_toolchain_cc))
 
@@ -345,13 +346,6 @@ class AndroidArchitecture(Architecture):
 
         # Android can never be a host.
         return False
-
-    @staticmethod
-    def _check_exists(name):
-        """ Raise an exception if something is missing from the NDK. """
-
-        if not os.path.exists(name):
-            raise UserException("'{0}' does not exist, make sure ANDROID_NDK_ROOT and ANDROID_NDK_PLATFORM are set correctly".format(name))
 
 
 class Android_arm_32(AndroidArchitecture):
@@ -383,6 +377,13 @@ class Android(Platform):
         super().__init__("Android", 'android',
                 [('android-32', Android_arm_32),
                         ('android-64', Android_arm_64)])
+
+    @staticmethod
+    def android_check_exists(name):
+        """ Raise an exception if something is missing from the NDK. """
+
+        if not os.path.exists(name):
+            raise UserException("'{0}' does not exist, make sure ANDROID_NDK_ROOT and ANDROID_NDK_PLATFORM are set correctly".format(name))
 
     def configure(self):
         """ Configure the platform for building. """
@@ -430,8 +431,12 @@ class Android(Platform):
                         "The {0} environment variable must be set.".format(
                                 name))
 
-        self.ndk_root = os.environ['ANDROID_NDK_ROOT']
-        self.sdk_root = os.environ['ANDROID_SDK_ROOT']
+        self.android_ndk_root = os.environ['ANDROID_NDK_ROOT']
+        self.android_sdk_root = os.environ['ANDROID_SDK_ROOT']
+
+        self.android_ndk_sysroot = os.path.join(self.android_ndk_root,
+                'sysroot')
+        self.android_check_exists(self.android_ndk_sysroot)
 
         # Verify the NDK revision.
         self.android_ndk_version = self._get_ndk_version()
@@ -464,7 +469,7 @@ class Android(Platform):
 
         ndk_platform = os.environ['ANDROID_NDK_PLATFORM']
 
-        if not os.path.isdir(os.path.join(self.ndk_root, 'platforms', ndk_platform)):
+        if not os.path.isdir(os.path.join(self.android_ndk_root, 'platforms', ndk_platform)):
             raise UserException(
                     "NDK r{0} does not support {1}.".format(
                             self.android_ndk_version.major, ndk_platform))
@@ -499,12 +504,13 @@ class Android(Platform):
         """ Return the version number of the NDK. """
 
         # source.properties is available from r11.
-        source_properties = os.path.join(self.ndk_root, 'source.properties')
+        source_properties = os.path.join(self.android_ndk_root,
+                'source.properties')
         if os.path.isfile(source_properties):
             return self._get_version(source_properties)
 
         # RELEASE.TXT is available in r10 and earlier.
-        release_txt = os.path.join(self.ndk_root, 'RELEASE.TXT')
+        release_txt = os.path.join(self.android_ndk_root, 'RELEASE.TXT')
         if os.path.isfile(release_txt):
             with open(release_txt) as f:
                 for line in f:
@@ -527,7 +533,7 @@ class Android(Platform):
         """ Return the version number of the SDK. """
 
         # Assume that source.properties should be available.
-        source_properties = os.path.join(self.sdk_root, 'tools',
+        source_properties = os.path.join(self.android_sdk_root, 'tools',
                 'source.properties')
 
         if not os.path.exists(source_properties):

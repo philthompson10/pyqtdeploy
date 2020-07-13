@@ -93,6 +93,26 @@ class OpenSSLComponent(Component):
         else:
             self._install_1_0_2(common_options)
 
+    def sdk_configure(self, platform_name):
+        """ Perform any platform-specific SDK configuration. """
+
+        if platform_name == 'android':
+            # OpenSSL v1.1.1 expects ANDROID_NDK_HOME to be set rather than
+            # ANDROID_NDK_ROOT.
+            if 'ANDROID_NDK_HOME' not in os.environ:
+                os.environ['ANDROID_NDK_HOME'] = self.android_ndk_root
+                setattr(self, '_android_ndk_home_set', True)
+
+    def sdk_deconfigure(self, platform_name):
+        """ Remove any platform-specific SDK configuration applied by a
+        previous call to sdk_configure().
+        """
+
+        if platform_name == 'android':
+            if getattr(self, '_android_ndk_home_set', False):
+                del os.environ['ANDROID_NDK_HOME']
+                delattr(self, '_android_ndk_home_set')
+
     def verify(self):
         """ Verify the component. """
 
@@ -192,7 +212,13 @@ class OpenSSLComponent(Component):
                     self.android_ndk_sysroot)
 
         configure_args.extend(common_options)
-        configure_args.append('android')
+
+        if self.target_arch_name == 'android-32':
+            os_compiler = 'android-arm'
+        else:
+            os_compiler = 'android-arm64'
+
+        configure_args.append(os_compiler)
 
         self.run(*configure_args)
 

@@ -126,6 +126,9 @@ module_name = "PyQt5.sip"
 version = "1.2.11"
 install_from_source = false
 
+[zlib.android]
+version = "1.2.7"
+
 [zlib.win]
 install_from_source = true
 static_msvc_runtime = true
