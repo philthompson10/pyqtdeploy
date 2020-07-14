@@ -53,7 +53,7 @@ def freeze_as_c(py_filename, c_filename, embedded_name):
     for i in range(0, len(code), 16):
         c_file.write('\n    ')
         for j in code[i:i + 16]:
-            c_file.write('%d,' % j)
+            c_file.write('%d, ' % j)
 
     c_file.write('\n};\n')
 
@@ -66,7 +66,7 @@ def _get_marshalled_code(py_filename, embedded_name):
     try:
         source_file = open(py_filename, 'rb')
     except Exception as e:
-        sys.stderr.write("%s: %s\n" % (py_filename, str(e)))
+        sys.stderr.write("{0}: {1}\n".format(py_filename, str(e)))
         sys.exit(1)
 
     source = source_file.read()
@@ -90,7 +90,7 @@ job_file = open(job_filename, newline='')
 job_reader = csv.reader(job_file)
 
 for out_filename, py_filename, embedded_name, conversion in job_reader:
-    sys.stdout.write("Freezing %s...\n" % py_filename)
+    sys.stdout.write("Freezing {0}...\n".format(os.path.basename(py_filename)))
     sys.stdout.flush()
 
     if conversion == 'C':

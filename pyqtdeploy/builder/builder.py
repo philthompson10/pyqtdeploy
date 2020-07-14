@@ -76,10 +76,6 @@ class Builder:
                     "The sysroot directory '{0}' does not exist.".format(
                             self._sysroot.sysroot_dir))
 
-        # Create a temporary directory which will be removed automatically when
-        # this function's objects are garbage collected.
-        temp_dir = tempfile.TemporaryDirectory()
-
         # Get the names of the required Python modules, extension modules and
         # libraries.
         #metadata = get_python_metadata(python_target_version)
@@ -179,7 +175,8 @@ class Builder:
         self._create_directory(self._build_dir)
 
         # Create the job file and writer.
-        job_filename = os.path.join(temp_dir.name, 'jobs.csv')
+        job_dir = tempfile.TemporaryDirectory()
+        job_filename = os.path.join(job_dir.name, 'jobs.csv')
         job_file = open(job_filename, 'w', newline='')
         job_writer = csv.writer(job_file)
 
@@ -188,9 +185,9 @@ class Builder:
         # original source.  We continue to use a local copy of _bootstrap.py
         # as it still needs to be frozen and we don't want to depend on an
         # external source.
-        self._freeze_bootstrap('bootstrap', self._build_dir, temp_dir,
-                job_writer, python)
-        self._freeze_bootstrap('bootstrap_external', self._build_dir, temp_dir,
+        self._freeze_bootstrap('bootstrap', self._build_dir, job_writer,
+                python)
+        self._freeze_bootstrap('bootstrap_external', self._build_dir,
                 job_writer, python)
 
         # Freeze any main application script.
@@ -219,14 +216,9 @@ class Builder:
         # Run the freeze jobs.
         job_file.close()
 
-        # The odd naming of Python source files is to prevent them from being
-        # frozen if we deploy ourself.
-        freeze = shutil.copy2(self._get_lib_path('freeze.python'),
-                os.path.join(temp_dir.name, 'freeze.py'))
+        self._run_freeze(python, job_filename, opt)
 
-        self._run_freeze(freeze, python, job_filename, opt)
-
-    def _freeze_bootstrap(self, name, build_dir, temp_dir, job_writer, python):
+    def _freeze_bootstrap(self, name, build_dir, job_writer, python):
         """ Freeze a version dependent bootstrap script. """
 
         # Find the bootstrap script appropriate for this version of Python.
@@ -236,8 +228,8 @@ class Builder:
 
         for fn in os.listdir(bootstrap_dir):
             version = fn.split('-')[-1]
-            if version.endswith('.python'):
-                version = version[:-7]
+            if version.endswith('.py'):
+                version = version[:-3]
 
             try:
                 version = VersionNumber.parse_version_number(version)
@@ -255,9 +247,7 @@ class Builder:
 
         assert bootstrap is not None
 
-        bootstrap_src = os.path.join(bootstrap_dir, bootstrap)
-        bootstrap_path = shutil.copy2(bootstrap_src,
-                os.path.join(temp_dir.name, name + '.py'))
+        bootstrap_path = os.path.join(bootstrap_dir, bootstrap)
         self._freeze(job_writer,
                 os.path.join(build_dir, 'frozen_' + name + '.h'),
                 bootstrap_path, 'pyqtdeploy_' + name, as_c=True)
@@ -1202,7 +1192,7 @@ static struct _inittab %s[] = {
 
         job_writer.writerow([out_file, in_file, name, conversion])
 
-    def _run_freeze(self, freeze, python, job_filename, opt):
+    def _run_freeze(self, python, job_filename, opt):
         """ Run the accumlated freeze jobs. """
 
         argv = [python.host_python]
@@ -1212,7 +1202,7 @@ static struct _inittab %s[] = {
         elif opt == 1:
             argv.append('-O')
 
-        argv.append(freeze)
+        argv.append(self._get_lib_path('freeze.py'))
         argv.append(job_filename)
 
         self.run(argv, "Unable to freeze files")
