@@ -72,11 +72,12 @@ class PackagesPage(QWidget):
                 textEdited=self._toml_changed)
         form.addRow("Sysroot specification file", self._toml_edit)
 
-        self._dir_edit = FilenameEditor("Sysroot Directory",
-                placeholderText="Sysroot directory name",
-                whatsThis="The name of the sysroot directory.",
+        self._dir_edit = FilenameEditor("Sysroots Directory",
+                placeholderText="Sysroots directory name",
+                whatsThis="The name of the directory containing "
+                        "target-specific sysroot directories.",
                 textEdited=self._dir_changed, directory=True)
-        form.addRow("Sysroot directory", self._dir_edit)
+        form.addRow("Sysroots directory", self._dir_edit)
 
         layout.addLayout(form)
 
@@ -161,11 +162,11 @@ class PackagesPage(QWidget):
         return module_item
 
     def _dir_changed(self, value):
-        """ Invoked when the user edits the sysroot directory name. """
+        """ Invoked when the user edits the sysroots directory name. """
 
         project = self.project
 
-        project.sysroot_dir = value
+        project.sysroots_dir = value
         project.modified = True
 
     def _get_module_item(self, module_name, modules, stdlib):
@@ -244,7 +245,7 @@ class PackagesPage(QWidget):
         project = self.project
 
         self._toml_edit.setText(project.sysroot_toml)
-        self._dir_edit.setText(project.sysroot_dir)
+        self._dir_edit.setText(project.sysroots_dir)
 
         # Create a non-verified sysroot for each target architecture and
         # determine the availability of each module.
@@ -257,7 +258,8 @@ class PackagesPage(QWidget):
         self._has_openssl = False
 
         for target in Architecture.all_architectures:
-            sysroot = Sysroot(project.sysroot_specification, host, target)
+            sysroot = Sysroot(project.sysroot_specification, host, target,
+                    project.sysroots_dir)
 
             for component in sysroot.components:
                 if component.name == 'OpenSSL':
