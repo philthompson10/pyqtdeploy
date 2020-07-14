@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Riverbank Computing Limited
+// Copyright (c) 2020, Riverbank Computing Limited
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,21 +44,12 @@
 #error "Qt v4.2.0 or later is required"
 #endif
 
-
-extern "C" {
-
-#if PY_MAJOR_VERSION >= 3
-#if PY_MINOR_VERSION < 3
-#error "Python v3.3 or later is required"
+#if PY_VERSION_HEX < 0x03050000
+#error "Python v3.5 or later is required"
 #endif
 
-#define PYQTDEPLOY_INIT                 PyInit_pdytools
-#define PYQTDEPLOY_TYPE                 PyObject *
-#define PYQTDEPLOY_MODULE_DISCARD(m)    Py_DECREF(m)
-#define PYQTDEPLOY_FATAL(s)             return NULL
-#define PYQTDEPLOY_RETURN(m)            return (m)
-#define PYQTDEPLOY_PARSE_STR            "U"
-#define CONST_CAST(s)                   s
+
+extern "C" {
 
 // The module definition structure.
 static struct PyModuleDef pdytoolsmodule = {
@@ -72,19 +63,6 @@ static struct PyModuleDef pdytoolsmodule = {
     NULL,
     NULL
 };
-#else
-#if PY_MINOR_VERSION < 7
-#error "Python v2.7 or later is required"
-#endif
-
-#define PYQTDEPLOY_INIT                 initpdytools
-#define PYQTDEPLOY_TYPE                 void
-#define PYQTDEPLOY_MODULE_DISCARD(m)
-#define PYQTDEPLOY_FATAL(s)             Py_FatalError(s)
-#define PYQTDEPLOY_RETURN(m)
-#define PYQTDEPLOY_PARSE_STR            "S"
-#define CONST_CAST(s)                   const_cast<char *>(s)
-#endif
 
 
 #if defined(Q_OS_WIN)
@@ -95,13 +73,11 @@ static const char extension_module_extension[] = ".so";
 
 
 // C linkage forward declarations.
-PYQTDEPLOY_TYPE PYQTDEPLOY_INIT();
+PyObject *PyInit_pdytools();
 
 static int qrcimporter_init(PyObject *self, PyObject *args, PyObject *kwds);
 static void qrcimporter_dealloc(PyObject *self);
-#if PY_MAJOR_VERSION >= 3
 static PyObject *qrcimporter_find_loader(PyObject *self, PyObject *args);
-#endif
 static PyObject *qrcimporter_find_module(PyObject *self, PyObject *args);
 static PyObject *qrcimporter_get_code(PyObject *self, PyObject *args);
 static PyObject *qrcimporter_get_data(PyObject *self, PyObject *args);
@@ -129,9 +105,7 @@ typedef struct _qrcimporter
 
 // The importer method table.
 static PyMethodDef qrcimporter_methods[] = {
-#if PY_MAJOR_VERSION >= 3
     {"find_loader", qrcimporter_find_loader, METH_VARARGS, NULL},
-#endif
     {"find_module", qrcimporter_find_module, METH_VARARGS, NULL},
     {"get_code", qrcimporter_get_code, METH_VARARGS, NULL},
     {"get_data", qrcimporter_get_data, METH_VARARGS, NULL},
@@ -194,9 +168,7 @@ static PyTypeObject QrcImporter_Type = {
     0,                                          // tp_weaklist
     0,                                          // tp_del
     0,                                          // tp_version_tag
-#if PY_VERSION_HEX >= 0x03040000
     0,                                          // tp_finalize
-#endif
 };
 
 
@@ -426,13 +398,8 @@ static int qrcimporter_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     PyObject *path;
 
-#if PY_MAJOR_VERSION >= 3
     if (!PyArg_ParseTuple(args, "O&:qrcimporter", PyUnicode_FSDecoder, &path))
         return -1;
-#else
-    if (!PyArg_ParseTuple(args, PYQTDEPLOY_PARSE_STR ":qrcimporter", &path))
-        return -1;
-#endif
 
     QString *q_path = new QString(str_to_qstring(path));
 
@@ -476,13 +443,12 @@ static void qrcimporter_dealloc(PyObject *self)
 }
 
 
-#if PY_MAJOR_VERSION >= 3
 // Implement the standard find_loader() method for the importer.
 static PyObject *qrcimporter_find_loader(PyObject *self, PyObject *args)
 {
     QString fqmn;
 
-    if (!parse_qstring(args, PYQTDEPLOY_PARSE_STR ":qrcimporter.find_loader", fqmn))
+    if (!parse_qstring(args, "U:qrcimporter.find_loader", fqmn))
         return NULL;
 
     QString pathname, filename;
@@ -553,7 +519,6 @@ static PyObject *qrcimporter_find_loader(PyObject *self, PyObject *args)
 
     return result;
 }
-#endif
 
 
 // Implement the standard find_module() method for the importer.  Note that we
@@ -563,7 +528,7 @@ static PyObject *qrcimporter_find_module(PyObject *self, PyObject *args)
 {
     PyObject *py_fqmn, *path;
 
-    if (!PyArg_ParseTuple(args, PYQTDEPLOY_PARSE_STR "|O:qrcimporter.find_module", &py_fqmn, &path))
+    if (!PyArg_ParseTuple(args, "U|O:qrcimporter.find_module", &py_fqmn, &path))
         return NULL;
 
     QString fqmn = str_to_qstring(py_fqmn);
@@ -600,37 +565,13 @@ static PyObject *qrcimporter_load_module(PyObject *self, PyObject *args)
     QString fqmn;
     PyObject *py_fqmn;
 
-    if (!parse_qstring(args, PYQTDEPLOY_PARSE_STR ":qrcimporter.load_module", fqmn, &py_fqmn))
+    if (!parse_qstring(args, "U:qrcimporter.load_module", fqmn, &py_fqmn))
         return NULL;
 
     QString pathname, filename;
     PyObject *code, *py_filename, *mod_dict;
 
     ModuleType mt = find_module((QrcImporter *)self, fqmn, pathname, filename);
-
-#if PY_MAJOR_VERSION < 3
-    if (mt == ModuleNotFound)
-    {
-        // We use the imp module to load sub-packages that are statically
-        // linked extension modules.
-        static PyObject *init_builtin = 0;
-
-        if (!init_builtin)
-        {
-            PyObject *imp_module = PyImport_ImportModule("imp");
-            if (!imp_module)
-                return NULL;
-
-            init_builtin = PyObject_GetAttrString(imp_module, "init_builtin");
-            Py_DECREF(imp_module);
-
-            if (!init_builtin)
-                return NULL;
-        }
-
-        return PyObject_CallObject(init_builtin, args);
-    }
-#endif
 
     if (mt == ModuleIsAdjacentExtensionModule)
     {
@@ -671,8 +612,8 @@ static PyObject *qrcimporter_load_module(PyObject *self, PyObject *args)
         if (!py_filename)
             return NULL;
 
-        PyObject *module_file = PyObject_CallFunction(open_file,
-                CONST_CAST("Os"), py_filename, "rb");
+        PyObject *module_file = PyObject_CallFunction(open_file, "Os",
+                py_filename, "rb");
 
         if (!module_file)
         {
@@ -680,9 +621,9 @@ static PyObject *qrcimporter_load_module(PyObject *self, PyObject *args)
             return NULL;
         }
 
-        PyObject *module = PyObject_CallFunction(load_module,
-                CONST_CAST("OOO(ssi)"), py_fqmn, module_file, py_filename,
-                extension_module_extension, "rb", 3);
+        PyObject *module = PyObject_CallFunction(load_module, "OOO(ssi)",
+                py_fqmn, module_file, py_filename, extension_module_extension,
+                "rb", 3);
 
         Py_DECREF(module_file);
         Py_DECREF(py_filename);
@@ -702,11 +643,7 @@ static PyObject *qrcimporter_load_module(PyObject *self, PyObject *args)
         return NULL;
 
     // Get the module object and its dict.
-#if PY_MAJOR_VERSION >= 3
     PyObject *mod = PyImport_AddModuleObject(py_fqmn);
-#else
-    PyObject *mod = PyImport_AddModule(PyString_AS_STRING(py_fqmn));
-#endif
     if (!mod)
         goto error;
 
@@ -739,12 +676,7 @@ static PyObject *qrcimporter_load_module(PyObject *self, PyObject *args)
     if (!py_filename)
         goto error;
 
-#if PY_MAJOR_VERSION >= 3
     mod = PyImport_ExecCodeModuleObject(py_fqmn, code, py_filename, NULL);
-#else
-    mod = PyImport_ExecCodeModuleEx(PyString_AS_STRING(py_fqmn), code,
-            PyString_AS_STRING(py_filename));
-#endif
 
     Py_DECREF(py_filename);
     Py_DECREF(code);
@@ -762,7 +694,7 @@ static PyObject *qrcimporter_get_code(PyObject *self, PyObject *args)
 {
     QString fqmn;
 
-    if (!parse_qstring(args, PYQTDEPLOY_PARSE_STR ":qrcimporter.get_code", fqmn))
+    if (!parse_qstring(args, "U:qrcimporter.get_code", fqmn))
         return NULL;
 
     QString pathname, filename;
@@ -807,7 +739,7 @@ static int qrcreader_init(PyObject *self, PyObject *args, PyObject *kwds)
     QrcImporter *importer;
     PyObject *py_package;
 
-    if (!PyArg_ParseTuple(args, "O" PYQTDEPLOY_PARSE_STR ":qrcreader", &importer, &py_package))
+    if (!PyArg_ParseTuple(args, "OU:qrcreader", &importer, &py_package))
         return -1;
 
     QString package = str_to_qstring(py_package);
@@ -871,7 +803,7 @@ static PyObject *qrcreader_is_resource(PyObject *self, PyObject *args)
     QString resource;
     PyObject *py_resource;
 
-    if (!parse_qstring(args, PYQTDEPLOY_PARSE_STR ":qrcreader.is_resource", resource, &py_resource))
+    if (!parse_qstring(args, "U:qrcreader.is_resource", resource, &py_resource))
         return NULL;
 
     QFileInfo resource_info(get_resource_path((QrcReader *)self, resource));
@@ -920,7 +852,7 @@ static int qrcresource_init(PyObject *self, PyObject *args, PyObject *kwds)
     QrcReader *reader;
     PyObject *py_resource;
 
-    if (!PyArg_ParseTuple(args, "O" PYQTDEPLOY_PARSE_STR ":qrcresource", &reader, &py_resource))
+    if (!PyArg_ParseTuple(args, "OU:qrcresource", &reader, &py_resource))
         return -1;
 
     QFile *resource = new QFile(
@@ -987,11 +919,7 @@ static PyObject *qrcresource_read(PyObject *self, PyObject *args)
 
     QByteArray data = (size < 0 ? resource->readAll() : resource->read(size));
 
-#if PY_MAJOR_VERSION >= 3
     return PyBytes_FromStringAndSize(data.constData(), data.size());
-#else
-    return PyString_FromStringAndSize(data.constData(), data.size());
-#endif
 }
 
 
@@ -1048,7 +976,7 @@ static PyObject *qrcimporter_is_package(PyObject *self, PyObject *args)
 {
     QString fqmn;
 
-    if (!parse_qstring(args, PYQTDEPLOY_PARSE_STR ":qrcimporter.is_package", fqmn))
+    if (!parse_qstring(args, "U:qrcimporter.is_package", fqmn))
         return NULL;
 
     QString pathname, filename;
@@ -1078,7 +1006,7 @@ static PyObject *qrcimporter_get_data(PyObject *self, PyObject *args)
 {
     QString filename;
 
-    if (!parse_qstring(args, PYQTDEPLOY_PARSE_STR ":qrcimporter.get_data", filename))
+    if (!parse_qstring(args, "U:qrcimporter.get_data", filename))
         return NULL;
 
     QByteArray data;
@@ -1086,11 +1014,7 @@ static PyObject *qrcimporter_get_data(PyObject *self, PyObject *args)
     if (!read_data(filename, data))
         return NULL;
 
-#if PY_MAJOR_VERSION >= 3
     return PyBytes_FromStringAndSize(data.constData(), data.size());
-#else
-    return PyString_FromStringAndSize(data.constData(), data.size());
-#endif
 }
 
 
@@ -1212,7 +1136,6 @@ static bool parse_qstring(PyObject *args, const char *fmt, QString &qstring,
 // Convert a Python str object to a QString.
 static QString str_to_qstring(PyObject *str)
 {
-#if PY_MAJOR_VERSION >= 3
     Py_ssize_t len = PyUnicode_GET_LENGTH(str);
 
     switch (PyUnicode_KIND(str))
@@ -1229,23 +1152,16 @@ static QString str_to_qstring(PyObject *str)
     }
 
     return QString();
-#else
-    return QString(QLatin1String(PyString_AS_STRING(str)));
-#endif
 }
 
 
 // Convert a QString to a Python str object.
 static PyObject *qstring_to_str(const QString &qstring)
 {
-#if PY_MAJOR_VERSION >= 3
     QVector<uint> ucs4 = qstring.toUcs4();
 
     return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, ucs4.data(),
             ucs4.size());
-#else
-    return PyString_FromString(qstring.toLatin1().constData());
-#endif
 }
 
 
@@ -1261,7 +1177,7 @@ static void raise_import_error(const QString &fqmn)
 void pdytools_init_executable_dir(const QString &argv0)
 {
     QString name;
-    PyObject *executable = PySys_GetObject(CONST_CAST("executable"));
+    PyObject *executable = PySys_GetObject("executable");
 
     if (executable && executable != Py_None)
         name = str_to_qstring(executable);
@@ -1282,7 +1198,7 @@ const QDir &pdytools_get_executable_dir()
 
 
 // The module initialisation function.
-PYQTDEPLOY_TYPE PYQTDEPLOY_INIT()
+PyObject *PyInit_pdytools()
 {
     PyObject *mod;
 
@@ -1290,40 +1206,36 @@ PYQTDEPLOY_TYPE PYQTDEPLOY_INIT()
     QrcImporter_Type.tp_new = PyType_GenericNew;
 
     if (PyType_Ready(&QrcImporter_Type) < 0)
-        PYQTDEPLOY_FATAL("Failed to initialise pdytools.qrcimporter type");
+        return NULL;
 
 #if PY_VERSION_HEX >= 0x03070000
     QrcReader_Type.tp_new = PyType_GenericNew;
 
     if (PyType_Ready(&QrcReader_Type) < 0)
-        PYQTDEPLOY_FATAL("Failed to initialise pdytools.qrcreader type");
+        return NULL;
 
     QrcResource_Type.tp_new = PyType_GenericNew;
 
     if (PyType_Ready(&QrcResource_Type) < 0)
-        PYQTDEPLOY_FATAL("Failed to initialise pdytools.qrcresource type");
+        return NULL;
 #endif
 
-#if PY_MAJOR_VERSION >= 3
     mod = PyModule_Create(&pdytoolsmodule);
-#else
-    mod = Py_InitModule("pdytools", NULL);
-#endif
     if (mod == NULL)
-        PYQTDEPLOY_FATAL("Failed to initialise pdytools module");
+        return NULL;
 
     if (PyModule_AddIntConstant(mod, "hexversion", PYQTDEPLOY_HEXVERSION) < 0)
     {
-        PYQTDEPLOY_MODULE_DISCARD(mod);
-        PYQTDEPLOY_FATAL("Failed to add hexversion to pdytools module");
+        Py_DECREF(mod);
+        return NULL;
     }
 
     Py_INCREF(&QrcImporter_Type);
     if (PyModule_AddObject(mod, "qrcimporter", (PyObject *)&QrcImporter_Type) < 0)
     {
-        PYQTDEPLOY_MODULE_DISCARD(mod);
-        PYQTDEPLOY_FATAL("Failed to add qrcimporter to pdytools module");
+        Py_DECREF(mod);
+        return NULL;
     }
 
-    PYQTDEPLOY_RETURN(mod);
+    return mod;
 }
