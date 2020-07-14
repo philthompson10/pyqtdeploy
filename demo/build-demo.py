@@ -100,8 +100,6 @@ if target in ('android-32', 'android-64', 'ios-64') and not qmake:
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 sysroot_dir = 'sysroot-' + target
-build_dir = 'build-' + target
-host_bin_dir = os.path.abspath(os.path.join(sysroot_dir, 'host', 'bin'))
 
 # Build sysroot if required.
 if build_sysroot and os.path.isdir(sysroot_dir):
@@ -129,17 +127,36 @@ if not os.path.isdir(sysroot_dir):
     run(args)
 
 # Build the demo.
+build_dir = 'build-' + target
+
 shutil.copy('pyqt-demo.py', os.path.join('data', 'pyqt-demo.py.dat'))
 
-args = ['pyqtdeploy-build', '--target', target, '--sysroot', sysroot_dir]
+args = ['pyqtdeploy-build', '--target', target, '--build-dir', build_dir]
 
-args.append('pyqt-demo.pdy')
+if qmake:
+    args.append('--qmake')
+    args.append(qmake)
+
+if quiet:
+    args.append('--quiet')
+
+if verbose:
+    args.append('--verbose')
+
+args.append('pyqt-demo.pdt')
 
 run(args)
 
-# Run qmake.  Use the qmake left by pyqtdeploy-sysroot.
+# Run qmake.  Use the qmake left by pyqtdeploy-sysroot if there is one.
+qmake_path = os.path.join(sysroot_dir, 'Qt', 'bin', 'qmake')
+if sys.platform == 'win32':
+    qmake_path += '.exe'
+
+if not os.path.isfile(qmake_path):
+    qmake_path = qmake
+
 os.chdir(build_dir)
-run([os.path.join(host_bin_dir, 'qmake')])
+run([qmake_path])
 
 # Run make. (When targeting iOS we leave it to Xcode.)
 if target.startswith('ios'):
@@ -152,9 +169,10 @@ else:
 
     if target.startswith('android'):
         run([make, 'INSTALL_ROOT=pyqt-demo', 'install'])
-        run([os.path.join(host_bin_dir, 'androiddeployqt'), '--gradle',
-                '--input', 'android-libpyqt-demo.so-deployment-settings.json',
-                '--output', 'pyqt-demo'])
+        run([os.path.join(os.path.dirname(qmake_path), 'androiddeployqt'),
+                '--gradle', '--input',
+                'android-libpyqt-demo.so-deployment-settings.json', '--output',
+                'pyqt-demo'])
 
 # Tell the user where the demo is.
 if target.startswith('android'):

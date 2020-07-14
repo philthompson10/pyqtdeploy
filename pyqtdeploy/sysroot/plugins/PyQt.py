@@ -29,7 +29,8 @@ import os
 from ... import Component, ComponentOption, VersionedModule
 
 
-# TODO
+# TODO: add linking information
+# TODO: add uic
 # The VersionedModule objects for all modules that can be provided by the
 # component.
 _ALL_MODULES = {
