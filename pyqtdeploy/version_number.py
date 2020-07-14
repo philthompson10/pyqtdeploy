@@ -127,23 +127,23 @@ class VersionNumber:
 
         major, minor, patch, suffix = other
 
-        if self.major < major:
+        if self.major > major:
+            return True
+
+        if self.major < major or minor is None:
             return False
 
-        if minor is None:
-            return self.major > major
+        if self.minor > minor:
+            return True
 
-        if self.minor < minor:
+        if self.minor < minor or patch is None:
             return False
 
-        if patch is None:
-            return self.minor > minor
+        if self.patch > patch:
+            return True
 
-        if self.patch <= patch:
+        if self.patch < patch or suffix is None:
             return False
-
-        if suffix is None:
-            return self.patch > patch
 
         return self.suffix > suffix
 
@@ -196,23 +196,23 @@ class VersionNumber:
 
         major, minor, patch, suffix = other
 
-        if self.major > major:
+        if self.major < major:
+            return True
+
+        if self.major > major or minor is None:
             return False
 
-        if minor is None:
-            return self.major < major
+        if self.minor < minor:
+            return True
 
-        if self.minor > minor:
+        if self.minor > minor or patch is None:
             return False
 
-        if patch is None:
-            return self.minor < minor
+        if self.patch < patch:
+            return True
 
-        if self.patch > patch:
+        if self.patch > patch or suffix is None:
             return False
-
-        if suffix is None:
-            return self.patch < patch
 
         return self.suffix < suffix
 
