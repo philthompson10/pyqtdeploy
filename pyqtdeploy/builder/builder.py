@@ -30,14 +30,15 @@ import os
 import shlex
 import shutil
 import subprocess
+import tempfile
 
-from PyQt5.QtCore import (QByteArray, QCoreApplication, QDir, QFile,
-        QFileDevice, QFileInfo, QProcess, QTemporaryDir, QTextCodec)
+from PyQt5.QtCore import (QByteArray, QCoreApplication, QFile, QFileInfo,
+        QProcess, QTextCodec)
 
-from ..file_utilities import (create_file, get_embedded_dir,
-        get_embedded_file_for_version, read_embedded_file)
-from ..project import QrcDirectory
+from ..file_utilities import create_file, open_file
+from ..project import Project, QrcDirectory
 from ..platforms import Architecture, Platform
+from ..sysroot import Sysroot
 from ..user_exception import UserException
 from ..version import PYQTDEPLOY_HEXVERSION
 from ..version_number import VersionNumber
@@ -46,68 +47,61 @@ from ..version_number import VersionNumber
 class Builder:
     """ The builder for a project. """
 
-    def __init__(self, project_name, target_arch_name, message_handler):
+    def __init__(self, project_name, target_arch_name, message_handler, python,
+            qmake):
         """ Initialise the builder for a project. """
 
         self._message_handler = message_handler
 
+        self._project = Project.load(project_name)
         self._host = Architecture.architecture()
         self._target = Architecture.architecture(target_arch_name)
 
-        self._project = Project.load(project_name, self._target)
+        self._sysroot = Sysroot(self._project.sysroot_specification,
+                self._host, self._target,
+                message_handler=self._message_handler, python=python,
+                qmake=qmake)
 
-    def build(self, opt, nr_resources, clean, build_dir, include_dir,
-            interpreter, python_library, source_dir, standard_library_dir):
+    def build(self, opt, nr_resources, clean, build_dir):
         """ Build the project in a given directory.  Raise a UserException if
         there is an error.
         """
 
         project = self._project
-        python_target_version = project.python_target_version
-
-        # Set $SYSROOT.  An explicit sysroot will override any existing value.
-        if sysroot:
-            os.environ['SYSROOT'] = os.path.abspath(sysroot)
-        elif 'SYSROOT' not in os.environ:
-            # Provide a default.
-            os.environ['SYSROOT'] = os.path.abspath(
-                    'sysroot-' + self._target.name)
+        python = self._sysroot.get_component('Python')
 
         # Create a temporary directory which will be removed automatically when
         # this function's objects are garbage collected.
-        temp_dir = QTemporaryDir()
-        if not temp_dir.isValid():
-            raise UserException(
-                    "There was an error creating a temporary directory")
+        temp_dir = tempfile.TemporaryDirectory()
 
         # Get the names of the required Python modules, extension modules and
         # libraries.
-        metadata = get_python_metadata(python_target_version)
-        required_modules, required_libraries = project.get_stdlib_requirements(
-                include_hidden=True)
+        #metadata = get_python_metadata(python_target_version)
+        #required_modules, required_libraries = project.get_stdlib_requirements(
+        #        include_hidden=True)
 
-        required_py = {}
-        required_ext = {}
-        for name in required_modules.keys():
-            module = metadata[name]
+        #required_py = {}
+        #required_ext = {}
+        #for name in required_modules.keys():
+        #    module = metadata[name]
 
-            if module.target and not self._target.is_targeted(module.target):
-                continue
+        #    if module.target and not self._target.is_targeted(module.target):
+        #        continue
 
-            if module.source is None:
-                required_py[name] = module
-            elif not module.core:
-                required_ext[name] = module
+        #    if module.source is None:
+        #        required_py[name] = module
+        #    elif not module.core:
+        #        required_ext[name] = module
 
         # Initialise and check we have the information we need.
-        if len(required_ext) != 0:
-            if source_dir is None:
-                if project.python_source_dir == '':
-                    raise UserException(
-                            "The name of the Python source directory has not "
-                            "been specified")
+        #if len(required_ext) != 0:
+        #    if source_dir is None:
+        #        if project.python_source_dir == '':
+        #            raise UserException(
+        #                    "The name of the Python source directory has not "
+        #                    "been specified")
 
-                source_dir = project.path_from_user(project.python_source_dir)
+        #        source_dir = project.path_from_user(project.python_source_dir)
 
         if project.get_executable_basename() == '':
             raise UserException("The name of the application has not been "
@@ -125,43 +119,43 @@ class Builder:
                     "entry point must be specified but not both")
 
         # Get other directories from the project that may be overridden.
-        if include_dir is None:
-            include_dir = project.path_from_user(
-                    project.python_target_include_dir)
+        #if include_dir is None:
+        #    include_dir = project.path_from_user(
+        #            project.python_target_include_dir)
 
-        if interpreter is None:
-            if project.python_host_interpreter != '':
-                # Note that we assume a relative filename is on PATH rather
-                # than being relative to the project file.
-                interpreter = project.python_host_interpreter
-            elif self._host.platform.name == 'win':
-                interpreter = get_py_install_path(python_target_version,
-                        self._target) + 'python'
-            else:
-                interpreter = 'python{}.{}'.format(python_target_version.major,
-                        python_target_version.minor)
+        #if interpreter is None:
+        #    if project.python_host_interpreter != '':
+        #        # Note that we assume a relative filename is on PATH rather
+        #        # than being relative to the project file.
+        #        interpreter = project.python_host_interpreter
+        #    elif self._host.platform.name == 'win':
+        #        interpreter = get_py_install_path(python_target_version,
+        #                self._target) + 'python'
+        #    else:
+        #        interpreter = 'python{}.{}'.format(python_target_version.major,
+        #                python_target_version.minor)
 
         # On Windows the interpreter name is simply 'python'.  So in order to
         # make the .pdy file more portable we strip any trailing version
         # number.
-        if self._host.platform.name == 'win':
-            for i in range(len(interpreter) - 1, -1, -1):
-                if interpreter[i] not in '.0123456789':
-                    interpreter = interpreter[:i + 1]
-                    break
+        #if self._host.platform.name == 'win':
+        #    for i in range(len(interpreter) - 1, -1, -1):
+        #        if interpreter[i] not in '.0123456789':
+        #            interpreter = interpreter[:i + 1]
+        #            break
 
-        interpreter = QDir.toNativeSeparators(interpreter)
+        #interpreter = QDir.toNativeSeparators(interpreter)
 
         # Make sure the interpreter being used is the one we are targetting.
-        self._check_interpreter_version(interpreter)
+        #self._check_interpreter_version(interpreter)
 
-        if python_library is None:
-            python_library = project.path_from_user(
-                    project.python_target_library)
+        #if python_library is None:
+        #    python_library = project.path_from_user(
+        #            project.python_target_library)
 
-        if standard_library_dir is None:
-            standard_library_dir = project.path_from_user(
-                    project.python_target_stdlib_dir)
+        #if standard_library_dir is None:
+        #    standard_library_dir = project.path_from_user(
+        #            project.python_target_stdlib_dir)
 
         # Set the name of the build directory.
         if not build_dir:
@@ -171,16 +165,15 @@ class Builder:
 
         # Remove any build directory if required.
         if clean:
-            native_build_dir = QDir.toNativeSeparators(self._build_dir)
             self._message_handler.progress_message(
-                    "Cleaning {0}".format(native_build_dir))
-            shutil.rmtree(native_build_dir, ignore_errors=True)
+                    "Cleaning {0}".format(self._build_dir))
+            shutil.rmtree(self._build_dir, ignore_errors=True)
 
         # Now start the build.
         self._create_directory(self._build_dir)
 
         # Create the job file and writer.
-        job_filename = QDir.toNativeSeparators(temp_dir.path() + '/jobs.csv')
+        job_filename = os.path.join(temp_dir.name, 'jobs.csv')
         job_file = open(job_filename, 'w', newline='')
         job_writer = csv.writer(job_file)
 
@@ -190,25 +183,22 @@ class Builder:
         # as it still needs to be frozen and we don't want to depend on an
         # external source.
         self._freeze_bootstrap('bootstrap', self._build_dir, temp_dir,
-                job_writer)
-
-        if python_target_version >= (3, 5):
-            self._freeze_bootstrap('bootstrap_external', self._build_dir,
-                    temp_dir, job_writer)
+                job_writer, python)
+        self._freeze_bootstrap('bootstrap_external', self._build_dir, temp_dir,
+                job_writer, python)
 
         # Freeze any main application script.
         if project.application_script != '':
-            self._freeze(job_writer, self._build_dir + '/frozen_main.h',
+            self._freeze(job_writer,
+                    os.path.join(self._build_dir, 'frozen_main.h'),
                     project.path_from_user(project.application_script),
                     'pyqtdeploy_main', as_c=True)
 
         # Create the pyqtdeploy module version file.
-        version_f = self._create_file(
-                self._build_dir + '/pyqtdeploy_version.h')
-        version_f.write(
-                '#define PYQTDEPLOY_HEXVERSION %s\n' % hex(
-                        PYQTDEPLOY_HEXVERSION))
-        version_f.close()
+        with create_file(os.path.join(self._build_dir, 'pyqtdeploy_version.h')) as f:
+            f.write(
+                    '#define PYQTDEPLOY_HEXVERSION %s\n' % hex(
+                            PYQTDEPLOY_HEXVERSION))
 
         # Determine if there is a private sip module.
         sip_lib_path = '{0}/site-packages/{1}/{2}'.format(
@@ -231,20 +221,46 @@ class Builder:
 
         # The odd naming of Python source files is to prevent them from being
         # frozen if we deploy ourself.
-        freeze = self._copy_lib_file(self._get_lib_file_name('freeze.python'),
-                temp_dir.path(), dst_file_name='freeze.py')
+        freeze = shutil.copy2(self._get_lib_path('freeze.python'),
+                os.path.join(temp_dir.name, 'freeze.py'))
 
         self._run_freeze(freeze, interpreter, job_filename, opt)
 
-    def _freeze_bootstrap(self, name, build_dir, temp_dir, job_writer):
+    def _freeze_bootstrap(self, name, build_dir, temp_dir, job_writer, python):
         """ Freeze a version dependent bootstrap script. """
 
-        bootstrap_src = get_embedded_file_for_version(
-                self._project.python_target_version, __file__, 'lib', name)
-        bootstrap = self._copy_lib_file(bootstrap_src, temp_dir.path(),
-                dst_file_name=name + '.py')
-        self._freeze(job_writer, build_dir + '/frozen_' + name + '.h',
-                bootstrap, 'pyqtdeploy_' + name, as_c=True)
+        # Find the bootstrap script appropriate for this version of Python.
+        bootstrap_dir = self._get_lib_path(name)
+        bootstrap = None
+        bootstrap_version = None
+
+        for fn in listdir(bootstrap_dir):
+            version = fn.split('-')[-1]
+            if version.endswith('.python'):
+                version = [:-7]
+
+            try:
+                version = VersionNumber.parse_version_number(version)
+            except UserException:
+                continue
+
+            if version > python.version:
+                # This is for a later version so we can ignore it.
+                continue
+
+            if bootstrap is None or bootstrap_version < version:
+                # This is a better candidate than we have so far.
+                bootstrap = fn
+                bootstrap_version = version
+
+        assert bootstrap is not None
+
+        bootstrap_src = os.path.join(bootstrap_dir, bootstrap)
+        bootstrap_path = shutil.copy2(bootstrap_src,
+                os.path.join(temp_dir.name, name + '.py'))
+        self._freeze(job_writer,
+                os.path.join(build_dir, 'frozen_' + name + '.h'),
+                bootstrap_path, 'pyqtdeploy_' + name, as_c=True)
 
     def _generate_resource(self, resources_dir, required_py, standard_library_dir, private_sip, job_writer, nr_resources):
         """ Generate the application resource. """
@@ -293,11 +309,7 @@ class Builder:
 
             # Handle the PyQt.uic package.
             if 'uic' in project.pyqt_modules:
-                skip_dirs = ['__pycache__']
-                if project.python_target_version[0] == 3:
-                    skip_dirs.append('port_v2')
-                else:
-                    skip_dirs.append('port_v3')
+                skip_dirs = ['__pycache__', 'port_v2']
 
                 def copy_freeze(src, dst):
                     for skip in skip_dirs:
@@ -350,21 +362,18 @@ class Builder:
         suffix = '' if nr < 0 else str(nr)
         basename = 'pyqtdeploy{0}.qrc'.format(suffix)
 
-        f = self._create_file(resources_dir + '/' + basename)
-
-        f.write('''<!DOCTYPE RCC>
+        with create_file(os.path.join(resources_dir, basename)) as f:
+            f.write('''<!DOCTYPE RCC>
 <RCC version="1.0">
     <qresource>
 ''')
 
-        for content in resource_contents:
-            f.write('        <file>{0}</file>\n'.format(content))
+            for content in resource_contents:
+                f.write('        <file>{}</file>\n'.format(content))
 
-        f.write('''    </qresource>
+            f.write('''    </qresource>
 </RCC>
 ''')
-
-        f.close()
 
         return basename
 
@@ -424,8 +433,9 @@ class Builder:
         python_target_version = project.python_target_version
         target_platform = self._target.platform.name
 
-        f = self._create_file(self._build_dir + '/' +
-                project.get_executable_basename() + '.pro')
+        f = create_file(
+                os.path.join(self._build_dir,
+                        project.get_executable_basename() + '.pro'))
 
         f.write('# Generated for {0} and Python v{1}.\n\n'.format(
                 self._target.name, python_target_version))
@@ -672,10 +682,8 @@ class Builder:
 
         # Specify the defines.
         defines = []
-        headers = ['pyqtdeploy_version.h', 'frozen_bootstrap.h']
-
-        if python_target_version >= (3, 5):
-            headers.append('frozen_bootstrap_external.h')
+        headers = ['pyqtdeploy_version.h', 'frozen_bootstrap.h',
+                'frozen_bootstrap_external.h']
 
         if project.application_script != '':
             defines.append('PYQTDEPLOY_FROZEN_MAIN')
@@ -702,8 +710,10 @@ class Builder:
         f.write('SOURCES = pyqtdeploy_main.cpp pyqtdeploy_start.cpp pdytools_module.cpp\n')
         self._write_used_values(f, used_sources, 'SOURCES')
         self._write_main(used_inittab, used_defines)
-        self._copy_lib_file('pyqtdeploy_start.cpp', self._build_dir)
-        self._copy_lib_file('pdytools_module.cpp', self._build_dir)
+        shutil.copy2(self._get_lib_path('pyqtdeploy_start.cpp'),
+                self._build_dir)
+        shutil.copy2(self._get_lib_path('pdytools_module.cpp'),
+                self._build_dir)
 
         f.write('\n')
         f.write('HEADERS = {0}\n'.format(' '.join(headers)))
@@ -724,7 +734,8 @@ class Builder:
             self._copy_windows_dlls(py_lib_dir, used_dlls, f)
 
         # Add the project independent post-configuration stuff.
-        self._write_embedded_lib_file('post_configuration.pro', f)
+        with open_file(self._get_lib_path('post_configuration.pro')) as pro_f:
+            f.write(pro_f.read())
 
         # Add any application specific stuff.
         qmake_configuration = project.qmake_configuration.strip()
@@ -849,8 +860,8 @@ class Builder:
         dlls = ['python{}{}.dll'.format(python_target_version._major,
                 python_target_version._minor)]
 
-        if python_target_version >= (3, 5):
-            dlls.append('vcruntime140.dll')
+        # TODO: MSVC2019 DLLs?
+        dlls.append('vcruntime140.dll')
 
         for module in modules:
             dlls.append(module.pyd)
@@ -869,14 +880,6 @@ exists($$PDY_DLL) {
     }
 }
 ''' % (py_lib_dir, py_major, py_minor, name))
-
-    def _write_embedded_lib_file(self, file_name, f):
-        """ Write an embedded file from the lib directory. """
-
-        contents = read_embedded_file(self._get_lib_file_name(file_name))
-
-        f.write('\n')
-        f.write(contents.data().decode('latin1'))
 
     @staticmethod
     def _python_source_file(py_source_dir, rel_path):
@@ -1083,7 +1086,7 @@ exists($$PDY_DLL) {
 
         project = self._project
 
-        f = self._create_file(self._build_dir + '/pyqtdeploy_main.cpp')
+        f = create_file(os.path.join(self._build_dir, 'pyqtdeploy_main.cpp'))
 
         # Compilation fails when using GCC 5 when both Py_BUILD_CORE and
         # HAVE_STD_ATOMIC are defined.  Py_BUILD_CORE gets defined when certain
@@ -1132,7 +1135,7 @@ exists($$PDY_DLL) {
 
         path_dirs = 'path_dirs' if sys_path != '' else 'NULL'
 
-        if self._target.platform.name == 'win' and project.python_target_version >= 3:
+        if self._target.platform.name == 'win':
             f.write('''
 
 #include <windows.h>
@@ -1166,21 +1169,13 @@ int main(int argc, char **argv)
     def _write_inittab(self, f, inittab, c_inittab):
         """ Write the Python version specific extension module inittab. """
 
-        if self._project.python_target_version >= 3:
-            init_type = 'PyObject *'
-            init_prefix = 'PyInit_'
-        else:
-            init_type = 'void '
-            init_prefix = 'init'
-
         # We want reproduceable output.
         sorted_inittab = sorted(inittab)
 
         for name in sorted_inittab:
             base_name = name.split('.')[-1]
 
-            f.write('extern "C" %s%s%s(void);\n' % (init_type, init_prefix,
-                    base_name))
+            f.write('extern "C" PyObject *PyInit_%s(void);\n' % (base_name))
 
         f.write('''
 static struct _inittab %s[] = {
@@ -1189,7 +1184,7 @@ static struct _inittab %s[] = {
         for name in sorted_inittab:
             base_name = name.split('.')[-1]
 
-            f.write('    {"%s", %s%s},\n' % (name, init_prefix, base_name))
+            f.write('    {"%s", PyInit_%s},\n' % (name, base_name))
 
         f.write('''    {NULL, NULL}
 };
@@ -1198,9 +1193,6 @@ static struct _inittab %s[] = {
     @staticmethod
     def _freeze(job_writer, out_file, in_file, name, as_c=False):
         """ Freeze a Python source file to a C header file or a data file. """
-
-        out_file = QDir.toNativeSeparators(out_file)
-        in_file = QDir.toNativeSeparators(in_file)
 
         if as_c:
             conversion = 'C'
@@ -1230,11 +1222,9 @@ static struct _inittab %s[] = {
 
         if in_build_dir:
             saved_cwd = os.getcwd()
-            native_build_dir = QDir.toNativeSeparators(self._build_dir)
-            os.chdir(native_build_dir)
+            os.chdir(self._build_dir)
             self._message_handler.verbose_message(
-                    "{0} is now the current directory".format(
-                            native_build_dir))
+                    "{0} is now the current directory".format(self._build_dir))
         else:
             saved_cwd = None
 
@@ -1270,50 +1260,14 @@ static struct _inittab %s[] = {
                     QTextCodec.codecForLocale().toUnicode(stderr_output).strip())
 
     @staticmethod
-    def _get_lib_file_name(file_name):
-        """ Get name of a file in the 'lib' sub-directory. """
-
-        return get_embedded_dir(__file__, 'lib').absoluteFilePath(file_name)
-
-    @classmethod
-    def _copy_lib_file(cls, file_name, dir_name, dst_file_name=None):
-        """ Copy a library file to a directory and return the full pathname of
-        the copy.
+    def _get_lib_path(name):
+        """ Get the pathname of a file or directory in the 'lib' sub-directory.
         """
 
-        # Note that we use the Qt file operations to support the possibility
-        # that pyqtdeploy itself has been deployed as a single executable.
-
-        if dst_file_name is None:
-            dst_file_name = file_name
-            s_file_name = cls._get_lib_file_name(file_name)
-        else:
-            s_file_name = file_name
-
-        d_file_name = dir_name + '/' +  dst_file_name
-
-        # Make sure the destination doesn't exist.
-        QFile.remove(d_file_name)
-
-        if not QFile.copy(s_file_name, d_file_name):
-            raise UserException("Unable to copy file {0}".format(file_name))
-
-        # The file will be read-only if it was embedded.
-        QFile.setPermissions(d_file_name,
-                QFileDevice.ReadOwner|QFileDevice.WriteOwner)
-
-        return d_file_name
-
-    @staticmethod
-    def _create_file(file_name):
-        """ Create a text file in the build directory. """
-
-        return create_file(QDir.toNativeSeparators(file_name))
+        return os.path.join(__file__, 'lib', name)
 
     def _create_directory(self, dir_name):
         """ Create a directory which may already exist. """
-
-        dir_name = QDir.toNativeSeparators(dir_name)
 
         self._message_handler.verbose_message(
                 "Creating directory {0}".format(dir_name))
@@ -1324,32 +1278,3 @@ static struct _inittab %s[] = {
             raise UserException(
                     "Unable to create the '{0}' directory".format(dir_name),
                     str(e))
-
-    @staticmethod
-    def _check_interpreter_version(interpreter):
-        """ Check that the interpreter version matches the target version. """
-
-        python_target_version = self._project.python_target_version
-
-        argv = [interpreter, '-c', 'import sys; print(sys.version)']
-
-        try:
-            stdout = subprocess.check_output(argv, universal_newlines=True,
-                    stderr=subprocess.PIPE)
-        except subprocess.CalledProcessError as e:
-            try:
-                detail = e.stderr
-            except AttributeError:
-                detail = e.output
-
-            raise UserException("Unable to run '{0}'".format(interpreter),
-                    detail=detail)
-
-        interpreter_version = VersionNumber.parse_version_number(
-                stdout.strip().split()[0])
-
-        # We ignore the micro version.
-        if interpreter_version.major != python_target_version.major or interpreter_version.minor != python_target_version_minor:
-            raise UserException(
-                    "The host interpreter version '{0}' does not match the "
-                    "target version".format(interpreter_version))

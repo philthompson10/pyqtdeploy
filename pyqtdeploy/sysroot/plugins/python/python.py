@@ -293,7 +293,7 @@ class PythonComponent(AbstractPythonComponent):
                     continue
 
                 if pyconfig is None or pyconfig_version < version:
-                    # This is a better candidate than any we have so far.
+                    # This is a better candidate than we have so far.
                     pyconfig = fn
                     pyconfig_version = version
 

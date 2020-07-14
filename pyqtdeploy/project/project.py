@@ -167,7 +167,7 @@ class Project(QObject):
         return fi
 
     @classmethod
-    def load(cls, file_name, target=None):
+    def load(cls, file_name):
         """ Return a new project loaded from the given file.  Raise a
         UserException if there was an error.
         """
@@ -188,11 +188,11 @@ class Project(QObject):
         project = cls()
         project._name = fi
         loader(project, file_path)
-        project.load_sysroot(target)
+        project.load_sysroot()
 
         return project
 
-    def load_sysroot(self, target=None):
+    def load_sysroot(self):
         """ Load the project's sysroot specification file. """
 
         # Get the pathname of the project file.
