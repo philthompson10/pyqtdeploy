@@ -27,6 +27,7 @@
 import os
 import toml
 
+# TODO: refactor so that PyQt isn't used.
 from PyQt5.QtCore import QDir, QFileInfo, QObject, pyqtSignal
 
 from ..sysroot import SysrootSpecification
@@ -103,8 +104,8 @@ class Project(QObject):
         self.sys_path = ''
         self.standard_library = []
         self.other_packages = []
-        self.sysroot_dir = ''
         self.sysroot_toml = ''
+        self.sysroots_dir = ''
         self.qmake_configuration = ''
 
     def path_to_user(self, path):
@@ -293,7 +294,7 @@ class Project(QObject):
                     "The project's format is version {0} but only version {1} is supported.".format(version, cls.version))
 
         project.sysroot_toml = root.get('sysroot', '')
-        project.sysroot_dir = root.get('sysroot_dir', '')
+        project.sysroots_dir = root.get('sysroots_dir', '')
         project.standard_library = cls._get_list(root, 'standard_library')
         project.other_packages = cls._get_list(root, 'other_packages')
 
@@ -325,7 +326,7 @@ class Project(QObject):
         root = {
             'version': self.version,
             'sysroot': self.sysroot_toml,
-            'sysroot_dir': self.sysroot_dir,
+            'sysroots_dir': self.sysroots_dir,
             'standard_library': self.standard_library,
             'other_packages': self.other_packages
         }

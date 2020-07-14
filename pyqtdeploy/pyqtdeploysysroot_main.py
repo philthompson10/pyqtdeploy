@@ -58,7 +58,9 @@ def main():
     parser.add_argument('--source-dir',
             help="a directory containing source archives",
             metavar="DIR", dest='source_dirs', action='append')
-    parser.add_argument('--sysroot', help="the system image root directory",
+    parser.add_argument('--sysroots-dir',
+            help="the directory containing the target-specific system image "
+                    "root directories",
             metavar="DIR")
     parser.add_argument('--target', help="the target architecture"),
     parser.add_argument('--quiet', help="disable progress messages",
@@ -79,7 +81,7 @@ def main():
         specification = SysrootSpecification(args.specification)
         host = Architecture.architecture()
         target = Architecture.architecture(args.target)
-        sysroot = Sysroot(specification, host, target,
+        sysroot = Sysroot(specification, host, target, args.sysroots_dir,
                 message_handler=message_handler, python=args.python,
                 qmake=args.qmake)
 
@@ -88,8 +90,8 @@ def main():
         elif args.verify:
             sysroot.verify()
         else:
-            sysroot.install_components(args.sysroot, args.component,
-                    args.source_dirs, args.no_clean)
+            sysroot.install_components(args.component, args.source_dirs,
+                    args.no_clean)
     except UserException as e:
         message_handler.exception(e)
         return 1

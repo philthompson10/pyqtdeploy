@@ -40,14 +40,21 @@ from .specification import SysrootSpecification
 class Sysroot:
     """ Encapsulate a target-specific system root directory. """
 
-    def __init__(self, specification, host, target, message_handler=None,
-            python=None, qmake=None):
+    def __init__(self, specification, host, target, sysroots_dir,
+            message_handler=None, python=None, qmake=None):
         """ Initialise the object. """
 
         self._specification = specification
         self.host = host
         self.target = target
         self._message_handler = message_handler
+
+        if not sysroots_dir:
+            sysroots_dir = os.path.dirname(
+                    self._specification.specification_file)
+
+        self.sysroot_dir = os.path.join(sysroots_dir,
+                'sysroot-' + self.target.name)
 
         self._building_for_target = True
 
@@ -116,8 +123,7 @@ class Sysroot:
 
         return self.host.platform.exe(name)
 
-    def install_components(self, sysroot_dir, component_names, source_dirs,
-            no_clean):
+    def install_components(self, component_names, source_dirs, no_clean):
         """ Install a sequence of components.  If no names are given then
         create the system image root directory and install everything.  Raise a
         UserException if there is an error.
@@ -132,8 +138,6 @@ class Sysroot:
         else:
             self.source_dirs = [
                     os.path.dirname(self._specification.specification_file)]
-
-        self.sysroot_dir = os.path.abspath(sysroot_dir)
 
         self.target.configure()
 

@@ -99,7 +99,7 @@ if target in ('android-32', 'android-64', 'ios-64') and not qmake:
 # Anchor everything from the directory containing this script.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-sysroot_dir = 'sysroot-' + target
+sysroot_dir = os.path.abspath('sysroot-' + target)
 
 # Build sysroot if required.
 if build_sysroot and os.path.isdir(sysroot_dir):
@@ -110,7 +110,7 @@ if build_sysroot and os.path.isdir(sysroot_dir):
         sys.exit(1)
 
 if not os.path.isdir(sysroot_dir):
-    args = ['pyqtdeploy-sysroot', '--target', target, '--sysroot', sysroot_dir]
+    args = ['pyqtdeploy-sysroot', '--target', target]
 
     if qmake:
         args.append('--qmake')

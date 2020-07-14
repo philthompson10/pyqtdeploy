@@ -58,7 +58,7 @@ class Builder:
         self._target = Architecture.architecture(target_arch_name)
 
         self._sysroot = Sysroot(self._project.sysroot_specification,
-                self._host, self._target,
+                self._host, self._target, self._project.sysroots_dir,
                 message_handler=self._message_handler, python=python,
                 qmake=qmake)
 
@@ -69,6 +69,12 @@ class Builder:
 
         project = self._project
         python = self._sysroot.get_component('Python')
+
+        # Check the sysroot directory exists.
+        if not os.path.isdir(self._sysroot.sysroot_dir):
+            raise UserException(
+                    "The sysroot directory '{0}' does not exist.".format(
+                            self._sysroot.sysroot_dir))
 
         # Create a temporary directory which will be removed automatically when
         # this function's objects are garbage collected.
@@ -200,21 +206,15 @@ class Builder:
                     '#define PYQTDEPLOY_HEXVERSION %s\n' % hex(
                             PYQTDEPLOY_HEXVERSION))
 
-        # Determine if there is a private sip module.
-        sip_lib_path = '{0}/site-packages/{1}/{2}'.format(
-                standard_library_dir, self._get_pyqt_package_name(),
-                'sip.lib' if self._target.platform.name == 'win' else 'libsip.a')
-        private_sip = QFile.exists(sip_lib_path)
-
         # Generate the application resource.
-        resource_names = self._generate_resource(
-                self._build_dir + '/resources', required_py,
-                standard_library_dir, private_sip, job_writer, nr_resources)
+        #resource_names = self._generate_resource(
+        #        self._build_dir + '/resources', required_py,
+        #        standard_library_dir, job_writer, nr_resources)
 
         # Write the .pro file.
-        self._write_qmake(required_ext, required_libraries, include_dir,
-                python_library, standard_library_dir, private_sip, source_dir,
-                job_writer, opt, resource_names)
+        #self._write_qmake(required_ext, required_libraries, include_dir,
+        #        python_library, standard_library_dir, private_sip, source_dir,
+        #        job_writer, opt, resource_names)
 
         # Run the freeze jobs.
         job_file.close()
@@ -224,7 +224,7 @@ class Builder:
         freeze = shutil.copy2(self._get_lib_path('freeze.python'),
                 os.path.join(temp_dir.name, 'freeze.py'))
 
-        self._run_freeze(freeze, interpreter, job_filename, opt)
+        self._run_freeze(freeze, python, job_filename, opt)
 
     def _freeze_bootstrap(self, name, build_dir, temp_dir, job_writer, python):
         """ Freeze a version dependent bootstrap script. """
@@ -234,10 +234,10 @@ class Builder:
         bootstrap = None
         bootstrap_version = None
 
-        for fn in listdir(bootstrap_dir):
+        for fn in os.listdir(bootstrap_dir):
             version = fn.split('-')[-1]
             if version.endswith('.python'):
-                version = [:-7]
+                version = version[:-7]
 
             try:
                 version = VersionNumber.parse_version_number(version)
@@ -1202,10 +1202,10 @@ static struct _inittab %s[] = {
 
         job_writer.writerow([out_file, in_file, name, conversion])
 
-    def _run_freeze(self, freeze, interpreter, job_filename, opt):
+    def _run_freeze(self, freeze, python, job_filename, opt):
         """ Run the accumlated freeze jobs. """
 
-        argv = [interpreter]
+        argv = [python.host_python]
 
         if opt == 2:
             argv.append('-OO')
@@ -1264,7 +1264,7 @@ static struct _inittab %s[] = {
         """ Get the pathname of a file or directory in the 'lib' sub-directory.
         """
 
-        return os.path.join(__file__, 'lib', name)
+        return os.path.join(os.path.dirname(__file__), 'lib', name)
 
     def _create_directory(self, dir_name):
         """ Create a directory which may already exist. """
