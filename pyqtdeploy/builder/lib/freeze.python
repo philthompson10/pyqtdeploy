@@ -1,4 +1,4 @@
-# Copyright (c) 2016, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,12 +50,10 @@ def freeze_as_c(py_filename, c_filename, embedded_name):
     c_file.write(
             'static unsigned char frozen_%s[] = {' % embedded_name)
 
-    as_int = ord if sys.hexversion < 0x03000000 else lambda v: v
-
     for i in range(0, len(code), 16):
         c_file.write('\n    ')
         for j in code[i:i + 16]:
-            c_file.write('%d,' % as_int(j))
+            c_file.write('%d,' % j)
 
     c_file.write('\n};\n')
 
@@ -87,10 +85,7 @@ if len(sys.argv) != 2:
 job_filename = sys.argv[1]
 
 # Read the jobs file.
-if sys.hexversion >= 0x03000000:
-    job_file = open(job_filename, newline='')
-else:
-    job_file = open(job_filename, 'rb')
+job_file = open(job_filename, newline='')
 
 job_reader = csv.reader(job_file)
 
