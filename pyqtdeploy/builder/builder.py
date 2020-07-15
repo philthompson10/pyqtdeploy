@@ -29,14 +29,10 @@ import glob
 import os
 import shlex
 import shutil
-import subprocess
 import tempfile
 
-from PyQt5.QtCore import (QByteArray, QCoreApplication, QFile, QFileInfo,
-        QProcess, QTextCodec)
-
 from ..file_utilities import create_file, open_file
-from ..project import Project, QrcDirectory
+from ..project import Project
 from ..platforms import Architecture, Platform
 from ..sysroot import Sysroot
 from ..user_exception import UserException
@@ -78,6 +74,8 @@ class Builder:
 
         # Get the names of the required Python modules, extension modules and
         # libraries.
+        # TODO
+        modules = {}
         #metadata = get_python_metadata(python_target_version)
         #required_modules, required_libraries = project.get_stdlib_requirements(
         #        include_hidden=True)
@@ -105,10 +103,17 @@ class Builder:
 
         #        source_dir = project.path_from_user(project.python_source_dir)
 
-        if project.get_executable_basename() == '':
-            raise UserException("The name of the application has not been "
-                    "specified and cannot be inferred")
+        # Determine the application name.
+        if project.application_name:
+            application_name = project.application_name
+        elif project.application_script:
+            application_name = os.path.basename(project.application_script).split('.', maxsplit=1)[0]
+        elif project.application_package.name:
+            application_name = project.application_package.name
+        else:
+            application_name = os.path.basename(project.name).split('.', maxsplit=1)[0]
 
+        # Check there is an entry point or a script.
         if project.application_script == '':
             if project.application_entry_point == '':
                 raise UserException("Either the application script name or "
@@ -124,32 +129,6 @@ class Builder:
         #if include_dir is None:
         #    include_dir = project.path_from_user(
         #            project.python_target_include_dir)
-
-        #if interpreter is None:
-        #    if project.python_host_interpreter != '':
-        #        # Note that we assume a relative filename is on PATH rather
-        #        # than being relative to the project file.
-        #        interpreter = project.python_host_interpreter
-        #    elif self._host.platform.name == 'win':
-        #        interpreter = get_py_install_path(python_target_version,
-        #                self._target) + 'python'
-        #    else:
-        #        interpreter = 'python{}.{}'.format(python_target_version.major,
-        #                python_target_version.minor)
-
-        # On Windows the interpreter name is simply 'python'.  So in order to
-        # make the .pdy file more portable we strip any trailing version
-        # number.
-        #if self._host.platform.name == 'win':
-        #    for i in range(len(interpreter) - 1, -1, -1):
-        #        if interpreter[i] not in '.0123456789':
-        #            interpreter = interpreter[:i + 1]
-        #            break
-
-        #interpreter = QDir.toNativeSeparators(interpreter)
-
-        # Make sure the interpreter being used is the one we are targetting.
-        #self._check_interpreter_version(interpreter)
 
         #if python_library is None:
         #    python_library = project.path_from_user(
@@ -194,7 +173,7 @@ class Builder:
         if project.application_script != '':
             self._freeze(job_writer,
                     os.path.join(self._build_dir, 'frozen_main.h'),
-                    project.path_from_user(project.application_script),
+                    project.project_path(project.application_script),
                     'pyqtdeploy_main', as_c=True)
 
         # Create the pyqtdeploy module version file.
@@ -203,20 +182,43 @@ class Builder:
                     '#define PYQTDEPLOY_HEXVERSION %s\n' % hex(
                             PYQTDEPLOY_HEXVERSION))
 
-        # Generate the application resource.
-        #resource_names = self._generate_resource(
-        #        self._build_dir + '/resources', required_py,
-        #        standard_library_dir, job_writer, nr_resources)
+        # Generate the application resources.
+        resource_names = self._generate_resources(modules, job_writer,
+                nr_resources)
 
         # Write the .pro file.
-        #self._write_qmake(required_ext, required_libraries, include_dir,
-        #        python_library, standard_library_dir, private_sip, source_dir,
-        #        job_writer, opt, resource_names)
+        self._write_qmake(application_name, modules, job_writer, opt,
+                resource_names, python)
 
         # Run the freeze jobs.
         job_file.close()
 
         self._run_freeze(python, job_filename, opt)
+
+    def _create_directory(self, dir_name):
+        """ Create a directory which may already exist. """
+
+        self._message_handler.verbose_message(
+                "Creating directory {0}".format(dir_name))
+
+        try:
+            os.makedirs(dir_name, exist_ok=True)
+        except Exception as e:
+            raise UserException(
+                    "Unable to create the '{0}' directory".format(dir_name),
+                    str(e))
+
+    @staticmethod
+    def _freeze(job_writer, out_file, in_file, name, as_c=False):
+        """ Freeze a Python source file to a C header file or a data file. """
+
+        if as_c:
+            conversion = 'C'
+        else:
+            name = ':/' + name
+            conversion = 'data'
+
+        job_writer.writerow([out_file, in_file, name, conversion])
 
     def _freeze_bootstrap(self, name, build_dir, job_writer, python):
         """ Freeze a version dependent bootstrap script. """
@@ -252,81 +254,33 @@ class Builder:
                 os.path.join(build_dir, 'frozen_' + name + '.h'),
                 bootstrap_path, 'pyqtdeploy_' + name, as_c=True)
 
-    def _generate_resource(self, resources_dir, required_py, standard_library_dir, private_sip, job_writer, nr_resources):
-        """ Generate the application resource. """
+    def _generate_resources(self, modules, job_writer, nr_resources):
+        """ Generate the application resource files and return the names of
+        the files relatve to the build directory.
+        """
 
         project = self._project
 
-        self._create_directory(resources_dir)
-        resource_contents = []
+        resources_contents = []
 
         # Handle any application package.
         if project.application_package.name is not None:
-            fi = QFileInfo(project.path_from_user(
-                    project.application_package.name))
+            self._write_python_modules(project.application_package.modules,
+                    os.path.dirname(
+                            project.project_path(
+                                    project.application_package.name)),
+                    resources_contents, job_writer)
 
-            package_src_dir = fi.canonicalFilePath()
-
-            package_name = project.application_package.name
-            if package_name != '':
-                package_name = fi.completeBaseName()
-
-            self._write_package(resource_contents, resources_dir, package_name,
-                    project.application_package, package_src_dir, job_writer)
-
-        # Handle the Python standard library.
-        self._write_stdlib_py(resource_contents, resources_dir, required_py,
-                standard_library_dir, job_writer)
-
-        # Handle any additional packages.
-        for package in project.other_packages:
-            self._write_package(resource_contents, resources_dir, '', package,
-                    project.path_from_user(package.name), job_writer)
-
-        # Handle the PyQt package.
-        if any([m for m in project.pyqt_modules if private_sip or m != 'sip']):
-            pyqt_subdir = self._get_pyqt_package_name()
-            pyqt_dst_dir = resources_dir + '/' +  pyqt_subdir
-            pyqt_src_dir = standard_library_dir + '/site-packages/' + pyqt_subdir
-
-            self._create_directory(pyqt_dst_dir)
-
-            self._freeze(job_writer, pyqt_dst_dir + '/__init__.pyo',
-                    pyqt_src_dir + '/__init__.py',
-                    pyqt_subdir + '/__init__.py')
-
-            resource_contents.append(pyqt_subdir + '/__init__.pyo')
-
-            # Handle the PyQt.uic package.
-            if 'uic' in project.pyqt_modules:
-                skip_dirs = ['__pycache__', 'port_v2']
-
-                def copy_freeze(src, dst):
-                    for skip in skip_dirs:
-                        if skip in src:
-                            break
-                    else:
-                        if dst.endswith('.py'):
-                            src = QDir.fromNativeSeparators(src)
-                            dst = QDir.fromNativeSeparators(dst)
-                            rel_dst = dst[len(resources_dir) + 1:] + 'o'
-
-                            self._freeze(job_writer, dst + 'o', src, rel_dst)
-
-                            resource_contents.append(rel_dst)
-
-                shutil.copytree(QDir.toNativeSeparators(pyqt_src_dir + '/uic'),
-                        QDir.toNativeSeparators(pyqt_dst_dir + '/uic'),
-                        copy_function=copy_freeze)
+        # Handle the standard library and other packages.
+        # TODO
 
         # Write the .qrc files.
         if nr_resources == 1:
-            resource_names = [self._write_resource(resources_dir,
-                    resource_contents)]
+            resource_names = [self._write_resource(resources_contents)]
         else:
             resource_names = []
 
-            nr_files = len(resource_contents)
+            nr_files = len(resources_contents)
 
             if nr_resources > nr_files:
                 nr_resources = nr_files
@@ -340,25 +294,102 @@ class Builder:
                     end = nr_files
 
                 resource_names.append(
-                        self._write_resource(resources_dir,
-                                resource_contents[start:end], r))
+                        self._write_resource(resources_contents[start:end], r))
                 start += per_resource
 
         return resource_names
 
-    def _write_resource(self, resources_dir, resource_contents, nr=-1):
+    @staticmethod
+    def _get_lib_path(name):
+        """ Get the pathname of a file or directory in the 'lib' sub-directory.
+        """
+
+        return os.path.join(os.path.dirname(__file__), 'lib', name)
+
+    def _run_freeze(self, python, job_filename, opt):
+        """ Run the accumlated freeze jobs. """
+
+        args = [python.host_python]
+
+        if opt == 2:
+            args.append('-OO')
+        elif opt == 1:
+            args.append('-O')
+
+        args.append(self._get_lib_path('freeze.py'))
+        args.append(job_filename)
+
+        self._host.platform.run(*args, message_handler=self._message_handler)
+
+    def _write_python_module(self, name, module, modules, module_root_dir,
+            resources_contents, job_writer):
+        """ Write a Python module as a resource. """
+
+        # Discard anything other than non-core pure Python modules.
+        if module.core or module.builtin or module.source:
+            return
+
+        # Determine the full path of the file and whether or not it needs
+        # freezing.
+        src_name = name.replace('.', os.sep)
+        src_path = os.path.join(module_root_dir, src_name)
+
+        if module.data_ext is None:
+            if os.path.isdir(src_path):
+                src_name = os.path.join(src_name, '__init__')
+
+            dst_name = src_name + '.pyo'
+            src_name = src_name + '.py'
+
+            src_path = os.path.join(module_root_dir, src_name)
+
+            # This can happen legitimately if the name corresponds to a simple
+            # directory rather than a Python package.
+            if not os.path.isfile(src_path):
+                return
+
+            freeze = True
+        else:
+            src_name += module.data_ext
+            src_path += module.data_ext
+
+            dst_name = src_name
+
+            freeze = False
+
+        # Determine where the resource is to be created.
+        dst_path = os.path.join(self._build_dir, 'resources', dst_name)
+        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+
+        if freeze:
+            self._freeze(job_writer, dst_path, src_path,
+                    dst_name.replace(os.sep, '/'))
+        else:
+            shutil.copy2(src_path, dst_path)
+
+        resources_contents.append(dst_name)
+
+    def _write_python_modules(self, modules, module_root_dir,
+            resources_contents, job_writer):
+        """ Write a collection of Python modules as resources. """
+
+        for name, module in modules.items():
+            self._write_python_module(name, module, modules, module_root_dir,
+                    resources_contents, job_writer)
+
+    def _write_resource(self, resources_contents, nr=-1):
         """ Write a single resource file and return its basename. """
 
         suffix = '' if nr < 0 else str(nr)
         basename = 'pyqtdeploy{0}.qrc'.format(suffix)
 
-        with create_file(os.path.join(resources_dir, basename)) as f:
+        with create_file(os.path.join(self._build_dir, 'resources', basename)) as f:
             f.write('''<!DOCTYPE RCC>
 <RCC version="1.0">
     <qresource>
 ''')
 
-            for content in resource_contents:
+            for content in resources_contents:
                 f.write('        <file>{}</file>\n'.format(content))
 
             f.write('''    </qresource>
@@ -366,43 +397,6 @@ class Builder:
 ''')
 
         return basename
-
-    def _write_stdlib_py(self, resource_contents, resources_dir, required_py, standard_library_dir, job_writer):
-        """ Write the required parts of the Python standard library that are
-        implemented in Python.
-        """
-
-        project = self._project
-
-        # By sorting the names we ensure parents are handled before children.
-        for name in sorted(required_py.keys()):
-            module = required_py[name]
-            suffix = '/__init__.py' if module.modules is not None else '.py'
-
-            # Resolve any patterns.
-            if '*' in name:
-                pattern = os.path.join(standard_library_dir,
-                        name.replace('.', os.sep) + suffix)
-                modules = glob.glob(pattern)
-
-                if len(modules) != 1:
-                    raise UserException(
-                            "'{0}' must match exactly one module".format(name))
-
-                name_path = modules[0][len(standard_library_dir) + 1:-len(suffix)].replace(os.sep, '/')
-            else:
-                name_path = name.replace('.', '/')
-
-            if module.modules is not None:
-                self._create_directory(resources_dir + '/' + name_path)
-
-            in_file = name_path + suffix
-            out_file = in_file + 'o'
-
-            self._freeze(job_writer, resources_dir + '/' + out_file,
-                    standard_library_dir + '/' + in_file, in_file)
-
-            resource_contents.append(out_file)
 
     # The map of non-C/C++ source extensions to qmake variable.
     _source_extensions = (
@@ -414,21 +408,18 @@ class Builder:
         ('.y',      'YACCSOURCES')
     )
 
-    def _write_qmake(self, required_ext, required_libraries, include_dir,
-            python_library, standard_library_dir, private_sip, source_dir,
-            job_writer, opt, resource_names):
+    def _write_qmake(self, application_name, modules, job_writer, opt,
+            resource_names, python):
         """ Create the .pro file for qmake. """
 
         project = self._project
-        python_target_version = project.python_target_version
         target_platform = self._target.platform.name
 
         f = create_file(
-                os.path.join(self._build_dir,
-                        project.get_executable_basename() + '.pro'))
+                os.path.join(self._build_dir, application_name + '.pro'))
 
         f.write('# Generated for {0} and Python v{1}.\n\n'.format(
-                self._target.name, python_target_version))
+                self._target.name, python.version))
 
         f.write('TEMPLATE = app\n')
         f.write('\n')
@@ -436,8 +427,6 @@ class Builder:
         # Configure the CONFIG and QT values that are project dependent.
         needs_cpp11 = False
         needs_gui = False
-        qmake_qt4 = set()
-        qmake_config4 = set()
         qmake_qt5 = set()
         qmake_config5 = set()
 
@@ -451,9 +440,6 @@ class Builder:
                 needs_gui = True
 
             if self._target.is_targeted(metadata.targets):
-                qmake_qt4.update(metadata.qt4)
-                qmake_config4.update(metadata.config4)
-
                 qmake_qt5.update(metadata.qt5)
                 qmake_config5.update(metadata.config5)
 
@@ -736,68 +722,6 @@ class Builder:
         # All done.
         f.close()
 
-    def _add_stdlib_extension_modules(self, project, target_platform, source_dir, required_ext, used_inittab, used_sources, used_includepath, used_defines, used_libs, used_dlls):
-        """ Add the building of any standard library extension modules. """
-
-        for name, module in required_ext.items():
-            if not self._target.is_targeted(module.target):
-                continue
-
-            # See if the extension module should be disabled for a platform
-            # because there are no external libraries to link against.
-            skip_module = False
-
-            for xlib in project.external_libraries.get(target_platform, ()):
-                if xlib.name == module.xlib:
-                    if xlib.defines == '' and xlib.includepath == '' and xlib.libs == '':
-                        skip_module = True
-
-                    break
-
-            if skip_module:
-                continue
-
-            used_inittab.add(name)
-
-            for source in module.source:
-                source = self._get_scoped_value(source)
-                if source is not None:
-                    source = self._python_source_file(source_dir, source)
-                    used_sources.add(source)
-
-                    used_includepath.add(source_dir + '/Modules')
-
-            if module.defines is not None:
-                for define in module.defines:
-                    define = self._get_scoped_value(define)
-                    if define is not None:
-                        used_defines.add(define)
-
-            if module.includepath is not None:
-                for includepath in module.includepath:
-                    includepath = self._get_scoped_value(includepath)
-                    if includepath is not None:
-                        includepath = self._python_source_file(source_dir,
-                                includepath)
-                        used_includepath.add(includepath)
-
-            if module.libs is not None:
-                for lib in module.libs:
-                    lib = self._get_scoped_value(lib)
-                    if lib is not None:
-                        used_libs.add(lib)
-
-            if module.pyd is not None and target_platform == 'win':
-                used_dlls.add(module)
-
-        if target_platform == 'win':
-            used_includepath.add(source_dir + '/PC')
-
-    def _get_pyqt_package_name(self):
-        """ Return the name of the PyQt package. """
-
-        return 'PyQt5' if self._project.application_is_pyqt5 else 'PyQt4'
-
     @classmethod
     def _write_qt_config(cls, f, name, qt_major, values):
         """ Write the values of QT or CONFIG which may be Qt version specific.
@@ -970,107 +894,6 @@ exists($$PDY_DLL) {
 
         return value
 
-    def _get_pyqt_module_metadata(self, module_name):
-        """ Get the meta-data for a PyQt module. """
-
-        if self._project.application_is_pyqt5:
-            metadata = pyqt5_metadata
-        else:
-            metadata = pyqt4_metadata
-
-        return metadata[module_name]
-
-    def _get_all_pyqt_modules(self):
-        """ Return the list of all PyQt modules including dependencies. """
-
-        all_modules = []
-
-        for module_name in self._project.pyqt_modules:
-            self._get_pyqt_module_dependencies(module_name, all_modules)
-
-            if module_name not in all_modules:
-                all_modules.append(module_name)
-
-        return all_modules
-
-    def _get_pyqt_module_dependencies(self, module_name, all_modules):
-        """ Update a list of dependencies for a PyQt module. """
-
-        for dep in self._get_pyqt_module_metadata(module_name).deps:
-            if dep not in all_modules:
-                all_modules.append(dep)
-
-            # Handle sub-dependencies.
-            self._get_pyqt_module_dependencies(dep, all_modules)
-
-    def _write_package(self, resource_contents, resources_dir, resource, package, src_dir, job_writer):
-        """ Write the contents of a single package and return the list of files
-        written relative to the resources directory.
-        """
-
-        if resource == '':
-            dst_dir = resources_dir
-            dir_stack = []
-        else:
-            dst_dir = resources_dir + '/' + resource
-            dir_stack = [resource]
-
-        self._write_package_contents(package.contents, dst_dir, src_dir,
-                dir_stack, job_writer, resource_contents)
-
-    def _write_package_contents(self, contents, dst_dir, src_dir, dir_stack, job_writer, resource_contents):
-        """ Write the contents of a single package directory. """
-
-        self._create_directory(dst_dir)
-
-        for content in contents:
-            if not content.included:
-                continue
-
-            if isinstance(content, QrcDirectory):
-                dir_stack.append(content.name)
-
-                self._write_package_contents(content.contents,
-                        dst_dir + '/' + content.name,
-                        src_dir + '/' + content.name, dir_stack, job_writer,
-                        resource_contents)
-
-                dir_stack.pop()
-            else:
-                freeze_file = True
-                src_file = content.name
-                src_path = src_dir + '/' + src_file
-
-                if src_file.endswith('.py'):
-                    dst_file = src_file[:-3] + '.pyo'
-                elif src_file.endswith('.pyw'):
-                    dst_file = src_file[:-4] + '.pyo'
-                else:
-                    # Just copy the file.
-                    dst_file = src_file
-                    freeze_file = False
-
-                dst_path = dst_dir + '/' + dst_file
-
-                file_path = list(dir_stack)
-                file_path.append(dst_file)
-                file_path = '/'.join(file_path)
-
-                if freeze_file:
-                    self._freeze(job_writer, dst_path, src_path,
-                            file_path[:-1])
-                else:
-                    src_path = QDir.toNativeSeparators(src_path)
-                    dst_path = QDir.toNativeSeparators(dst_path)
-
-                    try:
-                        shutil.copyfile(src_path, dst_path)
-                    except FileNotFoundError:
-                        raise UserException(
-                                "{0} does not seem to exist".format(src_path))
-
-                resource_contents.append(file_path)
-
     def _write_main(self, inittab, defines):
         """ Create the application specific pyqtdeploy_main.cpp file. """
 
@@ -1179,92 +1002,3 @@ static struct _inittab %s[] = {
         f.write('''    {NULL, NULL}
 };
 ''')
-
-    @staticmethod
-    def _freeze(job_writer, out_file, in_file, name, as_c=False):
-        """ Freeze a Python source file to a C header file or a data file. """
-
-        if as_c:
-            conversion = 'C'
-        else:
-            name = ':/' + name
-            conversion = 'data'
-
-        job_writer.writerow([out_file, in_file, name, conversion])
-
-    def _run_freeze(self, python, job_filename, opt):
-        """ Run the accumlated freeze jobs. """
-
-        argv = [python.host_python]
-
-        if opt == 2:
-            argv.append('-OO')
-        elif opt == 1:
-            argv.append('-O')
-
-        argv.append(self._get_lib_path('freeze.py'))
-        argv.append(job_filename)
-
-        self.run(argv, "Unable to freeze files")
-
-    def run(self, argv, error_message, in_build_dir=False):
-        """ Execute a command and capture the output. """
-
-        if in_build_dir:
-            saved_cwd = os.getcwd()
-            os.chdir(self._build_dir)
-            self._message_handler.verbose_message(
-                    "{0} is now the current directory".format(self._build_dir))
-        else:
-            saved_cwd = None
-
-        self._message_handler.verbose_message(
-                "Running '{0}'".format(' '.join(argv)))
-
-        QCoreApplication.processEvents()
-
-        process = QProcess()
-
-        process.readyReadStandardOutput.connect(
-                lambda: self._message_handler.progress_message(
-                        QTextCodec.codecForLocale().toUnicode(
-                                process.readAllStandardOutput()).strip()))
-
-        stderr_output = QByteArray()
-        process.readyReadStandardError.connect(
-                lambda: stderr_output.append(process.readAllStandardError()))
-
-        process.start(argv[0], argv[1:])
-        finished = process.waitForFinished()
-
-        if saved_cwd is not None:
-            os.chdir(saved_cwd)
-            self._message_handler.verbose_message(
-                    "{0} is now the current directory".format(saved_cwd))
-
-        if not finished:
-            raise UserException(error_message, process.errorString())
-
-        if process.exitStatus() != QProcess.NormalExit or process.exitCode() != 0:
-            raise UserException(error_message,
-                    QTextCodec.codecForLocale().toUnicode(stderr_output).strip())
-
-    @staticmethod
-    def _get_lib_path(name):
-        """ Get the pathname of a file or directory in the 'lib' sub-directory.
-        """
-
-        return os.path.join(os.path.dirname(__file__), 'lib', name)
-
-    def _create_directory(self, dir_name):
-        """ Create a directory which may already exist. """
-
-        self._message_handler.verbose_message(
-                "Creating directory {0}".format(dir_name))
-
-        try:
-            os.makedirs(dir_name, exist_ok=True)
-        except Exception as e:
-            raise UserException(
-                    "Unable to create the '{0}' directory".format(dir_name),
-                    str(e))

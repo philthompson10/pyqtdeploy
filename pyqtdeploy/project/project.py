@@ -28,7 +28,7 @@ import os
 import toml
 
 # TODO: refactor so that PyQt isn't used.
-from PyQt5.QtCore import QDir, QFileInfo, QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal
 
 from ..sysroot import SysrootSpecification
 from ..user_exception import UserException
@@ -70,28 +70,29 @@ class Project(QObject):
     def name(self):
         """ The name property getter. """
 
-        # Use absoluteFilePath() because the file might not exist.
-        return self._name.absoluteFilePath() if self._name is not None else ''
+        return self._name
 
     @name.setter
     def name(self, value):
         """ The name property setter. """
 
-        if self._name is None or self._name.absoluteFilePath() != value:
-            self._name = QFileInfo(value)
+        value = os.path.abspath(value)
+
+        if self._name is None or self._name != value:
+            self._name = value
             self.name_changed.emit(value)
 
     # Emitted when the sysroot has been loaded.
     sysroot_loaded = pyqtSignal()
 
-    def __init__(self, name=''):
+    def __init__(self, name=None):
         """ Initialise the project. """
 
         super().__init__()
 
-        self._modified = False
-        self._name = QFileInfo(name) if name != '' else None
+        self._name = None if name is None else os.path.abspath(name)
 
+        self._modified = False
         self.sysroot_specification = None
 
         # Initialise the project data.
@@ -120,75 +121,36 @@ class Project(QObject):
 
         return QDir.toNativeSeparators(path)
 
-    def path_from_user(self, user_path):
-        """ Convert the name of a file or directory specified by the user to
-        the standard Qt format (ie. an absolute path using UNIX separators).  A
-        user path may be relative to the name of the project and may contain
-        environment variables.
+    def project_path(self, path):
+        """ Return an absolute path.  If the original path is relative then
+        assume it is relative to the name of the project file.
         """
 
-        fi = self._fileinfo_from_user(user_path)
+        if os.path.isabs(path):
+            return path
 
-        # Use the canonical name if possible (ie. when the file exists) and
-        # fall back to the absolute name.
-        path = fi.canonicalFilePath()
-        if path == '':
-            path = fi.absoluteFilePath()
-
-        return path
-
-    def get_executable_basename(self):
-        """ Return the basename of the application executable (i.e. with no
-        path or extension.
-        """
-
-        if self.application_name != '':
-            return self.application_name
-
-        name = self.application_script
-        if name == '':
-            name = self.application_package.name
-            if name == '':
-                return ''
-
-        return self._fileinfo_from_user(name).completeBaseName()
-
-    def _fileinfo_from_user(self, user_path):
-        """ Convert the name of a file or directory specified by the user to a
-        QFileInfo instance.  A user path may be relative to the name of the
-        project file and may contain environment variables.
-        """
-
-        # TODO: review need to allow environment variables.
-        fi = QFileInfo(os.path.expandvars(user_path.strip()))
-
-        if fi.isRelative() and self._name is not None:
-            fi = QFileInfo(self._name.canonicalPath() + '/' + fi.filePath())
-
-        return fi
+        return os.path.normpath(
+                os.path.join(os.path.dirname(self._name), path))
 
     @classmethod
-    def load(cls, file_name):
+    def load(cls, name):
         """ Return a new project loaded from the given file.  Raise a
         UserException if there was an error.
         """
 
         # Get the loader for the project.
-        fi = QFileInfo(file_name)
-        file_path = QDir.toNativeSeparators(fi.canonicalFilePath())
-
-        if file_path.endswith('.pdy'):
+        if name.endswith('.pdy'):
             from .legacy import load_xml as loader
 
             # Save the file using the current format.
-            fi.setFile(file_path.replace('.pdy', '.pdt'))
+            load_from = name.replace('.pdy', '.pdt')
         else:
             loader = cls._load_toml
+            load_from = name
 
         # Create the project and load it.
-        project = cls()
-        project._name = fi
-        loader(project, file_path)
+        project = cls(name)
+        loader(project, load_from)
         project.load_sysroot()
 
         return project
@@ -196,29 +158,26 @@ class Project(QObject):
     def load_sysroot(self):
         """ Load the project's sysroot specification file. """
 
-        # Get the pathname of the project file.
-        file_path = QDir.toNativeSeparators(self._name.canonicalFilePath())
-
         self.sysroot_specification = SysrootSpecification(self.sysroot_toml,
-                file_path)
+                self._name)
 
         self.sysroot_loaded.emit()
 
     def save(self):
         """ Save the project.  Raise a UserException if there was an error. """
 
-        self._save_project(self.name)
+        self._save_project(self._name)
 
-    def save_as(self, file_name):
+    def save_as(self, name):
         """ Save the project to the given file and make the file the
         destination of subsequent saves.  Raise a UserException if there was an
         error.
         """
 
-        self._save_project(file_name)
+        self._save_project(name)
 
         # Only do this after the project has been successfully saved.
-        self.name = file_name
+        self.name = name
 
     @staticmethod
     def _get_dict(container, name):
@@ -244,7 +203,7 @@ class Project(QObject):
 
         package = QrcPackage()
 
-        package.name = container.get('name', '')
+        package.name = container.get('name')
         package.contents = cls._load_mfs_contents(container)
         package.exclusions = cls._get_list(container, 'exclude')
 
@@ -257,7 +216,7 @@ class Project(QObject):
         contents = []
 
         for content_element in cls._get_list(container, 'Content'):
-            name = content_element.get('name', '')
+            name = content_element.get('name')
             included = content_element.get('included', False)
             isdir = content_element.get('is_directory', False)
 

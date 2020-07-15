@@ -24,6 +24,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
+from ..modules import Module
+
+
 class QrcPackage():
     """ The encapsulation of a memory-filesystem package. """
 
@@ -35,16 +38,36 @@ class QrcPackage():
         self.exclusions = ['*.pyc', '*.pyd', '*.pyo', '*.pyx', '*.pxi',
                 '__pycache__', '*-info', 'EGG_INFO', '*.so']
 
-    def copy(self):
-        """ Return a copy of the package. """
+    @property
+    def modules(self):
+        """ Return the package as a dict of Module objects. """
 
-        copy = type(self)()
+        modules = {}
 
-        copy.name = self.name
-        copy.contents = [content.copy() for content in self.contents]
-        copy.exclusions = list(self.exclusions)
+        for node in self.contents:
+            self._add_module(node, self.name, modules)
 
-        return copy
+        return modules
+
+    def _add_module(self, node, parent_name, modules):
+        """ Add a single file or directory to the modules dict. """
+
+        if node.included:
+            node_name = parent_name + '.' + node.name
+
+            if isinstance(node, QrcDirectory):
+                for child in node.contents:
+                    self._add_module(child, node_name, modules)
+            else:
+                if node_name.endswith('.py'):
+                    node_name = node_name[:-3]
+                    data_ext = None
+                else:
+                    parts = node.name.split('.', maxsplit=1)
+                    node_name = parent_name + '.' + parts[0]
+                    data_ext = '.' + parts[1] if len(parts) == 2 else ''
+
+                modules[node_name] = Module(data_ext=data_ext)
 
 
 class QrcFile():
@@ -56,11 +79,6 @@ class QrcFile():
         self.name = name
         self.included = included
 
-    def copy(self):
-        """ Return a copy of the file. """
-
-        return type(self)(self.name, self.included)
-
 
 class QrcDirectory(QrcFile):
     """ The encapsulation of a memory-filesystem directory. """
@@ -71,12 +89,3 @@ class QrcDirectory(QrcFile):
         super().__init__(name, included)
 
         self.contents = []
-
-    def copy(self):
-        """ Return a copy of the directory. """
-
-        copy = super().copy()
-
-        copy.contents = [content.copy() for content in self.contents]
-
-        return copy
