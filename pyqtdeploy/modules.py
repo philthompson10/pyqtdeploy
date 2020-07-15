@@ -30,8 +30,10 @@ from .version_number import VersionNumber
 class Module:
     """ Encapsulate the meta-data for a module. """
 
-    def __init__(self, internal, target, deps, hidden_deps, core, builtin,
-            defines, xdep, modules, source, libs, includepath, pyd, dlls):
+    def __init__(self, internal=False, target='', deps=(), hidden_deps=(),
+            core=False, builtin=False, defines=None, xdep=None, modules=None,
+            source=None, libs=None, includepath=None, pyd=None, dlls=None,
+            data_ext=None):
         """ Initialise the object. """
 
         # Set if the module is internal.
@@ -88,6 +90,10 @@ class Module:
         # The sequence of additional DLLs needed by the extension module and
         # included in the Windows installer from python.org.
         self.dlls = (dlls, ) if isinstance(dlls, str) else dlls
+
+        # The file extension if the module is actually a data file.  Note that
+        # None and '' have different meanings.
+        self.data_ext = data_ext
 
 
 class VersionedModule:

@@ -244,7 +244,7 @@ class _ApplicationPackageEditor(PackageEditor):
 
         default = application_package.name
         if default is not None:
-            default = project.path_from_user(default)
+            default = project.project_path(default)
 
         root = QFileDialog.getExistingDirectory(self.parentWidget(),
                 self.title, default)
