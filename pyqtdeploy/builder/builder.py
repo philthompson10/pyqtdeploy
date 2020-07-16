@@ -424,50 +424,37 @@ class Builder:
         f.write('TEMPLATE = app\n')
         f.write('\n')
 
-        # Configure the CONFIG and QT values that are project dependent.
-        needs_cpp11 = False
-        needs_gui = False
-        qmake_qt5 = set()
-        qmake_config5 = set()
+        # Accumulate all the values of all the qmake variables.
+        qmake_cpp11 = False
+        qmake_config = set()
+        qmake_qt = set()
 
-        for pyqt_m in project.pyqt_modules:
-            metadata = self._get_pyqt_module_metadata(pyqt_m)
+        for module in modules.values():
+            # Ignore non-extension modules.
+            if module.source is None and module.qmake_config is None and module.qmake_qt is None:
+                continue
 
-            if metadata.cpp11:
-                needs_cpp11 = True
+            if module.qmake_cpp11:
+                qmake_cpp11 = True
 
-            if metadata.gui:
-                needs_gui = True
+            if module.qmake_config is not None:
+                qmake_config.update(module.qmake_config)
 
-            if self._target.is_targeted(metadata.targets):
-                qmake_qt5.update(metadata.qt5)
-                qmake_config5.update(metadata.config5)
-
-        # Extract QT and CONFIG values that not version-specific.
-        qmake_qt45 = qmake_qt4 & qmake_qt5
-        qmake_qt4 -= qmake_qt45
-        qmake_qt5 -= qmake_qt45
-
-        qmake_config45 = qmake_config4 & qmake_config5
-        qmake_config4 -= qmake_config45
-        qmake_config5 -= qmake_config45
+            if module.qmake_qt is not None:
+                qmake_qt.update(module.qmake_qt)
 
         # Generate QT.
-        self._write_qt_config(f, 'QT', None, qmake_qt45)
-        self._write_qt_config(f, 'QT', 4, qmake_qt4)
-        self._write_qt_config(f, 'QT', 5, qmake_qt5)
-
-        if not needs_gui:
-            f.write('QT -= gui\n')
+        if qmake_qt:
+            f.write('QT += %s\n' % ' '.join(qmake_qt))
 
         # Generate CONFIG.
         config = ['warn_off']
 
         if target_platform == 'win':
-            if project.application_is_console or not needs_gui:
+            if project.application_is_console:
                 config.append('console')
 
-        if needs_cpp11:
+        if qmake_cpp11:
             config.append('c++11')
 
         f.write('CONFIG += {0}\n'.format(' '.join(config)))
@@ -476,238 +463,237 @@ class Builder:
             if not project.application_is_bundle:
                 f.write('CONFIG -= app_bundle\n')
 
-        self._write_qt_config(f, 'CONFIG', None, qmake_config45)
-        self._write_qt_config(f, 'CONFIG', 4, qmake_config4)
-        self._write_qt_config(f, 'CONFIG', 5, qmake_config5)
+        if qmake_config:
+            f.write('CONFIG += %s\n' % ' '.join(qmake_config))
 
-        # Modules can share sources so we need to make sure we don't include
-        # them more than once.  We might as well handle the other things in the
-        # same way.
-        used_qt = set()
-        used_config = set()
-        used_sources = set()
-        used_defines = set()
-        used_includepath = set()
-        used_libs = set()
-        used_inittab = set()
-        used_dlls = set()
+        ## Modules can share sources so we need to make sure we don't include
+        ## them more than once.  We might as well handle the other things in the
+        ## same way.
+        #used_qt = set()
+        #used_config = set()
+        #used_sources = set()
+        #used_defines = set()
+        #used_includepath = set()
+        #used_libs = set()
+        #used_inittab = set()
+        #used_dlls = set()
 
-        # Handle any static PyQt modules.
-        site_packages = standard_library_dir + '/site-packages'
-        pyqt_package = self._get_pyqt_package_name()
+        ## Handle any static PyQt modules.
+        #site_packages = standard_library_dir + '/site-packages'
+        #pyqt_package = self._get_pyqt_package_name()
 
-        for module in self._get_all_pyqt_modules():
-            # The uic module is pure Python.
-            if module == 'uic':
-                continue
+        #for module in self._get_all_pyqt_modules():
+        #    # The uic module is pure Python.
+        #    if module == 'uic':
+        #        continue
 
-            metadata = self._get_pyqt_module_metadata(module)
+        #    metadata = self._get_pyqt_module_metadata(module)
 
-            if not self._target.is_targeted(metadata.targets):
-                continue
+        #    if not self._target.is_targeted(metadata.targets):
+        #        continue
 
-            # The sip module is always needed (implicitly or explicitly) if we
-            # have got this far.  We handle it separately when it is in a
-            # different directory.
-            if module == 'sip' and not private_sip:
-                used_inittab.add(module)
-                used_libs.add('-L' + site_packages)
-            else:
-                used_inittab.add(pyqt_package + '.' + module)
-                used_libs.add('-L' + site_packages + '/' + pyqt_package)
+        #    # The sip module is always needed (implicitly or explicitly) if we
+        #    # have got this far.  We handle it separately when it is in a
+        #    # different directory.
+        #    if module == 'sip' and not private_sip:
+        #        used_inittab.add(module)
+        #        used_libs.add('-L' + site_packages)
+        #    else:
+        #        used_inittab.add(pyqt_package + '.' + module)
+        #        used_libs.add('-L' + site_packages + '/' + pyqt_package)
 
-            lib_name = '-l' + module
-            if metadata.needs_suffix:
-                # Qt4's qmake thinks -lQtCore etc. always refer to the Qt
-                # libraries so PyQt4 creates static libraries with a suffix.
-                lib_name += '_s'
+        #    lib_name = '-l' + module
+        #    if metadata.needs_suffix:
+        #        # Qt4's qmake thinks -lQtCore etc. always refer to the Qt
+        #        # libraries so PyQt4 creates static libraries with a suffix.
+        #        lib_name += '_s'
 
-            used_libs.add(lib_name)
+        #    used_libs.add(lib_name)
 
-        # Handle any other extension modules.
-        for other_em in project.other_extension_modules:
-            # If the name is scoped then the targets are the outer scopes for
-            # the remaining values.
-            value = self._get_scoped_value(other_em.name)
-            if value is None:
-                continue
+        ## Handle any other extension modules.
+        #for other_em in project.other_extension_modules:
+        #    # If the name is scoped then the targets are the outer scopes for
+        #    # the remaining values.
+        #    value = self._get_scoped_value(other_em.name)
+        #    if value is None:
+        #        continue
 
-            used_inittab.add(value)
+        #    used_inittab.add(value)
 
-            if other_em.qt != '':
-                self._add_compound_scoped_values(used_qt, other_em.qt, False)
+        #    if other_em.qt != '':
+        #        self._add_compound_scoped_values(used_qt, other_em.qt, False)
 
-            if other_em.config != '':
-                self._add_compound_scoped_values(used_config, other_em.config,
-                        False)
+        #    if other_em.config != '':
+        #        self._add_compound_scoped_values(used_config, other_em.config,
+        #                False)
 
-            if other_em.sources != '':
-                self._add_compound_scoped_values(used_sources,
-                        other_em.sources, True)
+        #    if other_em.sources != '':
+        #        self._add_compound_scoped_values(used_sources,
+        #                other_em.sources, True)
 
-            if other_em.defines != '':
-                self._add_compound_scoped_values(used_defines,
-                        other_em.defines, False)
+        #    if other_em.defines != '':
+        #        self._add_compound_scoped_values(used_defines,
+        #                other_em.defines, False)
 
-            if other_em.includepath != '':
-                self._add_compound_scoped_values(used_includepath,
-                        other_em.includepath, True)
+        #    if other_em.includepath != '':
+        #        self._add_compound_scoped_values(used_includepath,
+        #                other_em.includepath, True)
 
-            if other_em.libs != '':
-                self._add_compound_scoped_values(used_libs, other_em.libs,
-                        False)
+        #    if other_em.libs != '':
+        #        self._add_compound_scoped_values(used_libs, other_em.libs,
+        #                False)
 
-        # Configure the target Python interpreter.
-        if include_dir != '':
-            used_includepath.add(include_dir)
+        ## Configure the target Python interpreter.
+        #if include_dir != '':
+        #    used_includepath.add(include_dir)
 
-        if python_library != '':
-            fi = QFileInfo(python_library)
+        #if python_library != '':
+        #    fi = QFileInfo(python_library)
 
-            py_lib_dir = fi.absolutePath()
-            lib = fi.completeBaseName()
+        #    py_lib_dir = fi.absolutePath()
+        #    lib = fi.completeBaseName()
 
-            # This is smart enough to translate the Python library as a UNIX .a
-            # file to what Windows needs.
-            if lib.startswith('lib'):
-                lib = lib[3:]
+        #    # This is smart enough to translate the Python library as a UNIX .a
+        #    # file to what Windows needs.
+        #    if lib.startswith('lib'):
+        #        lib = lib[3:]
 
-            if '.' in lib and target_platform == 'win':
-                lib = lib.replace('.', '')
+        #    if '.' in lib and target_platform == 'win':
+        #        lib = lib.replace('.', '')
 
-            used_libs.add('-l' + lib)
-            used_libs.add('-L' + py_lib_dir)
-        else:
-            py_lib_dir = None
+        #    used_libs.add('-l' + lib)
+        #    used_libs.add('-L' + py_lib_dir)
+        #else:
+        #    py_lib_dir = None
 
-        # Handle any standard library extension modules.
-        if target_platform not in project.python_use_platform:
-            self._add_stdlib_extension_modules(project, target_platform,
-                    source_dir, required_ext, used_inittab, used_sources,
-                    used_includepath, used_defines, used_libs, used_dlls)
+        ## Handle any standard library extension modules.
+        #if target_platform not in project.python_use_platform:
+        #    self._add_stdlib_extension_modules(project, target_platform,
+        #            source_dir, required_ext, used_inittab, used_sources,
+        #            used_includepath, used_defines, used_libs, used_dlls)
 
-        # Handle any required external libraries.
-        android_extra_libs = []
+        ## Handle any required external libraries.
+        #android_extra_libs = []
 
-        external_libs = project.external_libraries.get(target_platform, ())
+        #external_libs = project.external_libraries.get(target_platform, ())
 
-        for required_lib in required_libraries:
-            # Skip any external libraries that are not for the current target.
-            required_lib = self._get_scoped_value(required_lib)
-            if required_lib is None:
-                continue
+        #for required_lib in required_libraries:
+        #    # Skip any external libraries that are not for the current target.
+        #    required_lib = self._get_scoped_value(required_lib)
+        #    if required_lib is None:
+        #        continue
 
-            defines = includepath = libs = ''
+        #    defines = includepath = libs = ''
 
-            for xlib in external_libs:
-                if xlib.name == required_lib:
-                    defines = xlib.defines
-                    includepath = xlib.includepath
-                    libs = xlib.libs
-                    break
-            else:
-                # Use the defaults.
-                for xlib in external_libraries_metadata:
-                    if xlib.name == required_lib:
-                        if target_platform not in project.python_use_platform:
-                            defines = xlib.defines
-                            includepath = xlib.includepath
-                            libs = xlib.get_libs(target_platform)
+        #    for xlib in external_libs:
+        #        if xlib.name == required_lib:
+        #            defines = xlib.defines
+        #            includepath = xlib.includepath
+        #            libs = xlib.libs
+        #            break
+        #    else:
+        #        # Use the defaults.
+        #        for xlib in external_libraries_metadata:
+        #            if xlib.name == required_lib:
+        #                if target_platform not in project.python_use_platform:
+        #                    defines = xlib.defines
+        #                    includepath = xlib.includepath
+        #                    libs = xlib.get_libs(target_platform)
 
-                        break
+        #                break
 
-            # Check the library is not disabled for this target.
-            enabled = False
+        #    # Check the library is not disabled for this target.
+        #    enabled = False
 
-            if defines != '':
-                self._add_compound_scoped_values(used_defines, defines, False)
-                enabled = True
+        #    if defines != '':
+        #        self._add_compound_scoped_values(used_defines, defines, False)
+        #        enabled = True
 
-            if includepath != '':
-                self._add_compound_scoped_values(used_includepath, includepath,
-                        True)
-                enabled = True
+        #    if includepath != '':
+        #        self._add_compound_scoped_values(used_includepath, includepath,
+        #                True)
+        #        enabled = True
 
-            if libs != '':
-                self._add_compound_scoped_values(used_libs, libs, False)
-                enabled = True
+        #    if libs != '':
+        #        self._add_compound_scoped_values(used_libs, libs, False)
+        #        enabled = True
 
-            if enabled and target_platform == 'android':
-                self._add_android_extra_libs(libs, android_extra_libs)
+        #    if enabled and target_platform == 'android':
+        #        self._add_android_extra_libs(libs, android_extra_libs)
 
-        # Specify any project-specific configuration.
-        if used_qt:
-            f.write('\n')
-            self._write_used_values(f, used_qt, 'QT')
+        ## Specify any project-specific configuration.
+        #if used_qt:
+        #    f.write('\n')
+        #    self._write_used_values(f, used_qt, 'QT')
 
-        if used_config:
-            f.write('\n')
-            self._write_used_values(f, used_config, 'CONFIG')
+        #if used_config:
+        #    f.write('\n')
+        #    self._write_used_values(f, used_config, 'CONFIG')
 
-        # Python v3.6.0 requires C99 at least.  Note that specifying 'c++11' in
-        # 'CONFIG' doesn't affect 'CFLAGS'.
-        if python_target_version >= (3, 6) and target_platform != 'win':
-            f.write('\n')
-            f.write('QMAKE_CFLAGS += -std=c99\n')
+        ## Python v3.6.0 requires C99 at least.  Note that specifying 'c++11' in
+        ## 'CONFIG' doesn't affect 'CFLAGS'.
+        #if python_target_version >= (3, 6) and target_platform != 'win':
+        #    f.write('\n')
+        #    f.write('QMAKE_CFLAGS += -std=c99\n')
 
-        # Specify the resource files.
-        f.write('\n')
-        f.write('RESOURCES = \\\n')
-        f.write(' \\\n'.join(['    resources/{0}'.format(n) for n in resource_names]))
-        f.write('\n')
+        ## Specify the resource files.
+        #f.write('\n')
+        #f.write('RESOURCES = \\\n')
+        #f.write(' \\\n'.join(['    resources/{0}'.format(n) for n in resource_names]))
+        #f.write('\n')
 
-        # Specify the defines.
-        defines = []
-        headers = ['pyqtdeploy_version.h', 'frozen_bootstrap.h',
-                'frozen_bootstrap_external.h']
+        ## Specify the defines.
+        #defines = []
+        #headers = ['pyqtdeploy_version.h', 'frozen_bootstrap.h',
+        #        'frozen_bootstrap_external.h']
 
-        if project.application_script != '':
-            defines.append('PYQTDEPLOY_FROZEN_MAIN')
-            headers.append('frozen_main.h')
+        #if project.application_script != '':
+        #    defines.append('PYQTDEPLOY_FROZEN_MAIN')
+        #    headers.append('frozen_main.h')
 
-        if opt:
-            defines.append('PYQTDEPLOY_OPTIMIZED')
+        #if opt:
+        #    defines.append('PYQTDEPLOY_OPTIMIZED')
 
-        if defines or used_defines:
-            f.write('\n')
+        #if defines or used_defines:
+        #    f.write('\n')
 
-            if defines:
-                f.write('DEFINES += {0}\n'.format(' '.join(defines)))
+        #    if defines:
+        #        f.write('DEFINES += {0}\n'.format(' '.join(defines)))
 
-            self._write_used_values(f, used_defines, 'DEFINES')
+        #    self._write_used_values(f, used_defines, 'DEFINES')
 
-        # Specify the include paths.
-        if used_includepath:
-            f.write('\n')
-            self._write_used_values(f, used_includepath, 'INCLUDEPATH')
+        ## Specify the include paths.
+        #if used_includepath:
+        #    f.write('\n')
+        #    self._write_used_values(f, used_includepath, 'INCLUDEPATH')
 
-        # Specify the source files and header files.
-        f.write('\n')
-        f.write('SOURCES = pyqtdeploy_main.cpp pyqtdeploy_start.cpp pdytools_module.cpp\n')
-        self._write_used_values(f, used_sources, 'SOURCES')
-        self._write_main(used_inittab, used_defines)
-        shutil.copy2(self._get_lib_path('pyqtdeploy_start.cpp'),
-                self._build_dir)
-        shutil.copy2(self._get_lib_path('pdytools_module.cpp'),
-                self._build_dir)
+        ## Specify the source files and header files.
+        #f.write('\n')
+        #f.write('SOURCES = pyqtdeploy_main.cpp pyqtdeploy_start.cpp pdytools_module.cpp\n')
+        #self._write_used_values(f, used_sources, 'SOURCES')
+        #self._write_main(used_inittab, used_defines)
+        #shutil.copy2(self._get_lib_path('pyqtdeploy_start.cpp'),
+        #        self._build_dir)
+        #shutil.copy2(self._get_lib_path('pdytools_module.cpp'),
+        #        self._build_dir)
 
-        f.write('\n')
-        f.write('HEADERS = {0}\n'.format(' '.join(headers)))
+        #f.write('\n')
+        #f.write('HEADERS = {0}\n'.format(' '.join(headers)))
 
-        # Specify the libraries.
-        if used_libs:
-            f.write('\n')
-            self._write_used_values(f, used_libs, 'LIBS')
+        ## Specify the libraries.
+        #if used_libs:
+        #    f.write('\n')
+        #    self._write_used_values(f, used_libs, 'LIBS')
 
-        # Add the library files to be added to an Android APK.
-        if android_extra_libs and target_platform == 'android':
-            f.write('\n')
-            f.write('ANDROID_EXTRA_LIBS += %s\n' % ' '.join(android_extra_libs))
+        ## Add the library files to be added to an Android APK.
+        #if android_extra_libs and target_platform == 'android':
+        #    f.write('\n')
+        #    f.write('ANDROID_EXTRA_LIBS += %s\n' % ' '.join(android_extra_libs))
 
-        # If we are using the platform Python on Windows then copy in the
-        # required DLLs if they can be found.
-        if 'win' in project.python_use_platform and used_dlls and py_lib_dir is not None:
-            self._copy_windows_dlls(py_lib_dir, used_dlls, f)
+        ## If we are using the platform Python on Windows then copy in the
+        ## required DLLs if they can be found.
+        #if 'win' in project.python_use_platform and used_dlls and py_lib_dir is not None:
+        #    self._copy_windows_dlls(py_lib_dir, used_dlls, f)
 
         # Add the project independent post-configuration stuff.
         with open_file(self._get_lib_path('post_configuration.pro')) as pro_f:
@@ -721,27 +707,6 @@ class Builder:
 
         # All done.
         f.close()
-
-    @classmethod
-    def _write_qt_config(cls, f, name, qt_major, values):
-        """ Write the values of QT or CONFIG which may be Qt version specific.
-        """
-
-        if values:
-            if qt_major is None:
-                indent = ''
-            else:
-                indent = '    '
-
-                if qt_major == 5:
-                    f.write('greaterThan(QT_MAJOR_VERSION, 4) {\n')
-                else:
-                    f.write('lessThan(QT_MAJOR_VERSION, 5) {\n')
-
-            f.write('%s%s += %s\n' % (indent, name, ' '.join(values)))
-
-            if indent:
-                f.write('}\n')
 
     @classmethod
     def _write_used_values(cls, f, used_values, name):

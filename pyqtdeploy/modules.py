@@ -33,7 +33,8 @@ class Module:
     def __init__(self, internal=False, target='', deps=(), hidden_deps=(),
             core=False, builtin=False, defines=None, xdep=None, modules=None,
             source=None, libs=None, includepath=None, pyd=None, dlls=None,
-            data_ext=None):
+            data_ext=None, qmake_config=None, qmake_cpp11=False,
+            qmake_qt=None):
         """ Initialise the object. """
 
         # Set if the module is internal.
@@ -95,6 +96,15 @@ class Module:
         # None and '' have different meanings.
         self.data_ext = data_ext
 
+        # The sequence of strings to add the qmake's CONFIG variable.
+        self.qmake_config = (qmake_config, ) if isinstance(qmake_config, str) else qmake_config
+
+        # Set if C++11 compiler support is needed.
+        self.qmake_cpp11 = qmake_cpp11
+
+        # The sequence of strings to add the qmake's QT variable.
+        self.qmake_qt = (qmake_qt, ) if isinstance(qmake_qt, str) else qmake_qt
+
 
 class VersionedModule:
     """ Encapsulate the meta-data common to all types of module. """
@@ -102,7 +112,8 @@ class VersionedModule:
     def __init__(self, min_version=None, version=None, max_version=None,
             internal=False, target='', deps=(), hidden_deps=(), core=False,
             builtin=False, defines=None, xdep=None, modules=None, source=None,
-            libs=None, includepath=None, pyd=None, dlls=None):
+            libs=None, includepath=None, pyd=None, dlls=None, data_ext=None,
+            qmake_config=None, qmake_cpp11=False, qmake_qt=None):
         """ Initialise the object. """
 
         self._min_version = min_version
@@ -111,7 +122,7 @@ class VersionedModule:
 
         self.module = Module(internal, target, deps, hidden_deps, core,
                 builtin, defines, xdep, modules, source, libs, includepath,
-                pyd, dlls)
+                pyd, dlls, data_ext)
 
     def applies_to(self, version):
         """ Returns True if the given version applies to this versioned module.
