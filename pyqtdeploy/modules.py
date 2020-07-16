@@ -122,7 +122,7 @@ class VersionedModule:
 
         self.module = Module(internal, target, deps, hidden_deps, core,
                 builtin, defines, xdep, modules, source, libs, includepath,
-                pyd, dlls, data_ext)
+                pyd, dlls, data_ext, qmake_config, qmake_cpp11, qmake_qt)
 
     def applies_to(self, version):
         """ Returns True if the given version applies to this versioned module.

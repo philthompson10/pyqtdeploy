@@ -64,6 +64,10 @@ class Builder:
         """
 
         project = self._project
+
+        # Verify the sysroot.
+        self._sysroot.verify()
+
         python = self._sysroot.get_component('Python')
 
         # Check the sysroot directory exists.
@@ -72,36 +76,19 @@ class Builder:
                     "The sysroot directory '{0}' does not exist.".format(
                             self._sysroot.sysroot_dir))
 
-        # Get the names of the required Python modules, extension modules and
-        # libraries.
-        # TODO
+        # Get all the modules provided by the sysroot.
+        available_modules = {}
+        for component in self._sysroot.components:
+            available_modules.update(component.modules)
+
+        # Get the required modules.
         modules = {}
-        #metadata = get_python_metadata(python_target_version)
-        #required_modules, required_libraries = project.get_stdlib_requirements(
-        #        include_hidden=True)
 
-        #required_py = {}
-        #required_ext = {}
-        #for name in required_modules.keys():
-        #    module = metadata[name]
+        for module_name in project.standard_library:
+            self._add_project_module(module_name, modules, available_modules)
 
-        #    if module.target and not self._target.is_targeted(module.target):
-        #        continue
-
-        #    if module.source is None:
-        #        required_py[name] = module
-        #    elif not module.core:
-        #        required_ext[name] = module
-
-        # Initialise and check we have the information we need.
-        #if len(required_ext) != 0:
-        #    if source_dir is None:
-        #        if project.python_source_dir == '':
-        #            raise UserException(
-        #                    "The name of the Python source directory has not "
-        #                    "been specified")
-
-        #        source_dir = project.path_from_user(project.python_source_dir)
+        for module_name in project.other_packages:
+            self._add_project_module(module_name, modules, available_modules)
 
         # Determine the application name.
         if project.application_name:
@@ -194,6 +181,33 @@ class Builder:
         job_file.close()
 
         self._run_freeze(python, job_filename, opt)
+
+    def _add_project_module(self, module_name, modules, available_modules):
+        """ Make sure a module is in the dict of all modules. """
+
+        # See if it has already been done.
+        if module_name in modules:
+            return
+
+        # Make sure any parent modules exist.
+        if '.' in module_name:
+            parent_name = '.'.join(module_name.split('.')[:-1])
+            self._add_project_module(parent_name, modules, available_modules)
+
+        # Ignore modules that aren't provided by the sysroot (we assume the
+        # application will handle that) and internal modules.
+        module = available_modules.get(module_name)
+        if module is None or module.internal:
+            return
+
+        modules[module_name] = module
+
+        # Now handle the dependencies.
+        for dep in module.deps:
+            self._add_project_module(dep, modules, available_modules)
+
+        for dep in module.hidden_deps:
+            self._add_project_module(dep, modules, available_modules)
 
     def _create_directory(self, dir_name):
         """ Create a directory which may already exist. """
