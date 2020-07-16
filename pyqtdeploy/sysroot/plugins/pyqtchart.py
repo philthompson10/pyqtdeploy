@@ -40,9 +40,9 @@ class PyQtChartComponent(Component):
     preinstalls = ['Python', 'PyQt', 'Qt', 'SIP']
 
     # The dict of VersionedModule objects provided by the component.
-    # TODO
     provides = {
-        'PyQt5.QtChart': VersionedModule(deps='PyQt:PyQt5.QtWidgets')
+        'PyQt5.QtChart':
+            VersionedModule(deps='PyQt:PyQt5.QtWidgets', qmake_qt='charts')
     }
 
     def get_archive_name(self):

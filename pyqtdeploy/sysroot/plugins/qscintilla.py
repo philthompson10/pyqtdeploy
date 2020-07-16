@@ -129,8 +129,10 @@ sip_module = PyQt5.sip
         if 'QtPrintSupport' in self.get_component('PyQt').installed_modules:
             deps = (deps, 'PyQt:PyQt5.QtPrintSupport')
 
-        # TODO
-        return {'PyQt5.Qsci': VersionedModule(deps=deps)}
+        return {
+            'PyQt5.Qsci':
+                VersionedModule(deps=deps, qmake_config='qscintilla2')
+        }
 
     def verify(self):
         """ Verify the component. """

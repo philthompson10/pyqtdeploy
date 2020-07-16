@@ -29,54 +29,83 @@ import os
 from ... import Component, ComponentOption, VersionedModule
 
 
-# TODO: add linking information
+# TODO: add Qt
 # TODO: add uic
 # The VersionedModule objects for all modules that can be provided by the
 # component.
 _ALL_MODULES = {
     'PyQt5': VersionedModule(),
+    'PyQt5.QAxContainer':
+        VersionedModule(target='win', deps='PyQt5.QtWidgets',
+                qmake_qt='axcontainer'),
     'PyQt5.QtAndroidExtras':
-        VersionedModule(target='android', deps='PyQt5.QtCore'),
-    'PyQt5.QtBluetooth': VersionedModule(deps='PyQt5.QtCore'),
+        VersionedModule(target='android', deps='PyQt5.QtCore',
+                qmake_qt='androidextras'),
+    'PyQt5.QtBluetooth':
+        VersionedModule(deps='PyQt5.QtCore', qmake_qt='bluetooth'),
     'PyQt5.QtCore': VersionedModule(deps='SIP:PyQt5.sip'),
-    'PyQt5.QtDBus': VersionedModule(deps='PyQt5.QtCore'),
+    'PyQt5.QtDBus': VersionedModule(deps='PyQt5.QtCore', qmake_qt='dbus'),
     'PyQt5.QtGui': VersionedModule(deps='PyQt5.QtCore'),
-    'PyQt5.QtHelp': VersionedModule(deps='PyQt5.QtWidgets'),
-    'PyQt5.QtLocation': VersionedModule(deps='PyQt5.QtPositioning'),
+    'PyQt5.QtHelp': VersionedModule(deps='PyQt5.QtWidgets', qmake_qt='help'),
+    'PyQt5.QtLocation':
+        VersionedModule(deps='PyQt5.QtPositioning', qmake_qt='location'),
     'PyQt5.QtMacExtras':
-        VersionedModule(target='ios|macos', deps='PyQt5.QtGui'),
+        VersionedModule(target='ios|macos', deps='PyQt5.QtGui',
+                qmake_qt='macextras'),
     'PyQt5.QtMultimedia':
-        VersionedModule(deps=('PyQt5.QtGui', 'PyQt5.QtNetwork')),
+        VersionedModule(deps=('PyQt5.QtGui', 'PyQt5.QtNetwork'),
+                qmake_qt='multimedia'),
     'PyQt5.QtMultimediaWidgets':
-        VersionedModule(deps=('PyQt5.QtMultimedia', 'PyQt5.QtWidgets')),
-    'PyQt5.QtNetwork': VersionedModule(deps='PyQt5.QtCore'),
-    'PyQt5.QtNetworkAuth': VersionedModule(deps='PyQt5.QtNetwork'),
-    'PyQt5.QtNfc': VersionedModule(deps='PyQt5.QtCore'),
-    'PyQt5.QtOpenGL': VersionedModule(deps='PyQt5.QtWidgets'),
-    'PyQt5.QtPositioning': VersionedModule(deps='PyQt5.QtCore'),
-    'PyQt5.QtPrintSupport': VersionedModule(deps='PyQt5.QtWidgets'),
-    'PyQt5.QtQml': VersionedModule(deps='PyQt5.QtNetwork'),
-    'PyQt5.QtQuick': VersionedModule(deps=('PyQt5.QtGui', 'PyQt5.QtQml')),
+        VersionedModule(deps=('PyQt5.QtMultimedia', 'PyQt5.QtWidgets'),
+                qmake_qt='multimediawidgets'),
+    'PyQt5.QtNetwork':
+        VersionedModule(deps='PyQt5.QtCore', qmake_qt='network'),
+    'PyQt5.QtNetworkAuth':
+        VersionedModule(deps='PyQt5.QtNetwork',
+                qmake_qt=('network', 'networkauth')),
+    'PyQt5.QtNfc': VersionedModule(deps='PyQt5.QtCore', qmake_qt='nfc'),
+    'PyQt5.QtOpenGL':
+        VersionedModule(deps='PyQt5.QtWidgets', qmake_qt='opengl'),
+    'PyQt5.QtPositioning':
+        VersionedModule(deps='PyQt5.QtCore', qmake_qt='positioning'),
+    'PyQt5.QtPrintSupport':
+        VersionedModule(deps='PyQt5.QtWidgets', qmake_qt='printsupport'),
+    'PyQt5.QtQml': VersionedModule(deps='PyQt5.QtNetwork', qmake_qt='qml'),
+    'PyQt5.QtQuick':
+        VersionedModule(deps=('PyQt5.QtGui', 'PyQt5.QtQml'), qmake_qt='quick'),
     'PyQt5.QtQuick3D':
         VersionedModule(min_version=(5, 15),
-                deps=('PyQt5.QtGui', 'PyQt5.QtQml')),
+                deps=('PyQt5.QtGui', 'PyQt5.QtQml'), qmake_qt='quick3d'),
     'PyQt5.QtQuickWidgets':
-        VersionedModule(deps=('PyQt5.QtQuick', 'PyQt5.QtWidgets')),
-    'PyQt5.QtRemoteObjects': VersionedModule(deps='PyQt5.QtCore'),
-    'PyQt5.QtSensors': VersionedModule(deps='PyQt5.QtCore'),
-    'PyQt5.QtSerialPort': VersionedModule(deps='PyQt5.QtCore'),
-    'PyQt5.QtSql': VersionedModule(deps='PyQt5.QtWidgets'),
-    'PyQt5.QtSvg': VersionedModule(deps='PyQt5.QtWidgets'),
-    'PyQt5.QtTest': VersionedModule(deps='PyQt5.QtWidgets'),
+        VersionedModule(deps=('PyQt5.QtQuick', 'PyQt5.QtWidgets'),
+                qmake_qt='quickwidgets'),
+    'PyQt5.QtRemoteObjects':
+        VersionedModule(deps='PyQt5.QtCore', qmake_qt='remoteobjects'),
+    'PyQt5.QtSensors':
+        VersionedModule(deps='PyQt5.QtCore', qmake_qt='sensors'),
+    'PyQt5.QtSerialPort':
+        VersionedModule(deps='PyQt5.QtCore', qmake_qt='serialport'),
+    'PyQt5.QtSql': VersionedModule(deps='PyQt5.QtWidgets', qmake_qt='sql'),
+    'PyQt5.QtSvg': VersionedModule(deps='PyQt5.QtWidgets', qmake_qt='svg'),
+    'PyQt5.QtTest':
+        VersionedModule(deps='PyQt5.QtWidgets', qmake_qt='testlib'),
     'PyQt5.QtTextToSpeech':
-        VersionedModule(min_version=(5, 15, 1), deps='PyQt5.QtCore'),
-    'PyQt5.QtWebChannel': VersionedModule(deps='PyQt5.QtCore'),
-    'PyQt5.QtWebSockets': VersionedModule(deps='PyQt5.QtNetwork'),
-    'PyQt5.QtWidgets': VersionedModule(deps='PyQt5.QtGui'),
-    'PyQt5.QtWinExtras': VersionedModule(target='win', deps='PyQt5.QtWidgets'),
-    'PyQt5.QtX11Extras': VersionedModule(target='linux', deps='PyQt5.QtCore'),
-    'PyQt5.QtXml': VersionedModule(deps='PyQt5.QtCore'),
-    'PyQt5.QtXmlPatterns': VersionedModule(deps='PyQt5.QtNetwork'),
+        VersionedModule(min_version=(5, 15, 1), deps='PyQt5.QtCore',
+                qmake_qt='texttospeech'),
+    'PyQt5.QtWebChannel':
+        VersionedModule(deps='PyQt5.QtCore', qmake_qt='webchannel'),
+    'PyQt5.QtWebSockets':
+        VersionedModule(deps='PyQt5.QtNetwork', qmake_qt='websockets'),
+    'PyQt5.QtWidgets': VersionedModule(deps='PyQt5.QtGui', qmake_qt='widgets'),
+    'PyQt5.QtWinExtras':
+        VersionedModule(target='win', deps='PyQt5.QtWidgets',
+                qmake_qt='winextras'),
+    'PyQt5.QtX11Extras':
+        VersionedModule(target='linux', deps='PyQt5.QtCore',
+                qmake_qt='x11extras'),
+    'PyQt5.QtXml': VersionedModule(deps='PyQt5.QtCore', qmake_qt='xml'),
+    'PyQt5.QtXmlPatterns':
+        VersionedModule(deps='PyQt5.QtNetwork', qmake_qt='xmlpatterns'),
     'PyQt5._QOpenGLFunctions_2_0': VersionedModule(deps='PyQt5.QtGui'),
     'PyQt5._QOpenGLFunctions_2_1': VersionedModule(deps='PyQt5.QtGui'),
     'PyQt5._QOpenGLFunctions_4_1_Core': VersionedModule(deps='PyQt5.QtGui'),

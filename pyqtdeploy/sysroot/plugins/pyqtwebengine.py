@@ -138,15 +138,17 @@ sip_module = PyQt5.sip
         if 'QtWebChannel' in self.get_component('PyQt').installed_modules:
             widgets_deps += ('PyQt:PyQt5.QtWebChannel', )
 
-        # TODO
         return {
             'PyQt5.QtWebEngine':
-                VersionedModule(deps='PyQt5.QtWebEngineCore'),
+                VersionedModule(deps='PyQt5.QtWebEngineCore',
+                        qmake_qt='webengine'),
             'PyQt5.QtWebEngineCore':
                 VersionedModule(
-                        deps=('PyQt:PyQt5.QtNetwork', 'PyQt:PyQt5.QtGui')),
+                        deps=('PyQt:PyQt5.QtNetwork', 'PyQt:PyQt5.QtGui'),
+                        qmake_qt='webenginecore'),
             'PyQt5.QtWebEngineWidgets':
-                VersionedModule(deps=widgets_deps),
+                VersionedModule(deps=widgets_deps, qmake_cpp11=True,
+                        qmake_qt='webenginewidgets'),
         }
 
     def verify(self):

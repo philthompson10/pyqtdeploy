@@ -40,9 +40,10 @@ class PyQtDataVisualizationComponent(Component):
     preinstalls = ['Python', 'PyQt', 'Qt', 'SIP']
 
     # The dict of VersionedModule objects provided by the component.
-    # TODO
     provides = {
-        'PyQt5.QtDataVisualization': VersionedModule(deps='PyQt:PyQt5.QtGui')
+        'PyQt5.QtDataVisualization':
+            VersionedModule(deps='PyQt:PyQt5.QtGui',
+                    qmake_qt='datavisualization')
     }
 
     def get_archive_name(self):

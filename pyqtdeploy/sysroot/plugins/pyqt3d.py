@@ -40,24 +40,27 @@ class PyQt3DComponent(Component):
     preinstalls = ['Python', 'PyQt', 'Qt', 'SIP']
 
     # The dict of VersionedModule objects provided by the component.
-    # TODO
     provides = {
         'PyQt5.Qt3DAnimation':
             VersionedModule(
                     deps=('PyQt5.Qt3DCore', 'PyQt5.Qt3DRender',
-                            'PyQt:PyQt5.QtCore')),
+                            'PyQt:PyQt5.QtCore'),
+                    qmake_qt='3danimation'),
         'PyQt5.Qt3DCore':
-            VersionedModule(deps='PyQt:PyQt5.QtGui'),
+            VersionedModule(deps='PyQt:PyQt5.QtGui', qmake_qt='3dcore'),
         'PyQt5.Qt3DExtras':
             VersionedModule(
                     deps=('PyQt5.Qt3DCore', 'PyQt5.Qt3DInput',
-                            'PyQt5.Qt3DRender', 'PyQt:PyQt5.QtGui')),
+                            'PyQt5.Qt3DRender', 'PyQt:PyQt5.QtGui'),
+                    qmake_qt='3dextras'),
         'PyQt5.Qt3DInput':
-            VersionedModule(deps=('PyQt5.Qt3DCore', 'PyQt:PyQt5.QtGui')),
+            VersionedModule(deps=('PyQt5.Qt3DCore', 'PyQt:PyQt5.QtGui'),
+                    qmake_qt='3dinput'),
         'PyQt5.Qt3DLogic':
-            VersionedModule(deps='PyQt5.Qt3DCore'),
+            VersionedModule(deps='PyQt5.Qt3DCore', qmake_qt='3dlogic'),
         'PyQt5.Qt3DRender':
-            VersionedModule(deps=('PyQt5.Qt3DCore', 'PyQt:PyQt5.QtGui')),
+            VersionedModule(deps=('PyQt5.Qt3DCore', 'PyQt:PyQt5.QtGui'),
+                    qmake_qt='3drender'),
     }
 
     def get_archive_name(self):
