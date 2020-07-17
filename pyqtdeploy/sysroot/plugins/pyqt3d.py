@@ -45,22 +45,24 @@ class PyQt3DComponent(Component):
             VersionedModule(
                     deps=('PyQt5.Qt3DCore', 'PyQt5.Qt3DRender',
                             'PyQt:PyQt5.QtCore'),
-                    qmake_qt='3danimation'),
+                    libs='-lQt3DAnimation', qmake_qt='3danimation'),
         'PyQt5.Qt3DCore':
-            VersionedModule(deps='PyQt:PyQt5.QtGui', qmake_qt='3dcore'),
+            VersionedModule(deps='PyQt:PyQt5.QtGui', libs='-lQt3DCore',
+                    qmake_qt='3dcore'),
         'PyQt5.Qt3DExtras':
             VersionedModule(
                     deps=('PyQt5.Qt3DCore', 'PyQt5.Qt3DInput',
                             'PyQt5.Qt3DRender', 'PyQt:PyQt5.QtGui'),
-                    qmake_qt='3dextras'),
+                    libs='-lQt3DExtras', qmake_qt='3dextras'),
         'PyQt5.Qt3DInput':
             VersionedModule(deps=('PyQt5.Qt3DCore', 'PyQt:PyQt5.QtGui'),
-                    qmake_qt='3dinput'),
+                    libs='-lQt3DInput', qmake_qt='3dinput'),
         'PyQt5.Qt3DLogic':
-            VersionedModule(deps='PyQt5.Qt3DCore', qmake_qt='3dlogic'),
+            VersionedModule(deps='PyQt5.Qt3DCore', libs='-lQt3DLogic',
+                    qmake_qt='3dlogic'),
         'PyQt5.Qt3DRender':
             VersionedModule(deps=('PyQt5.Qt3DCore', 'PyQt:PyQt5.QtGui'),
-                    qmake_qt='3drender'),
+                    libs='-lQt3DRender', qmake_qt='3drender'),
     }
 
     def get_archive_name(self):

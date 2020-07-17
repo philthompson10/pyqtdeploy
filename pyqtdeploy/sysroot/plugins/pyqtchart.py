@@ -42,7 +42,8 @@ class PyQtChartComponent(Component):
     # The dict of VersionedModule objects provided by the component.
     provides = {
         'PyQt5.QtChart':
-            VersionedModule(deps='PyQt:PyQt5.QtWidgets', qmake_qt='charts')
+            VersionedModule(deps='PyQt:PyQt5.QtWidgets', libs='-lQtChart',
+                    qmake_qt='charts')
     }
 
     def get_archive_name(self):

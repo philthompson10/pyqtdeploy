@@ -472,6 +472,15 @@ class AbstractComponent(ABC):
         elif self._install_status == self._IS_IN_PROGRESS:
             self.error("the component is part of a circular dependency")
 
+    def get_target_src_path(self, name):
+        """ Return the absolute pathname of a source file provided by the
+        component.
+        """
+
+        # This default implementation assumes the name is relative to the
+        # sysroot's target source directory.
+        return os.path.join(self.target_src_dir, name)
+
     @property
     def modules(self):
         """ The map of Module instances, keyed by the name of the module, of
@@ -489,6 +498,9 @@ class AbstractComponent(ABC):
                         result_cache)
 
                 if module is not None:
+                    # This saves the plugin having to set it.
+                    module.component = self
+
                     self._modules[name] = module
 
         return self._modules

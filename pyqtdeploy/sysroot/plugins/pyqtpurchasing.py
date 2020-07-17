@@ -42,7 +42,8 @@ class PyQtPurchasingComponent(Component):
     # The dict of VersionedModule objects provided by the component.
     provides = {
         'PyQt5.QtPurchasing':
-            VersionedModule(deps='PyQt:PyQt5.QtCore', qmake_qt='purchasing')
+            VersionedModule(deps='PyQt:PyQt5.QtCore', libs='-lQtPurchasing',
+                    qmake_qt='purchasing')
     }
 
     def get_archive_name(self):

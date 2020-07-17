@@ -141,14 +141,14 @@ sip_module = PyQt5.sip
         return {
             'PyQt5.QtWebEngine':
                 VersionedModule(deps='PyQt5.QtWebEngineCore',
-                        qmake_qt='webengine'),
+                        libs='-lQtWebEngine', qmake_qt='webengine'),
             'PyQt5.QtWebEngineCore':
                 VersionedModule(
                         deps=('PyQt:PyQt5.QtNetwork', 'PyQt:PyQt5.QtGui'),
-                        qmake_qt='webenginecore'),
+                        libs='-lQtWebEngineCore', qmake_qt='webenginecore'),
             'PyQt5.QtWebEngineWidgets':
-                VersionedModule(deps=widgets_deps, qmake_cpp11=True,
-                        qmake_qt='webenginewidgets'),
+                VersionedModule(deps=widgets_deps, libs='-lQtWebEngineWidgets',
+                        qmake_cpp11=True, qmake_qt='webenginewidgets'),
         }
 
     def verify(self):

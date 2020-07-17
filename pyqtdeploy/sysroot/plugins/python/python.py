@@ -92,6 +92,14 @@ class PythonComponent(AbstractPythonComponent):
 
         return options
 
+    def get_target_src_path(self, name):
+        """ Return the absolute pathname of a source file provided by the
+        component.
+        """
+
+        return os.path.join(self.target_src_dir,
+                'Python-{}'.format(self.version), 'Modules', name)
+
     @property
     def host_python(self):
         """ The full pathname of the host python executable. """
@@ -140,7 +148,7 @@ class PythonComponent(AbstractPythonComponent):
 
         lib = self._py_subdir
 
-        if self.version <= (3, 7):
+        if not self.install_from_source and self.version <= (3, 7):
             lib += 'm'
 
         return lib

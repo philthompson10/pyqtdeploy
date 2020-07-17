@@ -87,11 +87,16 @@ class SIPComponent(AbstractSIPComponent):
     def provides(self):
         """ The dict of VersionedModule objects provided by the component. """
 
+        lib_dir = self.get_component('Python').target_sitepackages_dir
+
+        parts = self.module_name.split('.')
+        if len(parts) > 1:
+            lib_dir = os.path.join(lib_dir, os.path.join(*parts[:-1]))
+
         return {
-            # TODO
             self.module_name: VersionedModule(
                     deps=('Python:atexit', 'Python:enum', 'Python:gc'),
-                    libs=self.module_name)
+                    libs=('-L' + lib_dir, '-lsip'))
         }
 
     @property
