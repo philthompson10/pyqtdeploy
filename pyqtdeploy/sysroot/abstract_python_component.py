@@ -56,12 +56,5 @@ class AbstractPythonComponent(Component):
 
     @property
     @abstractmethod
-    def target_py_stdlib_dir(self):
-        """ The name of the directory containing target Python standard
-        library.
-        """
-
-    @property
-    @abstractmethod
     def target_sitepackages_dir(self):
         """ The name of the target Python site-packages directory. """

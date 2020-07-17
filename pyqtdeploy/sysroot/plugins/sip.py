@@ -93,6 +93,8 @@ class SIPComponent(AbstractSIPComponent):
         if len(parts) > 1:
             lib_dir = os.path.join(lib_dir, os.path.join(*parts[:-1]))
 
+        # Note that there is no dependency on the containing package because we
+        # don't know the name of the component that provides it.
         return {
             self.module_name: VersionedModule(
                     deps=('Python:atexit', 'Python:enum', 'Python:gc'),

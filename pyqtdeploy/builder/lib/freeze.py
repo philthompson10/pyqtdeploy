@@ -89,8 +89,8 @@ job_file = open(job_filename, newline='')
 
 job_reader = csv.reader(job_file)
 
-for out_filename, py_filename, embedded_name, conversion in job_reader:
-    sys.stdout.write("Freezing {0}...\n".format(os.path.basename(py_filename)))
+for label, out_filename, py_filename, embedded_name, conversion in job_reader:
+    sys.stdout.write("Freezing {0}...\n".format(label))
     sys.stdout.flush()
 
     if conversion == 'C':
