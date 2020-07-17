@@ -43,7 +43,7 @@ class PyQtDataVisualizationComponent(Component):
     provides = {
         'PyQt5.QtDataVisualization':
             VersionedModule(deps='PyQt:PyQt5.QtGui',
-                    qmake_qt='datavisualization')
+                    libs='-lQtDataVisualization', qmake_qt='datavisualization')
     }
 
     def get_archive_name(self):

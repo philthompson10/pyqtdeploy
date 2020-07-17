@@ -131,7 +131,8 @@ sip_module = PyQt5.sip
 
         return {
             'PyQt5.Qsci':
-                VersionedModule(deps=deps, qmake_config='qscintilla2')
+                VersionedModule(deps=deps, libs='-lQsci',
+                        qmake_config='qscintilla2')
         }
 
     def verify(self):

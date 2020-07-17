@@ -37,6 +37,9 @@ class Module:
             qmake_qt=None):
         """ Initialise the object. """
 
+        # The component that privides the module.
+        self.component = None
+
         # Set if the module is internal.
         self.internal = internal
 

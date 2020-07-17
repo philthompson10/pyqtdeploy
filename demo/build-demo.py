@@ -146,8 +146,6 @@ if verbose:
 args.append('pyqt-demo.pdt')
 
 run(args)
-# TODO
-sys.exit(0)
 
 # Run qmake.  Use the qmake left by pyqtdeploy-sysroot if there is one.
 qmake_path = os.path.join(sysroot_dir, 'Qt', 'bin', 'qmake')

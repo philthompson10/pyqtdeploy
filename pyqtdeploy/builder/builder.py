@@ -63,6 +63,10 @@ class Builder:
         there is an error.
         """
 
+        # TODO: What about when using an existing Python installation for the
+        # target?
+        # TODO: Handle the linking of components that don't provide any Python
+        # or extension modules.
         project = self._project
 
         # Verify the sysroot.
@@ -112,11 +116,7 @@ class Builder:
             raise UserException("Either the application script name or the "
                     "entry point must be specified but not both")
 
-        # Get other directories from the project that may be overridden.
-        #if include_dir is None:
-        #    include_dir = project.path_from_user(
-        #            project.python_target_include_dir)
-
+        ## Get other directories from the project that may be overridden.
         #if python_library is None:
         #    python_library = project.path_from_user(
         #            project.python_target_library)
@@ -209,6 +209,30 @@ class Builder:
         for dep in module.hidden_deps:
             self._add_project_module(dep, modules, available_modules)
 
+    def _add_scoped_values(self, used_values, values, module,
+            is_filename=True):
+        """ Parse a sequence of possiblly scoped values and add them to a set
+        of used values.  The values are optionally treated as filenames where
+        they are converted to absolute filenames with UNIX separators.
+        """
+
+        # Handle the trivial case.
+        if values is None:
+            return
+
+        for scoped_value in values:
+            value = self._get_scoped_value(scoped_value)
+            if value is None:
+                continue
+
+            # Convert potential filenames.
+            if is_filename:
+                value = module.component.get_target_src_path(value)
+            elif value.startswith('-L'):
+                value = '-L' + module.component.get_target_src_path(value[2:])
+
+            used_values.add(value)
+
     def _create_directory(self, dir_name):
         """ Create a directory which may already exist. """
 
@@ -267,6 +291,22 @@ class Builder:
         self._freeze(job_writer,
                 os.path.join(build_dir, 'frozen_' + name + '.h'),
                 bootstrap_path, 'pyqtdeploy_' + name, as_c=True)
+
+    def _get_scoped_value(self, scoped_value):
+        """ Return the value from a (possibly) scoped value or None if the
+        value isn't valid for the target.
+        """
+
+        parts = scoped_value.split('#', maxsplit=1)
+        if len(parts) == 2:
+            scope, value = parts
+
+            if not self._target.is_targeted(scope):
+                value = None
+        else:
+            value = scoped_value
+
+        return value
 
     def _generate_resources(self, modules, job_writer, nr_resources):
         """ Generate the application resource files and return the names of
@@ -335,543 +375,29 @@ class Builder:
 
         self._host.platform.run(*args, message_handler=self._message_handler)
 
-    def _write_python_module(self, name, module, modules, module_root_dir,
-            resources_contents, job_writer):
-        """ Write a Python module as a resource. """
+    def _write_inittab(self, f, inittab, c_inittab):
+        """ Write the Python version specific extension module inittab. """
 
-        # Discard anything other than non-core pure Python modules.
-        if module.core or module.builtin or module.source:
-            return
+        # We want reproduceable output.
+        sorted_inittab = sorted(inittab)
 
-        # Determine the full path of the file and whether or not it needs
-        # freezing.
-        src_name = name.replace('.', os.sep)
-        src_path = os.path.join(module_root_dir, src_name)
+        for name in sorted_inittab:
+            base_name = name.split('.')[-1]
 
-        if module.data_ext is None:
-            if os.path.isdir(src_path):
-                src_name = os.path.join(src_name, '__init__')
+            f.write('extern "C" PyObject *PyInit_%s(void);\n' % (base_name))
 
-            dst_name = src_name + '.pyo'
-            src_name = src_name + '.py'
+        f.write('''
+static struct _inittab %s[] = {
+''' % c_inittab)
 
-            src_path = os.path.join(module_root_dir, src_name)
+        for name in sorted_inittab:
+            base_name = name.split('.')[-1]
 
-            # This can happen legitimately if the name corresponds to a simple
-            # directory rather than a Python package.
-            if not os.path.isfile(src_path):
-                return
+            f.write('    {"%s", PyInit_%s},\n' % (name, base_name))
 
-            freeze = True
-        else:
-            src_name += module.data_ext
-            src_path += module.data_ext
-
-            dst_name = src_name
-
-            freeze = False
-
-        # Determine where the resource is to be created.
-        dst_path = os.path.join(self._build_dir, 'resources', dst_name)
-        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-
-        if freeze:
-            self._freeze(job_writer, dst_path, src_path,
-                    dst_name.replace(os.sep, '/'))
-        else:
-            shutil.copy2(src_path, dst_path)
-
-        resources_contents.append(dst_name)
-
-    def _write_python_modules(self, modules, module_root_dir,
-            resources_contents, job_writer):
-        """ Write a collection of Python modules as resources. """
-
-        for name, module in modules.items():
-            self._write_python_module(name, module, modules, module_root_dir,
-                    resources_contents, job_writer)
-
-    def _write_resource(self, resources_contents, nr=-1):
-        """ Write a single resource file and return its basename. """
-
-        suffix = '' if nr < 0 else str(nr)
-        basename = 'pyqtdeploy{0}.qrc'.format(suffix)
-
-        with create_file(os.path.join(self._build_dir, 'resources', basename)) as f:
-            f.write('''<!DOCTYPE RCC>
-<RCC version="1.0">
-    <qresource>
+        f.write('''    {NULL, NULL}
+};
 ''')
-
-            for content in resources_contents:
-                f.write('        <file>{}</file>\n'.format(content))
-
-            f.write('''    </qresource>
-</RCC>
-''')
-
-        return basename
-
-    # The map of non-C/C++ source extensions to qmake variable.
-    _source_extensions = (
-        ('.asm',    'MASMSOURCES'),
-        ('.h',      'HEADERS'),
-        ('.java',   'JAVASOURCES'),
-        ('.l',      'LEXSOURCES'),
-        ('.pyx',    'CYTHONSOURCES'),
-        ('.y',      'YACCSOURCES')
-    )
-
-    def _write_qmake(self, application_name, modules, job_writer, opt,
-            resource_names, python):
-        """ Create the .pro file for qmake. """
-
-        project = self._project
-        target_platform = self._target.platform.name
-
-        f = create_file(
-                os.path.join(self._build_dir, application_name + '.pro'))
-
-        f.write('# Generated for {0} and Python v{1}.\n\n'.format(
-                self._target.name, python.version))
-
-        f.write('TEMPLATE = app\n')
-        f.write('\n')
-
-        # Accumulate all the values of all the qmake variables.
-        qmake_cpp11 = False
-        qmake_config = set()
-        qmake_qt = set()
-
-        for module in modules.values():
-            # Ignore non-extension modules.
-            if module.source is None and module.qmake_config is None and module.qmake_qt is None:
-                continue
-
-            if module.qmake_cpp11:
-                qmake_cpp11 = True
-
-            if module.qmake_config is not None:
-                qmake_config.update(module.qmake_config)
-
-            if module.qmake_qt is not None:
-                qmake_qt.update(module.qmake_qt)
-
-        # Generate QT.
-        if qmake_qt:
-            f.write('QT += %s\n' % ' '.join(qmake_qt))
-
-        # Generate CONFIG.
-        config = ['warn_off']
-
-        if target_platform == 'win':
-            if project.application_is_console:
-                config.append('console')
-
-        if qmake_cpp11:
-            config.append('c++11')
-
-        f.write('CONFIG += {0}\n'.format(' '.join(config)))
-
-        if target_platform == 'macos':
-            if not project.application_is_bundle:
-                f.write('CONFIG -= app_bundle\n')
-
-        if qmake_config:
-            f.write('CONFIG += %s\n' % ' '.join(qmake_config))
-
-        ## Modules can share sources so we need to make sure we don't include
-        ## them more than once.  We might as well handle the other things in the
-        ## same way.
-        #used_qt = set()
-        #used_config = set()
-        #used_sources = set()
-        #used_defines = set()
-        #used_includepath = set()
-        #used_libs = set()
-        #used_inittab = set()
-        #used_dlls = set()
-
-        ## Handle any static PyQt modules.
-        #site_packages = standard_library_dir + '/site-packages'
-        #pyqt_package = self._get_pyqt_package_name()
-
-        #for module in self._get_all_pyqt_modules():
-        #    # The uic module is pure Python.
-        #    if module == 'uic':
-        #        continue
-
-        #    metadata = self._get_pyqt_module_metadata(module)
-
-        #    if not self._target.is_targeted(metadata.targets):
-        #        continue
-
-        #    # The sip module is always needed (implicitly or explicitly) if we
-        #    # have got this far.  We handle it separately when it is in a
-        #    # different directory.
-        #    if module == 'sip' and not private_sip:
-        #        used_inittab.add(module)
-        #        used_libs.add('-L' + site_packages)
-        #    else:
-        #        used_inittab.add(pyqt_package + '.' + module)
-        #        used_libs.add('-L' + site_packages + '/' + pyqt_package)
-
-        #    lib_name = '-l' + module
-        #    if metadata.needs_suffix:
-        #        # Qt4's qmake thinks -lQtCore etc. always refer to the Qt
-        #        # libraries so PyQt4 creates static libraries with a suffix.
-        #        lib_name += '_s'
-
-        #    used_libs.add(lib_name)
-
-        ## Handle any other extension modules.
-        #for other_em in project.other_extension_modules:
-        #    # If the name is scoped then the targets are the outer scopes for
-        #    # the remaining values.
-        #    value = self._get_scoped_value(other_em.name)
-        #    if value is None:
-        #        continue
-
-        #    used_inittab.add(value)
-
-        #    if other_em.qt != '':
-        #        self._add_compound_scoped_values(used_qt, other_em.qt, False)
-
-        #    if other_em.config != '':
-        #        self._add_compound_scoped_values(used_config, other_em.config,
-        #                False)
-
-        #    if other_em.sources != '':
-        #        self._add_compound_scoped_values(used_sources,
-        #                other_em.sources, True)
-
-        #    if other_em.defines != '':
-        #        self._add_compound_scoped_values(used_defines,
-        #                other_em.defines, False)
-
-        #    if other_em.includepath != '':
-        #        self._add_compound_scoped_values(used_includepath,
-        #                other_em.includepath, True)
-
-        #    if other_em.libs != '':
-        #        self._add_compound_scoped_values(used_libs, other_em.libs,
-        #                False)
-
-        ## Configure the target Python interpreter.
-        #if include_dir != '':
-        #    used_includepath.add(include_dir)
-
-        #if python_library != '':
-        #    fi = QFileInfo(python_library)
-
-        #    py_lib_dir = fi.absolutePath()
-        #    lib = fi.completeBaseName()
-
-        #    # This is smart enough to translate the Python library as a UNIX .a
-        #    # file to what Windows needs.
-        #    if lib.startswith('lib'):
-        #        lib = lib[3:]
-
-        #    if '.' in lib and target_platform == 'win':
-        #        lib = lib.replace('.', '')
-
-        #    used_libs.add('-l' + lib)
-        #    used_libs.add('-L' + py_lib_dir)
-        #else:
-        #    py_lib_dir = None
-
-        ## Handle any standard library extension modules.
-        #if target_platform not in project.python_use_platform:
-        #    self._add_stdlib_extension_modules(project, target_platform,
-        #            source_dir, required_ext, used_inittab, used_sources,
-        #            used_includepath, used_defines, used_libs, used_dlls)
-
-        ## Handle any required external libraries.
-        #android_extra_libs = []
-
-        #external_libs = project.external_libraries.get(target_platform, ())
-
-        #for required_lib in required_libraries:
-        #    # Skip any external libraries that are not for the current target.
-        #    required_lib = self._get_scoped_value(required_lib)
-        #    if required_lib is None:
-        #        continue
-
-        #    defines = includepath = libs = ''
-
-        #    for xlib in external_libs:
-        #        if xlib.name == required_lib:
-        #            defines = xlib.defines
-        #            includepath = xlib.includepath
-        #            libs = xlib.libs
-        #            break
-        #    else:
-        #        # Use the defaults.
-        #        for xlib in external_libraries_metadata:
-        #            if xlib.name == required_lib:
-        #                if target_platform not in project.python_use_platform:
-        #                    defines = xlib.defines
-        #                    includepath = xlib.includepath
-        #                    libs = xlib.get_libs(target_platform)
-
-        #                break
-
-        #    # Check the library is not disabled for this target.
-        #    enabled = False
-
-        #    if defines != '':
-        #        self._add_compound_scoped_values(used_defines, defines, False)
-        #        enabled = True
-
-        #    if includepath != '':
-        #        self._add_compound_scoped_values(used_includepath, includepath,
-        #                True)
-        #        enabled = True
-
-        #    if libs != '':
-        #        self._add_compound_scoped_values(used_libs, libs, False)
-        #        enabled = True
-
-        #    if enabled and target_platform == 'android':
-        #        self._add_android_extra_libs(libs, android_extra_libs)
-
-        ## Specify any project-specific configuration.
-        #if used_qt:
-        #    f.write('\n')
-        #    self._write_used_values(f, used_qt, 'QT')
-
-        #if used_config:
-        #    f.write('\n')
-        #    self._write_used_values(f, used_config, 'CONFIG')
-
-        ## Python v3.6.0 requires C99 at least.  Note that specifying 'c++11' in
-        ## 'CONFIG' doesn't affect 'CFLAGS'.
-        #if python_target_version >= (3, 6) and target_platform != 'win':
-        #    f.write('\n')
-        #    f.write('QMAKE_CFLAGS += -std=c99\n')
-
-        ## Specify the resource files.
-        #f.write('\n')
-        #f.write('RESOURCES = \\\n')
-        #f.write(' \\\n'.join(['    resources/{0}'.format(n) for n in resource_names]))
-        #f.write('\n')
-
-        ## Specify the defines.
-        #defines = []
-        #headers = ['pyqtdeploy_version.h', 'frozen_bootstrap.h',
-        #        'frozen_bootstrap_external.h']
-
-        #if project.application_script != '':
-        #    defines.append('PYQTDEPLOY_FROZEN_MAIN')
-        #    headers.append('frozen_main.h')
-
-        #if opt:
-        #    defines.append('PYQTDEPLOY_OPTIMIZED')
-
-        #if defines or used_defines:
-        #    f.write('\n')
-
-        #    if defines:
-        #        f.write('DEFINES += {0}\n'.format(' '.join(defines)))
-
-        #    self._write_used_values(f, used_defines, 'DEFINES')
-
-        ## Specify the include paths.
-        #if used_includepath:
-        #    f.write('\n')
-        #    self._write_used_values(f, used_includepath, 'INCLUDEPATH')
-
-        ## Specify the source files and header files.
-        #f.write('\n')
-        #f.write('SOURCES = pyqtdeploy_main.cpp pyqtdeploy_start.cpp pdytools_module.cpp\n')
-        #self._write_used_values(f, used_sources, 'SOURCES')
-        #self._write_main(used_inittab, used_defines)
-        #shutil.copy2(self._get_lib_path('pyqtdeploy_start.cpp'),
-        #        self._build_dir)
-        #shutil.copy2(self._get_lib_path('pdytools_module.cpp'),
-        #        self._build_dir)
-
-        #f.write('\n')
-        #f.write('HEADERS = {0}\n'.format(' '.join(headers)))
-
-        ## Specify the libraries.
-        #if used_libs:
-        #    f.write('\n')
-        #    self._write_used_values(f, used_libs, 'LIBS')
-
-        ## Add the library files to be added to an Android APK.
-        #if android_extra_libs and target_platform == 'android':
-        #    f.write('\n')
-        #    f.write('ANDROID_EXTRA_LIBS += %s\n' % ' '.join(android_extra_libs))
-
-        ## If we are using the platform Python on Windows then copy in the
-        ## required DLLs if they can be found.
-        #if 'win' in project.python_use_platform and used_dlls and py_lib_dir is not None:
-        #    self._copy_windows_dlls(py_lib_dir, used_dlls, f)
-
-        # Add the project independent post-configuration stuff.
-        with open_file(self._get_lib_path('post_configuration.pro')) as pro_f:
-            f.write(pro_f.read())
-
-        # Add any application specific stuff.
-        qmake_configuration = project.qmake_configuration.strip()
-
-        if qmake_configuration != '':
-            f.write('\n' + qmake_configuration + '\n')
-
-        # All done.
-        f.close()
-
-    @classmethod
-    def _write_used_values(cls, f, used_values, name):
-        """ Write a set of used values to a .pro file. """
-
-        # Sort them for reproduceable output.
-        for value in sorted(used_values):
-            qmake_var = name
-
-            if qmake_var == 'SOURCES':
-                for ext, var in cls._source_extensions:
-                    if value.endswith(ext):
-                        qmake_var = var
-                        break
-
-            elif qmake_var == 'LIBS':
-                # A (strictly unnecessary) bit of pretty printing.
-                if value.startswith('"-framework') and value.endswith('"'):
-                    value = value[1:-1]
-
-            f.write('{0} += {1}\n'.format(qmake_var, value))
-
-    def _copy_windows_dlls(self, py_lib_dir, modules, f):
-        """ Generate additional qmake commands to install additional Windows
-        DLLs so that the application will be able to run.
-        """
-
-        python_target_version = self._project.python_target_version
-
-        dlls = ['python{}{}.dll'.format(python_target_version._major,
-                python_target_version._minor)]
-
-        # TODO: MSVC2019 DLLs?
-        dlls.append('vcruntime140.dll')
-
-        for module in modules:
-            dlls.append(module.pyd)
-
-            if module.dlls is not None:
-                dlls.extend(module.dlls)
-
-        for name in dlls:
-            f.write('''
-PDY_DLL = %s/DLLs%d.%d/%s
-exists($$PDY_DLL) {
-    CONFIG(debug, debug|release) {
-        QMAKE_POST_LINK += $(COPY_FILE) $$shell_path($$PDY_DLL) $$shell_path($$OUT_PWD/debug) &
-    } else {
-        QMAKE_POST_LINK += $(COPY_FILE) $$shell_path($$PDY_DLL) $$shell_path($$OUT_PWD/release) &
-    }
-}
-''' % (py_lib_dir, py_major, py_minor, name))
-
-    @staticmethod
-    def _python_source_file(py_source_dir, rel_path):
-        """ Return the absolute name of a file in the Python source tree
-        relative to the Modules directory.
-        """
-
-        file_path = py_source_dir + '/Modules/' + rel_path
-
-        return QFileInfo(file_path).absoluteFilePath()
-
-    def _add_compound_scoped_values(self, used_values, raw, isfilename):
-        """ Parse a string of space separated possible scoped values and add
-        them to a set of used values.  The values are optionally treated as
-        filenames where they are converted to absolute filenames with UNIX
-        separators and have environment variables expanded.
-        """
-
-        project = self._project
-
-        for scoped_value in self._split_quotes(raw):
-            value = self._get_scoped_value(scoped_value)
-            if value is None:
-                continue
-
-            # Convert potential filenames.
-            if isfilename:
-                value = project.path_from_user(value)
-            elif value.startswith('-L'):
-                value = '-L' + project.path_from_user(value[2:])
-
-            used_values.add(value)
-
-    def _add_android_extra_libs(self, libs, android_extra_libs):
-        """ Add the shared library files for Android. """
-
-        project = self._project
-
-        lib_dir = ''
-        lib_so = []
-
-        for scoped_value in self._split_quotes(libs):
-            # We support the use of scoped values (to be consistent) but it
-            # actually makes no sense in this context.
-            value = self._get_scoped_value(scoped_value)
-            if value is None:
-                continue
-
-            if value.startswith('-L'):
-                lib_dir = project.path_from_user(value[2:])
-            elif value.startswith('-l'):
-                lib_so.append('lib' + value[2:] + '.so')
-
-        if lib_dir != '':
-            for lib in lib_so:
-                android_extra_libs.append(lib_dir + '/' + lib)
-
-    @staticmethod
-    def _split_quotes(s):
-        """ A generator for a splitting a string allowing for quoted spaces.
-        """
-
-        s = s.lstrip()
-
-        while s != '':
-            quote_stack = []
-            i = 0
-
-            for ch in s:
-                if ch in '\'"':
-                    if len(quote_stack) == 0 or quote_stack[-1] != ch:
-                        quote_stack.append(ch)
-                    else:
-                        quote_stack.pop()
-                elif ch == ' ':
-                    if len(quote_stack) == 0:
-                        break
-
-                i += 1
-
-            yield s[:i]
-
-            s = s[i:].lstrip()
-
-    def _get_scoped_value(self, scoped_value):
-        """ Return the value from a (possibly) scoped value or None if the
-        value isn't valid for the target.
-        """
-
-        parts = scoped_value.split('#', maxsplit=1)
-        if len(parts) == 2:
-            scope, value = parts
-
-            if not self._target.is_targeted(scope):
-                value = None
-        else:
-            value = scoped_value
-
-        return value
 
     def _write_main(self, inittab, defines):
         """ Create the application specific pyqtdeploy_main.cpp file. """
@@ -892,7 +418,6 @@ exists($$PDY_DLL) {
 ''')
 
         f.write('''#include <Python.h>
-#include <QtGlobal>
 
 
 ''')
@@ -958,26 +483,452 @@ int main(int argc, char **argv)
 
         f.close()
 
-    def _write_inittab(self, f, inittab, c_inittab):
-        """ Write the Python version specific extension module inittab. """
+    def _write_python_module(self, name, module, modules, module_root_dir,
+            resources_contents, job_writer):
+        """ Write a Python module as a resource. """
 
-        # We want reproduceable output.
-        sorted_inittab = sorted(inittab)
+        # Discard anything other than non-core pure Python modules.
+        if module.core or module.builtin or module.source:
+            return
 
-        for name in sorted_inittab:
-            base_name = name.split('.')[-1]
+        # Determine the full path of the file and whether or not it needs
+        # freezing.
+        src_name = name.replace('.', os.sep)
+        src_path = os.path.join(module_root_dir, src_name)
 
-            f.write('extern "C" PyObject *PyInit_%s(void);\n' % (base_name))
+        if module.data_ext is None:
+            if os.path.isdir(src_path):
+                src_name = os.path.join(src_name, '__init__')
 
-        f.write('''
-static struct _inittab %s[] = {
-''' % c_inittab)
+            dst_name = src_name + '.pyo'
+            src_name = src_name + '.py'
 
-        for name in sorted_inittab:
-            base_name = name.split('.')[-1]
+            src_path = os.path.join(module_root_dir, src_name)
 
-            f.write('    {"%s", PyInit_%s},\n' % (name, base_name))
+            # This can happen legitimately if the name corresponds to a simple
+            # directory rather than a Python package.
+            if not os.path.isfile(src_path):
+                return
 
-        f.write('''    {NULL, NULL}
-};
+            freeze = True
+        else:
+            src_name += module.data_ext
+            src_path += module.data_ext
+
+            dst_name = src_name
+
+            freeze = False
+
+        # Determine where the resource is to be created.
+        dst_path = os.path.join(self._build_dir, 'resources', dst_name)
+        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+
+        if freeze:
+            self._freeze(job_writer, dst_path, src_path,
+                    dst_name.replace(os.sep, '/'))
+        else:
+            shutil.copy2(src_path, dst_path)
+
+        resources_contents.append(dst_name)
+
+    def _write_python_modules(self, modules, module_root_dir,
+            resources_contents, job_writer):
+        """ Write a collection of Python modules as resources. """
+
+        for name, module in modules.items():
+            self._write_python_module(name, module, modules, module_root_dir,
+                    resources_contents, job_writer)
+
+    def _write_qmake(self, application_name, modules, job_writer, opt,
+            resource_names, python):
+        """ Create the .pro file for qmake. """
+
+        project = self._project
+        target_platform = self._target.platform.name
+
+        f = create_file(
+                os.path.join(self._build_dir, application_name + '.pro'))
+
+        f.write('# Generated for {0} and Python v{1}.\n\n'.format(
+                self._target.name, python.version))
+
+        f.write('TEMPLATE = app\n')
+        f.write('\n')
+
+        # Accumulate all the values of all the qmake variables.
+        qmake_cpp11 = False
+        qmake_config = set()
+        qmake_qt = set()
+        used_defines = set()
+        used_dlls = set()
+        used_includepath = set()
+        used_inittab = set()
+        used_libs = set()
+        used_sources = set()
+
+        used_includepath.add(python.target_py_include_dir)
+        used_libs.add('-L' + self._sysroot.target_lib_dir)
+        used_libs.add('-l' + python.target_py_lib)
+
+        for module_name, module in modules.items():
+            # Ignore non-extension modules.
+            if module.source is None and module.libs is None and module.qmake_config is None and module.qmake_qt is None:
+                continue
+
+            used_inittab.add(module_name)
+
+            if module.pyd is not None and target_platform == 'win':
+                used_dlls.add(module)
+
+            if module.qmake_config is not None:
+                qmake_config.update(module.qmake_config)
+
+            if module.qmake_cpp11:
+                qmake_cpp11 = True
+
+            if module.qmake_qt is not None:
+                qmake_qt.update(module.qmake_qt)
+
+            self._add_scoped_values(used_defines, module.defines, module,
+                    is_filename=False)
+            self._add_scoped_values(used_includepath, module.includepath,
+                    module)
+            self._add_scoped_values(used_libs, module.libs, module,
+                    is_filename=False)
+            self._add_scoped_values(used_sources, module.source, module)
+
+        # Generate QT.
+        if qmake_qt:
+            f.write('QT += %s\n' % ' '.join(qmake_qt))
+
+        # Generate CONFIG.
+        config = ['warn_off']
+
+        if target_platform == 'win':
+            if project.application_is_console:
+                config.append('console')
+
+        if qmake_cpp11:
+            config.append('c++11')
+
+        f.write('CONFIG += {0}\n'.format(' '.join(config)))
+
+        if target_platform == 'macos':
+            if not project.application_is_bundle:
+                f.write('CONFIG -= app_bundle\n')
+
+        if qmake_config:
+            f.write('CONFIG += %s\n' % ' '.join(qmake_config))
+
+        ## Handle any static PyQt modules.
+        #site_packages = standard_library_dir + '/site-packages'
+        #pyqt_package = self._get_pyqt_package_name()
+
+        #for module in self._get_all_pyqt_modules():
+        #    # The uic module is pure Python.
+        #    if module == 'uic':
+        #        continue
+
+        #    metadata = self._get_pyqt_module_metadata(module)
+
+        #    if not self._target.is_targeted(metadata.targets):
+        #        continue
+
+        #    # The sip module is always needed (implicitly or explicitly) if we
+        #    # have got this far.  We handle it separately when it is in a
+        #    # different directory.
+        #    if module == 'sip' and not private_sip:
+        #        used_inittab.add(module)
+        #        used_libs.add('-L' + site_packages)
+        #    else:
+        #        used_inittab.add(pyqt_package + '.' + module)
+        #        used_libs.add('-L' + site_packages + '/' + pyqt_package)
+
+        #    used_libs.add('-l' + module)
+
+        ## Handle any other extension modules.
+        #for other_em in project.other_extension_modules:
+        #    # If the name is scoped then the targets are the outer scopes for
+        #    # the remaining values.
+        #    value = self._get_scoped_value(other_em.name)
+        #    if value is None:
+        #        continue
+
+        #    used_inittab.add(value)
+
+        ## Configure the target Python interpreter.
+        #if include_dir != '':
+        #    used_includepath.add(include_dir)
+
+        #if python_library != '':
+        #    fi = QFileInfo(python_library)
+
+        #    py_lib_dir = fi.absolutePath()
+        #    lib = fi.completeBaseName()
+
+        #    # This is smart enough to translate the Python library as a UNIX .a
+        #    # file to what Windows needs.
+        #    if lib.startswith('lib'):
+        #        lib = lib[3:]
+
+        #    if '.' in lib and target_platform == 'win':
+        #        lib = lib.replace('.', '')
+
+        #    used_libs.add('-l' + lib)
+        #    used_libs.add('-L' + py_lib_dir)
+        #else:
+        #    py_lib_dir = None
+
+        ## Handle any standard library extension modules.
+        #if target_platform not in project.python_use_platform:
+        #    self._add_stdlib_extension_modules(project, target_platform,
+        #            source_dir, required_ext, used_inittab, used_sources,
+        #            used_includepath, used_defines, used_libs, used_dlls)
+
+        ## Handle any required external libraries.
+        #android_extra_libs = []
+
+        #external_libs = project.external_libraries.get(target_platform, ())
+
+        #for required_lib in required_libraries:
+        #    # Skip any external libraries that are not for the current target.
+        #    required_lib = self._get_scoped_value(required_lib)
+        #    if required_lib is None:
+        #        continue
+
+        #    defines = includepath = libs = ''
+
+        #    for xlib in external_libs:
+        #        if xlib.name == required_lib:
+        #            defines = xlib.defines
+        #            includepath = xlib.includepath
+        #            libs = xlib.libs
+        #            break
+        #    else:
+        #        # Use the defaults.
+        #        for xlib in external_libraries_metadata:
+        #            if xlib.name == required_lib:
+        #                if target_platform not in project.python_use_platform:
+        #                    defines = xlib.defines
+        #                    includepath = xlib.includepath
+        #                    libs = xlib.get_libs(target_platform)
+
+        #                break
+
+        #    # Check the library is not disabled for this target.
+        #    enabled = False
+
+        #    if enabled and target_platform == 'android':
+        #        self._add_android_extra_libs(libs, android_extra_libs)
+
+        # Python v3.6.0 requires C99 at least.  Note that specifying 'c++11' in
+        # 'CONFIG' doesn't affect 'CFLAGS'.
+        if python.version >= (3, 6) and target_platform != 'win':
+            f.write('\n')
+            f.write('QMAKE_CFLAGS += -std=c99\n')
+
+        # Specify the resource files.
+        f.write('\n')
+        f.write('RESOURCES = \\\n')
+        f.write(' \\\n'.join(['    resources/{0}'.format(n) for n in resource_names]))
+        f.write('\n')
+
+        # Specify the defines.
+        defines = []
+        headers = ['pyqtdeploy_version.h', 'frozen_bootstrap.h',
+                'frozen_bootstrap_external.h']
+
+        if project.application_script != '':
+            defines.append('PYQTDEPLOY_FROZEN_MAIN')
+            headers.append('frozen_main.h')
+
+        if opt:
+            defines.append('PYQTDEPLOY_OPTIMIZED')
+
+        if defines or used_defines:
+            f.write('\n')
+
+            if defines:
+                f.write('DEFINES += {0}\n'.format(' '.join(defines)))
+
+            self._write_used_values(f, used_defines, 'DEFINES')
+
+        # Specify the include paths.
+        if used_includepath:
+            f.write('\n')
+            self._write_used_values(f, used_includepath, 'INCLUDEPATH')
+
+        # Specify the source files and header files.
+        f.write('\n')
+        f.write('SOURCES = pyqtdeploy_main.cpp pyqtdeploy_start.cpp pdytools_module.cpp\n')
+        self._write_used_values(f, used_sources, 'SOURCES')
+        self._write_main(used_inittab, used_defines)
+        shutil.copy2(self._get_lib_path('pyqtdeploy_start.cpp'),
+                self._build_dir)
+        shutil.copy2(self._get_lib_path('pdytools_module.cpp'),
+                self._build_dir)
+
+        f.write('\n')
+        f.write('HEADERS = {0}\n'.format(' '.join(headers)))
+
+        # Specify the libraries.
+        if used_libs:
+            f.write('\n')
+            self._write_used_values(f, used_libs, 'LIBS')
+
+        ## Add the library files to be added to an Android APK.
+        #if android_extra_libs and target_platform == 'android':
+        #    f.write('\n')
+        #    f.write('ANDROID_EXTRA_LIBS += %s\n' % ' '.join(android_extra_libs))
+
+        ## If we are using the platform Python on Windows then copy in the
+        ## required DLLs if they can be found.
+        #if 'win' in project.python_use_platform and used_dlls and py_lib_dir is not None:
+        #    self._copy_windows_dlls(py_lib_dir, used_dlls, f)
+
+        # Add the project independent post-configuration stuff.
+        with open_file(self._get_lib_path('post_configuration.pro')) as pro_f:
+            f.write(pro_f.read())
+
+        # Add any application specific stuff.
+        qmake_configuration = project.qmake_configuration.strip()
+
+        if qmake_configuration != '':
+            f.write('\n' + qmake_configuration + '\n')
+
+        # All done.
+        f.close()
+
+    def _write_resource(self, resources_contents, nr=-1):
+        """ Write a single resource file and return its basename. """
+
+        suffix = '' if nr < 0 else str(nr)
+        basename = 'pyqtdeploy{0}.qrc'.format(suffix)
+
+        with create_file(os.path.join(self._build_dir, 'resources', basename)) as f:
+            f.write('''<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource>
 ''')
+
+            for content in resources_contents:
+                f.write('        <file>{}</file>\n'.format(content))
+
+            f.write('''    </qresource>
+</RCC>
+''')
+
+        return basename
+
+    # The map of non-C/C++ source extensions to qmake variable.
+    _source_extensions = (
+        ('.asm',    'MASMSOURCES'),
+        ('.h',      'HEADERS'),
+        ('.java',   'JAVASOURCES'),
+        ('.l',      'LEXSOURCES'),
+        ('.pyx',    'CYTHONSOURCES'),
+        ('.y',      'YACCSOURCES')
+    )
+
+    @classmethod
+    def _write_used_values(cls, f, used_values, name):
+        """ Write a set of used values to a .pro file. """
+
+        # Sort them for reproduceable output.
+        for value in sorted(used_values):
+            qmake_var = name
+
+            if qmake_var == 'SOURCES':
+                for ext, var in cls._source_extensions:
+                    if value.endswith(ext):
+                        qmake_var = var
+                        break
+
+            elif qmake_var == 'LIBS':
+                # A (strictly unnecessary) bit of pretty printing.
+                if value.startswith('"-framework') and value.endswith('"'):
+                    value = value[1:-1]
+
+            f.write('{0} += {1}\n'.format(qmake_var, value))
+
+    def _copy_windows_dlls(self, py_lib_dir, modules, f):
+        """ Generate additional qmake commands to install additional Windows
+        DLLs so that the application will be able to run.
+        """
+
+        python_target_version = self._project.python_target_version
+
+        dlls = ['python{}{}.dll'.format(python_target_version._major,
+                python_target_version._minor)]
+
+        # TODO: MSVC2019 DLLs?
+        dlls.append('vcruntime140.dll')
+
+        for module in modules:
+            dlls.append(module.pyd)
+
+            if module.dlls is not None:
+                dlls.extend(module.dlls)
+
+        for name in dlls:
+            f.write('''
+PDY_DLL = %s/DLLs%d.%d/%s
+exists($$PDY_DLL) {
+    CONFIG(debug, debug|release) {
+        QMAKE_POST_LINK += $(COPY_FILE) $$shell_path($$PDY_DLL) $$shell_path($$OUT_PWD/debug) &
+    } else {
+        QMAKE_POST_LINK += $(COPY_FILE) $$shell_path($$PDY_DLL) $$shell_path($$OUT_PWD/release) &
+    }
+}
+''' % (py_lib_dir, py_major, py_minor, name))
+
+    def _add_android_extra_libs(self, libs, android_extra_libs):
+        """ Add the shared library files for Android. """
+
+        project = self._project
+
+        lib_dir = ''
+        lib_so = []
+
+        for scoped_value in self._split_quotes(libs):
+            # We support the use of scoped values (to be consistent) but it
+            # actually makes no sense in this context.
+            value = self._get_scoped_value(scoped_value)
+            if value is None:
+                continue
+
+            if value.startswith('-L'):
+                lib_dir = project.path_from_user(value[2:])
+            elif value.startswith('-l'):
+                lib_so.append('lib' + value[2:] + '.so')
+
+        if lib_dir != '':
+            for lib in lib_so:
+                android_extra_libs.append(lib_dir + '/' + lib)
+
+    @staticmethod
+    def _split_quotes(s):
+        """ A generator for a splitting a string allowing for quoted spaces.
+        """
+
+        s = s.lstrip()
+
+        while s != '':
+            quote_stack = []
+            i = 0
+
+            for ch in s:
+                if ch in '\'"':
+                    if len(quote_stack) == 0 or quote_stack[-1] != ch:
+                        quote_stack.append(ch)
+                    else:
+                        quote_stack.pop()
+                elif ch == ' ':
+                    if len(quote_stack) == 0:
+                        break
+
+                i += 1
+
+            yield s[:i]
+
+            s = s[i:].lstrip()
