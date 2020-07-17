@@ -88,6 +88,11 @@ class Builder:
         # Get the required modules.
         modules = {}
 
+        # Always include the core Python modules.
+        for module_name, module in python.modules.items():
+            if self._is_python_module(module) and module.core:
+                modules[module_name] = module
+
         for module_name in project.standard_library:
             self._add_project_module(module_name, modules, available_modules)
 
@@ -115,15 +120,6 @@ class Builder:
         elif project.application_entry_point != '':
             raise UserException("Either the application script name or the "
                     "entry point must be specified but not both")
-
-        ## Get other directories from the project that may be overridden.
-        #if python_library is None:
-        #    python_library = project.path_from_user(
-        #            project.python_target_library)
-
-        #if standard_library_dir is None:
-        #    standard_library_dir = project.path_from_user(
-        #            project.python_target_stdlib_dir)
 
         # Set the name of the build directory.
         if not build_dir:
@@ -158,7 +154,7 @@ class Builder:
 
         # Freeze any main application script.
         if project.application_script != '':
-            self._freeze(job_writer,
+            self._freeze(job_writer, project.application_script,
                     os.path.join(self._build_dir, 'frozen_main.h'),
                     project.project_path(project.application_script),
                     'pyqtdeploy_main', as_c=True)
@@ -195,15 +191,22 @@ class Builder:
             self._add_project_module(parent_name, modules, available_modules)
 
         # Ignore modules that aren't provided by the sysroot (we assume the
-        # application will handle that) and internal modules.
+        # application will handle that) or that are built in.
         module = available_modules.get(module_name)
-        if module is None or module.internal:
+        if module is None or module.builtin:
             return
 
         modules[module_name] = module
 
         # Now handle the dependencies.
         for dep in module.deps:
+            # Remove any meta-characters.
+            if dep[0] in '?!':
+                dep = dep[1:]
+
+            if '#' in dep:
+                dep = dep.split('#', maxsplit=1)[1]
+
             self._add_project_module(dep, modules, available_modules)
 
         for dep in module.hidden_deps:
@@ -247,7 +250,7 @@ class Builder:
                     str(e))
 
     @staticmethod
-    def _freeze(job_writer, out_file, in_file, name, as_c=False):
+    def _freeze(job_writer, label, out_file, in_file, name, as_c=False):
         """ Freeze a Python source file to a C header file or a data file. """
 
         if as_c:
@@ -256,7 +259,7 @@ class Builder:
             name = ':/' + name
             conversion = 'data'
 
-        job_writer.writerow([out_file, in_file, name, conversion])
+        job_writer.writerow([label, out_file, in_file, name, conversion])
 
     def _freeze_bootstrap(self, name, build_dir, job_writer, python):
         """ Freeze a version dependent bootstrap script. """
@@ -288,7 +291,7 @@ class Builder:
         assert bootstrap is not None
 
         bootstrap_path = os.path.join(bootstrap_dir, bootstrap)
-        self._freeze(job_writer,
+        self._freeze(job_writer, bootstrap,
                 os.path.join(build_dir, 'frozen_' + name + '.h'),
                 bootstrap_path, 'pyqtdeploy_' + name, as_c=True)
 
@@ -320,13 +323,13 @@ class Builder:
         # Handle any application package.
         if project.application_package.name is not None:
             self._write_python_modules(project.application_package.modules,
-                    os.path.dirname(
+                    resources_contents, job_writer,
+                    module_root_dir=os.path.dirname(
                             project.project_path(
-                                    project.application_package.name)),
-                    resources_contents, job_writer)
+                                    project.application_package.name)))
 
         # Handle the standard library and other packages.
-        # TODO
+        self._write_python_modules(modules, resources_contents, job_writer)
 
         # Write the .qrc files.
         if nr_resources == 1:
@@ -359,6 +362,14 @@ class Builder:
         """
 
         return os.path.join(os.path.dirname(__file__), 'lib', name)
+
+    @staticmethod
+    def _is_python_module( module):
+        """ Return True if a module is a Python module rather than an extension
+        module.
+        """
+
+        return module.source is None and module.libs is None and module.qmake_config is None and module.qmake_qt is None
 
     def _run_freeze(self, python, job_filename, opt):
         """ Run the accumlated freeze jobs. """
@@ -487,9 +498,14 @@ int main(int argc, char **argv)
             resources_contents, job_writer):
         """ Write a Python module as a resource. """
 
-        # Discard anything other than non-core pure Python modules.
-        if module.core or module.builtin or module.source:
+        # Discard extension modules.
+        if not self._is_python_module(module):
             return
+
+        # If the module root directory isn't specified then get it from the
+        # component.
+        if module_root_dir is None:
+            module_root_dir = module.component.target_modules_dir
 
         # Determine the full path of the file and whether or not it needs
         # freezing.
@@ -524,15 +540,15 @@ int main(int argc, char **argv)
         os.makedirs(os.path.dirname(dst_path), exist_ok=True)
 
         if freeze:
-            self._freeze(job_writer, dst_path, src_path,
+            self._freeze(job_writer, name, dst_path, src_path,
                     dst_name.replace(os.sep, '/'))
         else:
             shutil.copy2(src_path, dst_path)
 
         resources_contents.append(dst_name)
 
-    def _write_python_modules(self, modules, module_root_dir,
-            resources_contents, job_writer):
+    def _write_python_modules(self, modules, resources_contents, job_writer,
+            module_root_dir=None):
         """ Write a collection of Python modules as resources. """
 
         for name, module in modules.items():
@@ -566,13 +582,15 @@ int main(int argc, char **argv)
         used_libs = set()
         used_sources = set()
 
+        used_includepath.add(self._sysroot.target_include_dir)
         used_includepath.add(python.target_py_include_dir)
+
         used_libs.add('-L' + self._sysroot.target_lib_dir)
         used_libs.add('-l' + python.target_py_lib)
 
         for module_name, module in modules.items():
-            # Ignore non-extension modules.
-            if module.source is None and module.libs is None and module.qmake_config is None and module.qmake_qt is None:
+            # Ignore Python modules and core extension modules.
+            if self._is_python_module(module) or module.core:
                 continue
 
             used_inittab.add(module_name)
@@ -620,71 +638,6 @@ int main(int argc, char **argv)
         if qmake_config:
             f.write('CONFIG += %s\n' % ' '.join(qmake_config))
 
-        ## Handle any static PyQt modules.
-        #site_packages = standard_library_dir + '/site-packages'
-        #pyqt_package = self._get_pyqt_package_name()
-
-        #for module in self._get_all_pyqt_modules():
-        #    # The uic module is pure Python.
-        #    if module == 'uic':
-        #        continue
-
-        #    metadata = self._get_pyqt_module_metadata(module)
-
-        #    if not self._target.is_targeted(metadata.targets):
-        #        continue
-
-        #    # The sip module is always needed (implicitly or explicitly) if we
-        #    # have got this far.  We handle it separately when it is in a
-        #    # different directory.
-        #    if module == 'sip' and not private_sip:
-        #        used_inittab.add(module)
-        #        used_libs.add('-L' + site_packages)
-        #    else:
-        #        used_inittab.add(pyqt_package + '.' + module)
-        #        used_libs.add('-L' + site_packages + '/' + pyqt_package)
-
-        #    used_libs.add('-l' + module)
-
-        ## Handle any other extension modules.
-        #for other_em in project.other_extension_modules:
-        #    # If the name is scoped then the targets are the outer scopes for
-        #    # the remaining values.
-        #    value = self._get_scoped_value(other_em.name)
-        #    if value is None:
-        #        continue
-
-        #    used_inittab.add(value)
-
-        ## Configure the target Python interpreter.
-        #if include_dir != '':
-        #    used_includepath.add(include_dir)
-
-        #if python_library != '':
-        #    fi = QFileInfo(python_library)
-
-        #    py_lib_dir = fi.absolutePath()
-        #    lib = fi.completeBaseName()
-
-        #    # This is smart enough to translate the Python library as a UNIX .a
-        #    # file to what Windows needs.
-        #    if lib.startswith('lib'):
-        #        lib = lib[3:]
-
-        #    if '.' in lib and target_platform == 'win':
-        #        lib = lib.replace('.', '')
-
-        #    used_libs.add('-l' + lib)
-        #    used_libs.add('-L' + py_lib_dir)
-        #else:
-        #    py_lib_dir = None
-
-        ## Handle any standard library extension modules.
-        #if target_platform not in project.python_use_platform:
-        #    self._add_stdlib_extension_modules(project, target_platform,
-        #            source_dir, required_ext, used_inittab, used_sources,
-        #            used_includepath, used_defines, used_libs, used_dlls)
-
         ## Handle any required external libraries.
         #android_extra_libs = []
 
@@ -715,10 +668,7 @@ int main(int argc, char **argv)
 
         #                break
 
-        #    # Check the library is not disabled for this target.
-        #    enabled = False
-
-        #    if enabled and target_platform == 'android':
+        #    if target_platform == 'android':
         #        self._add_android_extra_libs(libs, android_extra_libs)
 
         # Python v3.6.0 requires C99 at least.  Note that specifying 'c++11' in

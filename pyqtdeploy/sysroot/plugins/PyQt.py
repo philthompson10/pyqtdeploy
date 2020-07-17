@@ -37,14 +37,15 @@ _ALL_MODULES = {
     'PyQt5.QAxContainer':
         VersionedModule(target='win', deps='PyQt5.QtWidgets',
                 libs='-lQAxContainer', qmake_qt='axcontainer'),
-    'PyQt5.Qt': VersionedModule(libs='-lQt'),
+    'PyQt5.Qt': VersionedModule(deps='PyQt5', libs='-lQt'),
     'PyQt5.QtAndroidExtras':
         VersionedModule(target='android', deps='PyQt5.QtCore',
                 libs='-lQtAndroidExtras', qmake_qt='androidextras'),
     'PyQt5.QtBluetooth':
         VersionedModule(deps='PyQt5.QtCore', libs='-lQtBluetooth',
                 qmake_qt='bluetooth'),
-    'PyQt5.QtCore': VersionedModule(deps='SIP:PyQt5.sip', libs='-lQtCore'),
+    'PyQt5.QtCore':
+        VersionedModule(deps=('SIP:PyQt5.sip', 'PyQt5'), libs='-lQtCore'),
     'PyQt5.QtDBus':
         VersionedModule(deps='PyQt5.QtCore', libs='-lQtDBus', qmake_qt='dbus'),
     'PyQt5.QtGui': VersionedModule(deps='PyQt5.QtCore', libs='-lQtGui'),
@@ -271,7 +272,7 @@ pyqt_modules = {6}
     def provides(self):
         """ The dict of VersionedModule objects provided by the component. """
 
-        modules = {}
+        modules = {'PyQt5': _ALL_MODULES['PyQt5']}
 
         for name in self.installed_modules:
             name = 'PyQt5.' + name

@@ -136,6 +136,14 @@ class PythonComponent(AbstractPythonComponent):
             self._install_target_from_existing_windows_version()
 
     @property
+    def target_modules_dir(self):
+        """ The absolute pathname of the directory containing any Python
+        modules provided by the component.
+        """
+
+        return os.path.join(self.target_lib_dir, self._py_subdir)
+
+    @property
     def target_py_include_dir(self):
         """ The name of the directory containing target Python header files.
         """
@@ -152,14 +160,6 @@ class PythonComponent(AbstractPythonComponent):
             lib += 'm'
 
         return lib
-
-    @property
-    def target_py_stdlib_dir(self):
-        """ The name of the directory containing target Python standard
-        library.
-        """
-
-        return os.path.join(self.target_lib_dir, self._py_subdir)
 
     @property
     def target_sitepackages_dir(self):

@@ -505,6 +505,16 @@ class AbstractComponent(ABC):
 
         return self._modules
 
+    @property
+    def target_modules_dir(self):
+        """ The absolute pathname of the directory containing any Python
+        modules provided by the component.
+        """
+
+        # This default implementation returns the target Python installation's
+        # site-packages directory.
+        return self.get_component('Python').target_sitepackages_dir
+
     def _available_version(self, name, provides, openssl, result_cache):
         """ Return the Module object for a module that is available for this
         version and target and available components or None if it is not
