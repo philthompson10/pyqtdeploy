@@ -1994,8 +1994,11 @@ standard_library = {
                         '!win#_sysconfigdata', 'ios|macos#types', 'warnings')),
         PythonModule(min_version=(3, 6),
                 deps=('os', 'ios|macos#_osx_support', 'pprint', 're',
-                        '!win#_sysconfigdata_*', 'ios|macos#types',
-                        'warnings'))),
+                        'android#_sysconfigdata_m_linux_android',
+                        'ios#_sysconfigdata_m_darwin_ios',
+                        'macos#_sysconfigdata_m_darwin_darwin',
+                        'linux#_sysconfigdata_m_linux_x86_64-linux-gnu',
+                        'ios|macos#types', 'warnings'))),
 
     'syslog':
         ExtensionModule(target='!win', source='syslogmodule.c'),
@@ -3387,8 +3390,17 @@ standard_library = {
     '_sysconfigdata':
         PythonModule(version=(3, 5), internal=True, target='!win'),
 
-    '_sysconfigdata_*':
-        PythonModule(min_version=(3, 6), internal=True, target='!win'),
+    '_sysconfigdata_m_linux_android':
+        PythonModule(min_version=(3, 6), internal=True, target='android'),
+
+    '_sysconfigdata_m_darwin_ios':
+        PythonModule(min_version=(3, 6), internal=True, target='ios'),
+
+    '_sysconfigdata_m_darwin_darwin':
+        PythonModule(min_version=(3, 6), internal=True, target='macos'),
+
+    '_sysconfigdata_m_linux_x86_64-linux-gnu':
+        PythonModule(min_version=(3, 6), internal=True, target='linux'),
 
     '_tracemalloc':
         CoreExtensionModule(internal=True),
