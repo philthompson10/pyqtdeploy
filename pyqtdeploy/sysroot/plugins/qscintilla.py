@@ -98,9 +98,17 @@ sip_module = PyQt5.sip
                 python.target_py_lib, sip.target_sip_dir,
                 os.path.join(python.target_sitepackages_dir, 'PyQt5'))
 
-        if pyqt.disabled_features:
+        # If there is no printer support then make sure we don't try and import
+        # it.
+        disabled_features = pyqt.disabled_features
+
+        if not self._is_print_support and 'PyQt_Printer' not in disabled_features:
+            disabled_features = list(disabled_features)
+            disabled_features.append('PyQt_Printer')
+
+        if disabled_features:
             cfg += 'pyqt_disabled_features = {0}\n'.format(
-                    ' '.join(pyqt.disabled_features))
+                    ' '.join(disabled_features))
 
         cfg_name = 'qscintilla-' + self.target_arch_name + '.cfg'
 
@@ -126,7 +134,7 @@ sip_module = PyQt5.sip
 
         deps = 'PyQt:PyQt5.QtWidgets'
 
-        if 'QtPrintSupport' in self.get_component('PyQt').installed_modules:
+        if self._is_print_support:
             deps = (deps, 'PyQt:PyQt5.QtPrintSupport')
 
         return {
@@ -149,6 +157,12 @@ sip_module = PyQt5.sip
         # to NDK v14.
         if self.target_platform_name == 'android' and self.android_ndk_version < 14:
             self.error("Android NDK r14 or later is required.")
+
+    @property
+    def _is_print_support(self):
+        """ Return True if print support is available. """
+
+        return 'QtPrintSupport' in self.get_component('PyQt').installed_modules
 
     @property
     def _version_str(self):
