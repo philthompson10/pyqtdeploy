@@ -26,7 +26,7 @@
 
 import os
 
-from ... import Component, ComponentOption, VersionedModule
+from ... import Component, ComponentOption, VersionedPart
 
 
 class PyQtChartComponent(Component):
@@ -39,10 +39,10 @@ class PyQtChartComponent(Component):
     # this one.
     preinstalls = ['Python', 'PyQt', 'Qt', 'SIP']
 
-    # The dict of VersionedModule objects provided by the component.
+    # The dict of VersionedPart objects provided by the component.
     provides = {
         'PyQt5.QtChart':
-            VersionedModule(deps='PyQt:PyQt5.QtWidgets', libs='-lQtChart',
+            VersionedPart(deps='PyQt:PyQt5.QtWidgets', libs='-lQtChart',
                     qmake_qt='charts')
     }
 

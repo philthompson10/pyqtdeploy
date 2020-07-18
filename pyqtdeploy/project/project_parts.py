@@ -24,7 +24,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from ..modules import Module
+from ..parts import Part
 
 
 class QrcPackage():
@@ -39,35 +39,35 @@ class QrcPackage():
                 '__pycache__', '*-info', 'EGG_INFO', '*.so']
 
     @property
-    def modules(self):
-        """ Return the package as a dict of Module objects. """
+    def parts(self):
+        """ Return the package as a dict of Part objects. """
 
-        modules = {}
+        parts = {}
 
         for node in self.contents:
-            self._add_module(node, self.name, modules)
+            self._add_part(node, self.name, parts)
 
-        return modules
+        return parts
 
-    def _add_module(self, node, parent_name, modules):
-        """ Add a single file or directory to the modules dict. """
+    def _add_part(self, node, parent_name, parts):
+        """ Add a single file or directory to the parts dict. """
 
         if node.included:
             node_name = parent_name + '.' + node.name
 
             if isinstance(node, QrcDirectory):
                 for child in node.contents:
-                    self._add_module(child, node_name, modules)
+                    self._add_part(child, node_name, parts)
             else:
                 if node_name.endswith('.py'):
                     node_name = node_name[:-3]
                     data_ext = None
                 else:
-                    parts = node.name.split('.', maxsplit=1)
-                    node_name = parent_name + '.' + parts[0]
-                    data_ext = '.' + parts[1] if len(parts) == 2 else ''
+                    name_parts = node.name.split('.', maxsplit=1)
+                    node_name = parent_name + '.' + name_parts[0]
+                    data_ext = '.' + name_parts[1] if len(name_parts) == 2 else ''
 
-                modules[node_name] = Module(data_ext=data_ext)
+                parts[node_name] = Part(data_ext=data_ext)
 
 
 class QrcFile():

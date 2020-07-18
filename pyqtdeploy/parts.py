@@ -27,8 +27,8 @@
 from .version_number import VersionNumber
 
 
-class Module:
-    """ Encapsulate the meta-data for a module. """
+class Part:
+    """ Encapsulate the meta-data for a part. """
 
     def __init__(self, internal=False, target='', deps=(), hidden_deps=(),
             core=False, builtin=False, defines=None, xdep=None, modules=None,
@@ -37,19 +37,19 @@ class Module:
             qmake_qt=None):
         """ Initialise the object. """
 
-        # The component that privides the module.
+        # The component that provides the part.
         self.component = None
 
-        # Set if the module is internal.
+        # Set if the part is internal.
         self.internal = internal
 
-        # The target platform(s) of the module.
+        # The target platform(s) of the part.
         self.target = target
 
-        # The sequence of modules that this one is dependent on.
+        # The sequence of parts that this one is dependent on.
         self.deps = (deps, ) if isinstance(deps, str) else deps
 
-        # The sequence of additional modules that this one is dependent on.
+        # The sequence of additional parts that this one is dependent on.
         # These dependencies are hidden from the user and (most importantly)
         # further sub-dependencies are ignored.  The use case is the warnings
         # module in Python v3 which is a dependency of the core (for a simple
@@ -57,12 +57,12 @@ class Module:
         # stuff.
         self.hidden_deps = (hidden_deps, ) if isinstance(hidden_deps, str) else hidden_deps
 
-        # Set if the module is always compiled in to the interpreter library
+        # Set if the part is always compiled in to the interpreter library
         # (if it is an extension module) or if it is required (if it is a
         # Python module).
         self.core = core
 
-        # Set if the module is a core Python module that is embedded as a
+        # Set if the part is a core Python module that is embedded as a
         # builtin.
         self.builtin = builtin
 
@@ -74,17 +74,17 @@ class Module:
 
         # The sequence of modules or sub-packages if this is a package,
         # otherwise None.
+        # TODO: is this still used?
         self.modules = (modules, ) if isinstance(modules, str) else modules
 
-        # The sequence of (possibly scoped) source files relative to the
-        # Modules directory if this is an extension module, otherwise None.
+        # The sequence of (possibly scoped) source files.
         self.source = (source, ) if isinstance(source, str) else source
 
         # The sequence of (possibly scoped) LIBS to add to the .pro file.
         self.libs = (libs, ) if isinstance(libs, str) else libs
 
-        # The sequence of (possibly scoped) directories relative to the Modules
-        # directory to add to INCLUDEPATH.
+        # The sequence of (possibly scoped) directories directory to add to
+        # INCLUDEPATH.
         self.includepath = (includepath, ) if isinstance(includepath, str) else includepath
 
         # The name of the extension module if it is implemented as a .pyd file
@@ -95,7 +95,7 @@ class Module:
         # included in the Windows installer from python.org.
         self.dlls = (dlls, ) if isinstance(dlls, str) else dlls
 
-        # The file extension if the module is actually a data file.  Note that
+        # The file extension if the part is actually a data file.  Note that
         # None and '' have different meanings.
         self.data_ext = data_ext
 
@@ -109,8 +109,8 @@ class Module:
         self.qmake_qt = (qmake_qt, ) if isinstance(qmake_qt, str) else qmake_qt
 
 
-class VersionedModule:
-    """ Encapsulate the meta-data common to all types of module. """
+class VersionedPart:
+    """ Encapsulate the meta-data common to all types of part. """
 
     def __init__(self, min_version=None, version=None, max_version=None,
             internal=False, target='', deps=(), hidden_deps=(), core=False,
@@ -123,12 +123,12 @@ class VersionedModule:
         self._max_version = max_version
         self._version = version
 
-        self.module = Module(internal, target, deps, hidden_deps, core,
-                builtin, defines, xdep, modules, source, libs, includepath,
-                pyd, dlls, data_ext, qmake_config, qmake_cpp11, qmake_qt)
+        self.part = Part(internal, target, deps, hidden_deps, core, builtin,
+                defines, xdep, modules, source, libs, includepath, pyd, dlls,
+                data_ext, qmake_config, qmake_cpp11, qmake_qt)
 
     def applies_to(self, version):
-        """ Returns True if the given version applies to this versioned module.
+        """ Returns True if the given version applies to this versioned part.
         """
 
         if self._version is not None:
@@ -145,7 +145,7 @@ class VersionedModule:
         return True
 
 
-class ExtensionModule(VersionedModule):
+class ExtensionModule(VersionedPart):
     """ Encapsulate the meta-data for a single extension module. """
 
     def __init__(self, source, libs=None, includepath=None, min_version=None,
@@ -161,7 +161,7 @@ class ExtensionModule(VersionedModule):
                 pyd=pyd, dlls=dlls)
 
 
-class PythonModule(VersionedModule):
+class PythonModule(VersionedPart):
     """ Encapsulate the meta-data for a single Python module. """
 
     def __init__(self, min_version=None, version=None, max_version=None,

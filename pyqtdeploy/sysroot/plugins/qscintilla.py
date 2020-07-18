@@ -26,7 +26,7 @@
 
 import os
 
-from ... import Component, ComponentOption, VersionedModule
+from ... import Component, ComponentOption, VersionedPart
 
 
 class QScintillaComponent(Component):
@@ -130,7 +130,7 @@ sip_module = PyQt5.sip
 
     @property
     def provides(self):
-        """ The dict of VersionedModule objects provided by the component. """
+        """ The dict of VersionedPart objects provided by the component. """
 
         deps = 'PyQt:PyQt5.QtWidgets'
 
@@ -139,7 +139,7 @@ sip_module = PyQt5.sip
 
         return {
             'PyQt5.Qsci':
-                VersionedModule(deps=deps, libs='-lQsci',
+                VersionedPart(deps=deps, libs='-lQsci',
                         qmake_config='qscintilla2')
         }
 

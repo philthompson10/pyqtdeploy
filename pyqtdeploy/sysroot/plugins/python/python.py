@@ -49,7 +49,7 @@ class PythonComponent(AbstractPythonComponent):
     # not the sysroot.
     preinstalls = ['Qt']
 
-    # The dict of VersionedModule objects provided by the component.
+    # The dict of VersionedPart objects provided by the component.
     provides = standard_library
 
     def __init__(self, *args, **kwargs):

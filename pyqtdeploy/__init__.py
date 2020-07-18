@@ -1,4 +1,4 @@
-# Copyright (c) 2018, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,6 @@ from .version import PYQTDEPLOY_RELEASE
 
 
 # These are for component plugins.
-from .modules import ExtensionModule, PythonModule, VersionedModule
+from .parts import ExtensionModule, PythonModule, VersionedPart
 from .sysroot import (AbstractComponent, AbstractPythonComponent,
         AbstractQtComponent, AbstractSIPComponent, Component, ComponentOption)
