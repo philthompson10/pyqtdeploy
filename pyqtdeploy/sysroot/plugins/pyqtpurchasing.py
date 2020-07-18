@@ -26,7 +26,7 @@
 
 import os
 
-from ... import Component, ComponentOption, VersionedModule
+from ... import Component, ComponentOption, VersionedPart
 
 
 class PyQtPurchasingComponent(Component):
@@ -39,10 +39,10 @@ class PyQtPurchasingComponent(Component):
     # this one.
     preinstalls = ['Python', 'PyQt', 'Qt', 'SIP']
 
-    # The dict of VersionedModule objects provided by the component.
+    # The dict of VersionedPart objects provided by the component.
     provides = {
         'PyQt5.QtPurchasing':
-            VersionedModule(deps='PyQt:PyQt5.QtCore', libs='-lQtPurchasing',
+            VersionedPart(deps='PyQt:PyQt5.QtCore', libs='-lQtPurchasing',
                     qmake_qt='purchasing')
     }
 

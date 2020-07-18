@@ -48,7 +48,7 @@ class PackagesPage(QWidget):
         super().__init__()
 
         self._project = None
-        self._module_items = {}
+        self._part_items = {}
         self._has_openssl = False
 
         # Create the page's GUI.
@@ -106,60 +106,60 @@ class PackagesPage(QWidget):
             self._update_page()
 
     def update_dependencies(self):
-        """ Update the inter-module dependencies. """
+        """ Update the inter-part dependencies. """
 
         stdlib_blocked = self._stdlib_edit.blockSignals(True)
         others_blocked = self._others_edit.blockSignals(True)
 
-        # The first pass is to clear any implicit modules.
-        for module_item in self._module_items.values():
-            if module_item.checkState(0) == Qt.PartiallyChecked:
-                module_item.setCheckState(0, Qt.Unchecked)
+        # The first pass is to clear any implicit parts.
+        for part_item in self._part_items.values():
+            if part_item.checkState(0) == Qt.PartiallyChecked:
+                part_item.setCheckState(0, Qt.Unchecked)
 
-        # The second pass is to set the state of any implicit modules.
-        for module_item in self._module_items.values():
-            if module_item.checkState(0) == Qt.Checked:
-                self._set_implicit(module_item.parent())
-                self._set_implicit_deps(module_item)
-            elif module_item.module is not None and module_item.module.core:
-                self._set_implicit(module_item)
+        # The second pass is to set the state of any implicit parts.
+        for part_item in self._part_items.values():
+            if part_item.checkState(0) == Qt.Checked:
+                self._set_implicit(part_item.parent())
+                self._set_implicit_deps(part_item)
+            elif part_item.part is not None and part_item.part.core:
+                self._set_implicit(part_item)
 
         self._stdlib_edit.blockSignals(stdlib_blocked)
         self._others_edit.blockSignals(others_blocked)
 
-    def _add_module(self, parent, module_name, module=None):
-        """ Make sure a module appears in the dict of all modules. """
+    def _add_part(self, parent, part_name, part=None):
+        """ Make sure a part appears in the dict of all parts. """
 
         try:
-            module_item = self._module_items[module_name]
+            part_item = self._part_items[part_name]
 
-            # Update the module if it is currently just a place holder.
-            if module_item.module is None:
-                module_item.module = module
+            # Update the part if it is currently just a place holder.
+            if part_item.part is None:
+                part_item.part = part
         except KeyError:
-            module_item = ModuleItem(parent, module_name, module)
-            self._module_items[module_name] = module_item
+            part_item = PartItem(parent, part_name, part)
+            self._part_items[part_name] = part_item
 
-        return module_item
+        return part_item
 
-    def _add_project_module(self, module_name, stdlib, checked=True):
-        """ Make sure a module is in the dict of all modules. """
+    def _add_project_part(self, part_name, stdlib, checked=True):
+        """ Make sure a part is in the dict of all parts. """
 
-        # Make sure any parent module items exist.
-        if '.' in module_name:
-            parent_name = '.'.join(module_name.split('.')[:-1])
-            parent = self._add_project_module(parent_name, stdlib,
+        # Make sure any parent part items exist.
+        if '.' in part_name:
+            parent_name = '.'.join(part_name.split('.')[:-1])
+            parent = self._add_project_part(parent_name, stdlib,
                     checked=False)
             parent.setExpanded(True)
         else:
             parent = (self._stdlib_edit if stdlib else self._others_edit)
 
-        module_item = self._add_module(parent, module_name)
+        part_item = self._add_part(parent, part_name)
 
         if checked:
-            module_item.setCheckState(0, Qt.Checked)
+            part_item.setCheckState(0, Qt.Checked)
 
-        return module_item
+        return part_item
 
     def _dir_changed(self, value):
         """ Invoked when the user edits the sysroots directory name. """
@@ -169,48 +169,45 @@ class PackagesPage(QWidget):
         project.sysroots_dir = value
         project.modified = True
 
-    def _get_module_item(self, module_name, modules, stdlib):
-        """ Return a ModuleItem object for a module or None if the module is
+    def _get_part_item(self, part_name, parts, stdlib):
+        """ Return a PartItem object for a part or None if the part is
         internal.
         """
 
-        # TODO: is the modules attribute of a module (ie. the list of
-        # sub-modules) used any more?
-
-        # Ignore internal modules.
-        module = modules.get(module_name)
-        if module is not None and module.internal:
+        # Ignore internal parts.
+        part = parts.get(part_name)
+        if part is not None and part.internal:
             return None
 
-        # Make sure any parent module items exist.
-        if '.' in module_name:
-            parent_name = '.'.join(module_name.split('.')[:-1])
-            parent = self._get_module_item(parent_name, modules, stdlib)
+        # Make sure any parent part items exist.
+        if '.' in part_name:
+            parent_name = '.'.join(part_name.split('.')[:-1])
+            parent = self._get_part_item(parent_name, parts, stdlib)
         else:
             parent = (self._stdlib_edit if stdlib else self._others_edit)
 
-        return self._add_module(parent, module_name, module=module)
+        return self._add_part(parent, part_name, part=part)
 
-    def _set_implicit(self, module_item):
-        """ Set a module's state (and that of all it's parents) to be partially
+    def _set_implicit(self, part_item):
+        """ Set a part's state (and that of all it's parents) to be partially
         checked (unless it is already checked).
         """
 
-        while module_item is not None:
-            if module_item.checkState(0) == Qt.Unchecked:
-                module_item.setCheckState(0, Qt.PartiallyChecked)
+        while part_item is not None:
+            if part_item.checkState(0) == Qt.Unchecked:
+                part_item.setCheckState(0, Qt.PartiallyChecked)
 
-            module_item = module_item.parent()
+            part_item = part_item.parent()
 
-    def _set_implicit_deps(self, module_item):
-        """ Set a module's state (and that of all it's dependents) to be
+    def _set_implicit_deps(self, part_item):
+        """ Set a part's state (and that of all it's dependents) to be
         partially checked (unless it is already checked).
         """
 
-        if module_item.module is None:
+        if part_item.part is None:
             return
 
-        for dep in module_item.module.deps:
+        for dep in part_item.part.deps:
             if dep.startswith('?'):
                 dep = dep[1:]
             elif dep.startswith('!'):
@@ -219,15 +216,15 @@ class PackagesPage(QWidget):
 
                 dep = dep[1:]
 
-            # We have a global pool of all modules so the component doesn't
+            # We have a global pool of all parts so the component doesn't
             # matter.
             if ':' in dep:
                 _, dep = dep.split(':', maxsplit=1)
 
-            dep_module_item = self._module_items.get(dep)
-            if dep_module_item is not None and dep_module_item.checkState(0) == Qt.Unchecked:
-                self._set_implicit(dep_module_item)
-                self._set_implicit_deps(dep_module_item)
+            dep_part_item = self._part_items.get(dep)
+            if dep_part_item is not None and dep_part_item.checkState(0) == Qt.Unchecked:
+                self._set_implicit(dep_part_item)
+                self._set_implicit_deps(dep_part_item)
 
     def _toml_changed(self, value):
         """ Invoked when the user edits the specification file name. """
@@ -248,8 +245,8 @@ class PackagesPage(QWidget):
         self._dir_edit.setText(project.sysroots_dir)
 
         # Create a non-verified sysroot for each target architecture and
-        # determine the availability of each module.
-        self._module_items.clear()
+        # determine the availability of each part.
+        self._part_items.clear()
         host = Architecture.architecture()
 
         stdlib_blocked = self._stdlib_edit.blockSignals(True)
@@ -267,27 +264,27 @@ class PackagesPage(QWidget):
 
                 stdlib = (component.name == 'Python')
 
-                modules = component.modules
+                parts = component.parts
 
-                for module_name in modules:
-                    module_item = self._get_module_item(module_name, modules,
+                for part_name in parts:
+                    part_item = self._get_part_item(part_name, parts,
                             stdlib)
-                    if module_item is not None:
-                        module_item.target_count += 1
+                    if part_item is not None:
+                        part_item.target_count += 1
 
-        # Ensure that any modules explicitly used by the project have an item
+        # Ensure that any parts explicitly used by the project have an item
         # even if they are not provided by the sysroot.
-        for module_name in project.standard_library:
-            self._add_project_module(module_name, stdlib=True)
+        for part_name in project.standard_library:
+            self._add_project_part(part_name, stdlib=True)
 
-        for module_name in project.other_packages:
-            self._add_project_module(module_name, stdlib=False)
+        for part_name in project.other_packages:
+            self._add_project_part(part_name, stdlib=False)
 
-        # Set the availability of each module.
-        for module_item in self._module_items.values():
-            module_item.set_availability()
+        # Set the availability of each part.
+        for part_item in self._part_items.values():
+            part_item.set_availability()
 
-        # Sort module items in each editor.
+        # Sort part items in each editor.
         self._stdlib_edit.sortItems(0, Qt.AscendingOrder)
         self._others_edit.sortItems(0, Qt.AscendingOrder)
 
@@ -298,8 +295,8 @@ class PackagesPage(QWidget):
         self._others_edit.blockSignals(others_blocked)
 
 
-class ModulesEditor(QTreeWidget):
-    """ An editor for selecting a number of interdependent modules and
+class PartsEditor(QTreeWidget):
+    """ An editor for selecting a number of interdependent parts and
     packages.
     """
 
@@ -307,32 +304,32 @@ class ModulesEditor(QTreeWidget):
         """ Initialise the editor. """
 
         super().__init__(whatsThis=whats_this,
-                itemChanged=self._module_changed)
+                itemChanged=self._part_changed)
 
         self.page = page
 
         self.setHeaderLabels([title])
 
-    def _module_changed(self, itm, col):
-        """ Invoked when a module changes. """
+    def _part_changed(self, itm, col):
+        """ Invoked when a part changes. """
 
         page = self.page
 
-        module_name = itm.module_name
+        part_name = itm.part_name
 
         if itm.checkState(col) == Qt.Checked:
-            self.add_module_name(module_name)
+            self.add_part_name(part_name)
         else:
-            self.remove_module_name(module_name)
+            self.remove_part_name(part_name)
 
         page.update_dependencies()
 
         page.project.modified = True
 
 
-class OthersEditor(ModulesEditor):
-    """ An editor for selecting a number of other modules and packages
-    specified in the sysroot.
+class OthersEditor(PartsEditor):
+    """ An editor for selecting a number of other parts specified in the
+    sysroot.
     """
 
     def __init__(self, page):
@@ -345,21 +342,19 @@ class OthersEditor(ModulesEditor):
                 "will be partially checked (and automatically included) if "
                 "another module requires it.")
 
-    def add_module_name(self, module_name):
-        """ Add the name of an external module to the project. """
+    def add_part_name(self, part_name):
+        """ Add the name of an external part to the project. """
 
-        self.page.project.other_packages.append(module_name)
+        self.page.project.other_packages.append(part_name)
 
-    def remove_module_name(self, module_name):
-        """ Remove the name of an external module from the project. """
+    def remove_part_name(self, part_name):
+        """ Remove the name of an external part from the project. """
 
-        self.page.project.other_packages.remove(module_name)
+        self.page.project.other_packages.remove(part_name)
 
 
-class StdlibEditor(ModulesEditor):
-    """ An editor for selecting a number of standard library modules and
-    packages.
-    """
+class StdlibEditor(PartsEditor):
+    """ An editor for selecting a number of standard library parts. """
 
     def __init__(self, page):
         """ Initialise the editor. """
@@ -371,40 +366,40 @@ class StdlibEditor(ModulesEditor):
                 "will be partially checked (and automatically included) if "
                 "another module requires it.")
 
-    def add_module_name(self, module_name):
-        """ Add the name of a standard library module to the project. """
+    def add_part_name(self, part_name):
+        """ Add the name of a standard library part to the project. """
 
-        self.page.project.standard_library.append(module_name)
+        self.page.project.standard_library.append(part_name)
 
-    def remove_module_name(self, module_name):
-        """ Remove the name of a standard library module from the project. """
+    def remove_part_name(self, part_name):
+        """ Remove the name of a standard library part from the project. """
 
-        self.page.project.standard_library.remove(module_name)
+        self.page.project.standard_library.remove(part_name)
 
 
-class ModuleItem(QTreeWidgetItem):
-    """ An item in a QTreeWidget that encapsulates a public module. """
+class PartItem(QTreeWidgetItem):
+    """ An item in a QTreeWidget that encapsulates a public part. """
 
-    # The colour to use for modules that aren't available for any target.
+    # The colour to use for parts that aren't available for any target.
     _NO_TARGETS = QColor('#f00000')
 
-    # The colour to use for modules that are only available for some targets.
+    # The colour to use for parts that are only available for some targets.
     _SOME_TARGETS = QColor('#f08000')
 
-    def __init__(self, parent, module_name, module):
+    def __init__(self, parent, part_name, part):
         """ Initialise the item. """
 
-        super().__init__(parent, module_name.split('.')[-1:])
+        super().__init__(parent, part_name.split('.')[-1:])
 
         self.setFlags(Qt.ItemIsEnabled|Qt.ItemIsUserCheckable)
         self.setCheckState(0, Qt.Unchecked)
 
-        self.module = module
-        self.module_name = module_name
+        self.part = part
+        self.part_name = part_name
         self.target_count = 0
 
     def set_availability(self):
-        """ Set the availability of the module. """
+        """ Set the availability of the part. """
 
         if self.target_count == 0:
             self.setForeground(0, self._NO_TARGETS)

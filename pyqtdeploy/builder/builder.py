@@ -66,7 +66,7 @@ class Builder:
         # TODO: What about when using an existing Python installation for the
         # target?
         # TODO: Handle the linking of components that don't provide any Python
-        # or extension modules.
+        # or extension parts.
         project = self._project
 
         # Verify the sysroot.
@@ -80,24 +80,24 @@ class Builder:
                     "The sysroot directory '{0}' does not exist.".format(
                             self._sysroot.sysroot_dir))
 
-        # Get all the modules provided by the sysroot.
-        available_modules = {}
+        # Get all the parts provided by the sysroot.
+        available_parts = {}
         for component in self._sysroot.components:
-            available_modules.update(component.modules)
+            available_parts.update(component.parts)
 
-        # Get the required modules.
-        modules = {}
+        # Get the required parts.
+        parts = {}
 
         # Always include the core Python modules.
-        for module_name, module in python.modules.items():
-            if self._is_python_module(module) and module.core:
-                modules[module_name] = module
+        for part_name, part in python.parts.items():
+            if self._is_python_module(part) and part.core:
+                parts[part_name] = part
 
-        for module_name in project.standard_library:
-            self._add_project_module(module_name, modules, available_modules)
+        for part_name in project.standard_library:
+            self._add_project_part(part_name, parts, available_parts)
 
-        for module_name in project.other_packages:
-            self._add_project_module(module_name, modules, available_modules)
+        for part_name in project.other_packages:
+            self._add_project_part(part_name, parts, available_parts)
 
         # Determine the application name.
         if project.application_name:
@@ -166,11 +166,11 @@ class Builder:
                             PYQTDEPLOY_HEXVERSION))
 
         # Generate the application resources.
-        resource_names = self._generate_resources(modules, job_writer,
+        resource_names = self._generate_resources(parts, job_writer,
                 nr_resources)
 
         # Write the .pro file.
-        self._write_qmake(application_name, modules, job_writer, opt,
+        self._write_qmake(application_name, parts, job_writer, opt,
                 resource_names, python)
 
         # Run the freeze jobs.
@@ -178,28 +178,28 @@ class Builder:
 
         self._run_freeze(python, job_filename, opt)
 
-    def _add_project_module(self, module_name, modules, available_modules):
-        """ Make sure a module is in the dict of all modules. """
+    def _add_project_part(self, part_name, parts, available_parts):
+        """ Make sure a part is in the dict of all parts. """
 
         # See if it has already been done.
-        if module_name in modules:
+        if part_name in parts:
             return
 
-        # Make sure any parent modules exist.
-        if '.' in module_name:
-            parent_name = '.'.join(module_name.split('.')[:-1])
-            self._add_project_module(parent_name, modules, available_modules)
+        # Make sure any parent parts exist.
+        if '.' in part_name:
+            parent_name = '.'.join(part_name.split('.')[:-1])
+            self._add_project_part(parent_name, parts, available_parts)
 
-        # Ignore modules that aren't provided by the sysroot (we assume the
+        # Ignore parts that aren't provided by the sysroot (we assume the
         # application will handle that) or that are built in.
-        module = available_modules.get(module_name)
-        if module is None or module.builtin:
+        part = available_parts.get(part_name)
+        if part is None or part.builtin:
             return
 
-        modules[module_name] = module
+        parts[part_name] = part
 
         # Now handle the dependencies.
-        for dep in module.deps:
+        for dep in part.deps:
             # Remove any meta-characters.
             if dep[0] in '?!':
                 dep = dep[1:]
@@ -207,12 +207,12 @@ class Builder:
             if '#' in dep:
                 dep = dep.split('#', maxsplit=1)[1]
 
-            self._add_project_module(dep, modules, available_modules)
+            self._add_project_part(dep, parts, available_parts)
 
-        for dep in module.hidden_deps:
-            self._add_project_module(dep, modules, available_modules)
+        for dep in part.hidden_deps:
+            self._add_project_part(dep, parts, available_parts)
 
-    def _add_scoped_values(self, used_values, values, module,
+    def _add_scoped_values(self, used_values, values, part,
             is_filename=True):
         """ Parse a sequence of possiblly scoped values and add them to a set
         of used values.  The values are optionally treated as filenames where
@@ -230,9 +230,9 @@ class Builder:
 
             # Convert potential filenames.
             if is_filename:
-                value = module.component.get_target_src_path(value)
+                value = part.component.get_target_src_path(value)
             elif value.startswith('-L'):
-                value = '-L' + module.component.get_target_src_path(value[2:])
+                value = '-L' + part.component.get_target_src_path(value[2:])
 
             used_values.add(value)
 
@@ -311,7 +311,7 @@ class Builder:
 
         return value
 
-    def _generate_resources(self, modules, job_writer, nr_resources):
+    def _generate_resources(self, parts, job_writer, nr_resources):
         """ Generate the application resource files and return the names of
         the files relatve to the build directory.
         """
@@ -322,14 +322,14 @@ class Builder:
 
         # Handle any application package.
         if project.application_package.name is not None:
-            self._write_python_modules(project.application_package.modules,
+            self._write_python_modules(project.application_package.parts,
                     resources_contents, job_writer,
-                    module_root_dir=os.path.dirname(
+                    part_root_dir=os.path.dirname(
                             project.project_path(
                                     project.application_package.name)))
 
         # Handle the standard library and other packages.
-        self._write_python_modules(modules, resources_contents, job_writer)
+        self._write_python_modules(parts, resources_contents, job_writer)
 
         # Write the .qrc files.
         if nr_resources == 1:
@@ -364,12 +364,12 @@ class Builder:
         return os.path.join(os.path.dirname(__file__), 'lib', name)
 
     @staticmethod
-    def _is_python_module( module):
-        """ Return True if a module is a Python module rather than an extension
+    def _is_python_module(part):
+        """ Return True if a part is a Python module rather than an extension
         module.
         """
 
-        return module.source is None and module.libs is None and module.qmake_config is None and module.qmake_qt is None
+        return part.source is None and part.libs is None and part.qmake_config is None and part.qmake_qt is None
 
     def _run_freeze(self, python, job_filename, opt):
         """ Run the accumlated freeze jobs. """
@@ -494,32 +494,32 @@ int main(int argc, char **argv)
 
         f.close()
 
-    def _write_python_module(self, name, module, modules, module_root_dir,
+    def _write_python_module(self, name, part, parts, part_root_dir,
             resources_contents, job_writer):
         """ Write a Python module as a resource. """
 
         # Discard extension modules.
-        if not self._is_python_module(module):
+        if not self._is_python_module(part):
             return
 
-        # If the module root directory isn't specified then get it from the
+        # If the part root directory isn't specified then get it from the
         # component.
-        if module_root_dir is None:
-            module_root_dir = module.component.target_modules_dir
+        if part_root_dir is None:
+            part_root_dir = part.component.target_modules_dir
 
         # Determine the full path of the file and whether or not it needs
         # freezing.
         src_name = name.replace('.', os.sep)
-        src_path = os.path.join(module_root_dir, src_name)
+        src_path = os.path.join(part_root_dir, src_name)
 
-        if module.data_ext is None:
+        if part.data_ext is None:
             if os.path.isdir(src_path):
                 src_name = os.path.join(src_name, '__init__')
 
             dst_name = src_name + '.pyo'
             src_name = src_name + '.py'
 
-            src_path = os.path.join(module_root_dir, src_name)
+            src_path = os.path.join(part_root_dir, src_name)
 
             # This can happen legitimately if the name corresponds to a simple
             # directory rather than a Python package.
@@ -528,8 +528,8 @@ int main(int argc, char **argv)
 
             freeze = True
         else:
-            src_name += module.data_ext
-            src_path += module.data_ext
+            src_name += part.data_ext
+            src_path += part.data_ext
 
             dst_name = src_name
 
@@ -547,15 +547,15 @@ int main(int argc, char **argv)
 
         resources_contents.append(dst_name)
 
-    def _write_python_modules(self, modules, resources_contents, job_writer,
-            module_root_dir=None):
+    def _write_python_modules(self, parts, resources_contents, job_writer,
+            part_root_dir=None):
         """ Write a collection of Python modules as resources. """
 
-        for name, module in modules.items():
-            self._write_python_module(name, module, modules, module_root_dir,
+        for name, part in parts.items():
+            self._write_python_module(name, part, parts, part_root_dir,
                     resources_contents, job_writer)
 
-    def _write_qmake(self, application_name, modules, job_writer, opt,
+    def _write_qmake(self, application_name, parts, job_writer, opt,
             resource_names, python):
         """ Create the .pro file for qmake. """
 
@@ -588,32 +588,32 @@ int main(int argc, char **argv)
         used_libs.add('-L' + self._sysroot.target_lib_dir)
         used_libs.add('-l' + python.target_py_lib)
 
-        for module_name, module in modules.items():
+        for part_name, part in parts.items():
             # Ignore Python modules and core extension modules.
-            if self._is_python_module(module) or module.core:
+            if self._is_python_module(part) or part.core:
                 continue
 
-            used_inittab.add(module_name)
+            used_inittab.add(part_name)
 
-            if module.pyd is not None and target_platform == 'win':
-                used_dlls.add(module)
+            if part.pyd is not None and target_platform == 'win':
+                used_dlls.add(part)
 
-            if module.qmake_config is not None:
-                qmake_config.update(module.qmake_config)
+            if part.qmake_config is not None:
+                qmake_config.update(part.qmake_config)
 
-            if module.qmake_cpp11:
+            if part.qmake_cpp11:
                 qmake_cpp11 = True
 
-            if module.qmake_qt is not None:
-                qmake_qt.update(module.qmake_qt)
+            if part.qmake_qt is not None:
+                qmake_qt.update(part.qmake_qt)
 
-            self._add_scoped_values(used_defines, module.defines, module,
+            self._add_scoped_values(used_defines, part.defines, part,
                     is_filename=False)
-            self._add_scoped_values(used_includepath, module.includepath,
-                    module)
-            self._add_scoped_values(used_libs, module.libs, module,
+            self._add_scoped_values(used_includepath, part.includepath,
+                    part)
+            self._add_scoped_values(used_libs, part.libs, part,
                     is_filename=False)
-            self._add_scoped_values(used_sources, module.source, module)
+            self._add_scoped_values(used_sources, part.source, part)
 
         # Generate QT.
         if qmake_qt:
@@ -801,7 +801,7 @@ int main(int argc, char **argv)
 
             f.write('{0} += {1}\n'.format(qmake_var, value))
 
-    def _copy_windows_dlls(self, py_lib_dir, modules, f):
+    def _copy_windows_dlls(self, py_lib_dir, parts, f):
         """ Generate additional qmake commands to install additional Windows
         DLLs so that the application will be able to run.
         """
@@ -814,11 +814,11 @@ int main(int argc, char **argv)
         # TODO: MSVC2019 DLLs?
         dlls.append('vcruntime140.dll')
 
-        for module in modules:
-            dlls.append(module.pyd)
+        for part in parts:
+            dlls.append(part.pyd)
 
-            if module.dlls is not None:
-                dlls.extend(module.dlls)
+            if part.dlls is not None:
+                dlls.extend(part.dlls)
 
         for name in dlls:
             f.write('''

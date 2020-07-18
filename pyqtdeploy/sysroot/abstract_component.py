@@ -327,7 +327,7 @@ class AbstractComponent(ABC):
 
         self.name = name
         self._sysroot = sysroot
-        self._modules = None
+        self._parts = None
 
         # Configure the component.
         for option in self.get_options():
@@ -484,28 +484,28 @@ class AbstractComponent(ABC):
         return os.path.join(self.target_src_dir, name)
 
     @property
-    def modules(self):
-        """ The map of Module instances, keyed by the name of the module, of
-        the modules provided by this version of the component.
+    def parts(self):
+        """ The map of Part instances, keyed by the name of the part, of the
+        parts provided by this version of the component.
         """
 
-        if self._modules is None:
-            self._modules = {}
+        if self._parts is None:
+            self._parts = {}
             provides = self.provides
             openssl = self.get_component('OpenSSL', required=False)
             result_cache = {}
 
             for name in provides:
-                module = self._available_version(name, provides, openssl,
+                part = self._available_version(name, provides, openssl,
                         result_cache)
 
-                if module is not None:
+                if part is not None:
                     # This saves the plugin having to set it.
-                    module.component = self
+                    part.component = self
 
-                    self._modules[name] = module
+                    self._parts[name] = part
 
-        return self._modules
+        return self._parts
 
     @property
     def target_modules_dir(self):
@@ -518,18 +518,18 @@ class AbstractComponent(ABC):
         return self.get_component('Python').target_sitepackages_dir
 
     def _available_version(self, name, provides, openssl, result_cache):
-        """ Return the Module object for a module that is available for this
+        """ Return the Part object for a part that is available for this
         version and target and available components or None if it is not
         available.
         """
 
-        # See if we have already determined if the module is available.
+        # See if we have already determined if the part is available.
         try:
             return result_cache[name]
         except KeyError:
             pass
 
-        # Try each version of the module.
+        # Try each version of the part.
         try:
             versions = provides[name]
         except KeyError:
@@ -538,44 +538,44 @@ class AbstractComponent(ABC):
         if not isinstance(versions, tuple):
             versions = (versions, )
 
-        for versioned_module in versions:
-            if versioned_module.applies_to(self.version):
-                module = versioned_module.module
+        for versioned_part in versions:
+            if versioned_part.applies_to(self.version):
+                part = versioned_part.part
 
                 # Circular dependencies are valid (and presumably dealt with in
-                # the module implementation) so we assume the module will be
+                # the part implementation) so we assume the part will be
                 # available (to prevent recursive calls) and update the result
                 # afterwards.
-                result_cache[name] = module
+                result_cache[name] = part
 
-                if not self._is_available(module, provides, openssl, result_cache):
-                    module = None
+                if not self._is_available(part, provides, openssl, result_cache):
+                    part = None
 
                 break
         else:
-            module = None
+            part = None
 
         # Cache the result.
-        result_cache[name] = module
+        result_cache[name] = part
 
-        return module
+        return part
 
-    def _is_available(self, module, provides, openssl, result_cache):
-        """ Return True if a Module object for a module is available for this
+    def _is_available(self, part, provides, openssl, result_cache):
+        """ Return True if a Part object for a part is available for this
         version and target and available components or None if it is not
         available.
         """
 
-        # Discard modules with missing external dependencies.
-        if module.xdep is not None and self.get_component(module.xdep, required=False) is None:
+        # Discard parts with missing external dependencies.
+        if part.xdep is not None and self.get_component(part.xdep, required=False) is None:
             return False
 
-        # Discard modules not applicable to the target architecture.
-        if module.target != '' and not self._sysroot.target.is_targeted(module.target):
+        # Discard parts not applicable to the target architecture.
+        if part.target != '' and not self._sysroot.target.is_targeted(part.target):
             return False
 
         # Check any dependencies.
-        for dep in module.deps:
+        for dep in part.deps:
             if dep.startswith('?'):
                 # The dependency is optional so its availability has no impact.
                 continue
@@ -600,12 +600,12 @@ class AbstractComponent(ABC):
                 if component is None:
                     return False
 
-                dep_module = component.modules.get(dep)
+                dep_part = component.parts.get(dep)
             else:
-                dep_module = self._available_version(dep, provides, openssl,
+                dep_part = self._available_version(dep, provides, openssl,
                         result_cache)
 
-            if dep_module is None:
+            if dep_part is None:
                 return False
 
         return True
