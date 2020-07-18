@@ -143,12 +143,12 @@ class Sysroot:
 
         if component_names:
             components = self._components_from_names(component_names)
-            empty_sysroot = False
+            all_components = False
         else:
             components = self.components
-            empty_sysroot = True
+            all_components = True
 
-        self.create_dir(self.sysroot_dir, empty=empty_sysroot)
+        self.create_dir(self.sysroot_dir, empty=all_components)
         os.makedirs(self.host_dir, exist_ok=True)
         os.makedirs(self.target_include_dir, exist_ok=True)
         os.makedirs(self.target_lib_dir, exist_ok=True)
@@ -164,7 +164,7 @@ class Sysroot:
 
         for component in components:
             os.chdir(build_dir)
-            component.ensure_installed()
+            component.ensure_installed(all_components)
 
         # Remove the build directory if requested.
         os.chdir(cwd)

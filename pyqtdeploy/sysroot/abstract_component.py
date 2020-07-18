@@ -452,17 +452,19 @@ class AbstractComponent(ABC):
 
         return self._sysroot.apple_sdk
 
-    def ensure_installed(self):
+    def ensure_installed(self, all_components):
         """ Ensure the component is installed. """
 
         if self._install_status == self._IS_NOT_INSTALLED:
             self._install_status = self._IS_IN_PROGRESS
 
-            # Make sure any optional pre-installs are done.
-            for preinstall in self.preinstalls:
-                component = self.get_component(preinstall, required=False)
-                if component is not None:
-                    component.ensure_installed()
+            # If all components are being installed the make sure they are done
+            # in the right order.
+            if all_components:
+                for preinstall in self.preinstalls:
+                    component = self.get_component(preinstall, required=False)
+                    if component is not None:
+                        component.ensure_installed()
 
             self.progress("Installing component...")
             self.install()
