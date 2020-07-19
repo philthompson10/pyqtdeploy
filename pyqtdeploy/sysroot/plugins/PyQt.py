@@ -283,7 +283,7 @@ pyqt_modules = {6}
                         self.get_component('Python').target_sitepackages_dir,
                         'PyQt5')
 
-                part.part.libs = ('-L' + lib_dir,) + part.part.libs
+                part.libs = ('-L' + lib_dir,) + part.libs
 
             parts[name] = part
 
