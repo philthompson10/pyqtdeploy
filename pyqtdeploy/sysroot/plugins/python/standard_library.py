@@ -53,11 +53,11 @@ class CoreExtensionModule(ExtensionModule):
     """
 
     def __init__(self, min_version=None, version=None, max_version=None,
-            internal=False, target='', deps=(), hidden_deps=()):
+            target='', internal=False, deps=(), hidden_deps=()):
         """ Initialise the object. """
 
         super().__init__(source=(), min_version=min_version, version=version,
-                max_version=max_version, internal=internal, target=target,
+                max_version=max_version, target=target, internal=internal,
                 deps=deps, hidden_deps=hidden_deps, core=True)
 
 
@@ -67,59 +67,12 @@ class CorePythonModule(PythonModule):
     """
 
     def __init__(self, min_version=None, version=None, max_version=None,
-            internal=False, target='', deps=(), hidden_deps=(), builtin=False,
-            modules=None):
+            target='', internal=False, deps=(), hidden_deps=(), builtin=False):
         """ Initialise the object. """
 
         super().__init__(min_version=min_version, version=version,
-                max_version=max_version, internal=internal, target=target,
-                deps=deps, hidden_deps=hidden_deps, core=True, builtin=builtin,
-                modules=modules)
-
-
-# The encodings modules.
-_encodings_modules = (
-    'encodings.ascii', 'encodings.base64_codec', 'encodings.big5',
-    'encodings.big5hkscs', 'encodings.bz2_codec', 'encodings.charmap',
-    'encodings.cp037', 'encodings.cp1006', 'encodings.cp1026',
-    'encodings.cp1125', 'encodings.cp1140', 'encodings.cp1250',
-    'encodings.cp1251', 'encodings.cp1252', 'encodings.cp1253',
-    'encodings.cp1254', 'encodings.cp1255', 'encodings.cp1256',
-    'encodings.cp1257', 'encodings.cp1258', 'encodings.cp273',
-    'encodings.cp424', 'encodings.cp437', 'encodings.cp500',
-    'encodings.cp65001', 'encodings.cp720', 'encodings.cp737',
-    'encodings.cp775', 'encodings.cp850', 'encodings.cp852',
-    'encodings.cp855', 'encodings.cp856', 'encodings.cp857', 'encodings.cp858',
-    'encodings.cp860', 'encodings.cp861', 'encodings.cp862', 'encodings.cp863',
-    'encodings.cp864', 'encodings.cp865', 'encodings.cp866', 'encodings.cp869',
-    'encodings.cp874', 'encodings.cp875', 'encodings.cp932', 'encodings.cp949',
-    'encodings.cp950', 'encodings.euc_jis_2004', 'encodings.euc_jisx0213',
-    'encodings.euc_jp', 'encodings.euc_kr', 'encodings.gb18030',
-    'encodings.gb2312', 'encodings.gbk', 'encodings.hex_codec',
-    'encodings.hp_roman8', 'encodings.hz', 'encodings.idna',
-    'encodings.iso2022_jp', 'encodings.iso2022_jp_1', 'encodings.iso2022_jp_2',
-    'encodings.iso2022_jp_2004', 'encodings.iso2022_jp_3',
-    'encodings.iso2022_jp_ext', 'encodings.iso2022_kr',
-    'encodings.iso8859_1', 'encodings.iso8859_10', 'encodings.iso8859_11',
-    'encodings.iso8859_13', 'encodings.iso8859_14', 'encodings.iso8859_15',
-    'encodings.iso8859_16', 'encodings.iso8859_2', 'encodings.iso8859_3',
-    'encodings.iso8859_4', 'encodings.iso8859_5', 'encodings.iso8859_6',
-    'encodings.iso8859_7', 'encodings.iso8859_8', 'encodings.iso8859_9',
-    'encodings.johab', 'encodings.koi8_r', 'encodings.koi8_t',
-    'encodings.koi8_u', 'encodings.kz1048', 'encodings.latin_1',
-    'encodings.mac_arabic', 'encodings.mac_centeuro', 'encodings.mac_croatian',
-    'encodings.mac_cyrillic', 'encodings.mac_farsi', 'encodings.mac_greek',
-    'encodings.mac_iceland', 'encodings.mac_latin2', 'encodings.mac_roman',
-    'encodings.mac_romanian', 'encodings.mac_turkish', 'encodings.mbcs',
-    'encodings.palmos', 'encodings.ptcp154', 'encodings.punycode',
-    'encodings.quopri_codec', 'encodings.raw_unicode_escape',
-    'encodings.rot_13', 'encodings.shift_jis', 'encodings.shift_jis_2004',
-    'encodings.shift_jisx0213', 'encodings.tis_620', 'encodings.undefined',
-    'encodings.unicode_escape', 'encodings.unicode_internal',
-    'encodings.utf_16', 'encodings.utf_16_be', 'encodings.utf_16_le',
-    'encodings.utf_32', 'encodings.utf_32_be', 'encodings.utf_32_le',
-    'encodings.utf_7', 'encodings.utf_8', 'encodings.utf_8_sig',
-    'encodings.uu_codec', 'encodings.zlib_codec')
+                max_version=max_version, target=target, internal=internal,
+                deps=deps, hidden_deps=hidden_deps, core=True, builtin=builtin)
 
 
 # The meta-data for each module.
@@ -171,8 +124,7 @@ standard_library = {
                         'asyncio.streams', 'asyncio.subprocess',
                         'asyncio.tasks', 'asyncio.transports',
                         '!win#asyncio.unix_events',
-                        'win#asyncio.windows_events', 'selectors'),
-                modules=()),
+                        'win#asyncio.windows_events', 'selectors')),
         PythonModule(min_version=(3, 7),
                 deps=('asyncio.base_events', 'asyncio.coroutines',
                         'asyncio.events', 'asyncio.futures', 'asyncio.locks',
@@ -180,8 +132,7 @@ standard_library = {
                         'asyncio.queues', 'asyncio.streams',
                         'asyncio.subprocess', 'asyncio.tasks',
                         'asyncio.transports', '!win#asyncio.unix_events',
-                        'win#asyncio.windows_events'),
-                modules=())),
+                        'win#asyncio.windows_events'))),
 
     'atexit':
         CoreExtensionModule(),
@@ -260,13 +211,11 @@ standard_library = {
         PythonModule(version=(3, 5, 0),
                 deps=('_collections', '_collections_abc', 'copy', 'heapq',
                         'itertools', 'keyword', 'operator', 'reprlib',
-                        '_weakref'),
-                modules='collections.abc'),
+                        '_weakref')),
         PythonModule(min_version=(3, 5, 1),
                 deps=('_collections', '_collections_abc', 'copy', 'heapq',
                         'itertools', 'keyword', 'operator', 'reprlib',
-                        'warnings', '_weakref'),
-                modules='collections.abc')),
+                        'warnings', '_weakref'))),
 
     'collections.abc':
         PythonModule(deps='_collections_abc'),
@@ -280,14 +229,13 @@ standard_library = {
                         'os', 'py_compile', 'struct')),
 
     'concurrent':
-        PythonModule(modules='concurrent.futures'),
+        PythonModule(),
 
     'concurrent.futures':
         PythonModule(
                 deps=('concurrent', 'concurrent.futures._base',
                         'concurrent.futures.process',
-                        'concurrent.futures.thread'),
-                modules=()),
+                        'concurrent.futures.thread')),
 
     'configparser': (
         PythonModule(max_version=(3, 6, 0),
@@ -327,8 +275,7 @@ standard_library = {
 
     'ctypes':
         PythonModule(target='linux|macos|win',
-                deps=('_ctypes', 'ctypes._endian', 'os', 'struct'),
-                modules=('ctypes.util', 'ctypes.wintypes')),
+                deps=('_ctypes', 'ctypes._endian', 'os', 'struct')),
 
     'ctypes.util': (
         PythonModule(max_version=(3, 5, 2), target='linux|macos|win',
@@ -341,11 +288,10 @@ standard_library = {
                         'tempfile'))),
 
     'ctypes.wintypes':
-        PythonModule(deps='ctypes', target='win'),
+        PythonModule(target='win', deps='ctypes'),
 
     'curses':
-        PythonModule(target='!win', deps=('curses.has_key', '_curses', 'os'),
-                modules=('curses.ascii', 'curses.panel', 'curses.textpad')),
+        PythonModule(target='!win', deps=('curses.has_key', '_curses', 'os')),
 
     'curses.ascii':
         PythonModule(target='!win', deps='curses'),
@@ -366,9 +312,8 @@ standard_library = {
     'datetime':
         PythonModule(deps=('_datetime', 'math', '_strptime', 'time')),
 
-    'dbm': (
-        PythonModule(deps=('io', 'os', 'struct'),
-                modules=('dbm.dumb', 'dbm.gnu', 'dbm.ndbm'))),
+    'dbm':
+        PythonModule(deps=('io', 'os', 'struct')),
 
     'dbm.dumb': (
         PythonModule(version=(3, 5),
@@ -395,19 +340,7 @@ standard_library = {
         PythonModule(deps=('collections', 'io', 'opcode', 'types')),
 
     'distutils':
-        PythonModule(
-                modules=('distutils.archive_util', 'distutils.bcppcompiler',
-                        'distutils.ccompiler', 'distutils.cmd',
-                        'distutils.command', 'distutils.core',
-                        'distutils.cygwinccompiler', 'distutils.debug',
-                        'distutils.dep_util', 'distutils.dir_util',
-                        'distutils.dist', 'distutils.errors',
-                        'distutils.extension', 'distutils.fancy_getopt',
-                        'distutils.file_util', 'distutils.filelist',
-                        'distutils.log', 'distutils.msvccompiler',
-                        'distutils.spawn', 'distutils.sysconfig',
-                        'distutils.text_file', 'distutils.unixccompiler',
-                        'distutils.util', 'distutils.version')),
+        PythonModule(),
 
     'distutils.archive_util':
         PythonModule(
@@ -441,28 +374,7 @@ standard_library = {
                         'os', 're')),
 
     'distutils.command':
-        PythonModule(
-                modules=('distutils.command.bdist',
-                        'distutils.command.bdist_dumb',
-                        'distutils.command.bdist_msi',
-                        'distutils.command.bdist_rpm',
-                        'distutils.command.bdist_wininst',
-                        'distutils.command.build',
-                        'distutils.command.build_clib',
-                        'distutils.command.build_ext',
-                        'distutils.command.build_py',
-                        'distutils.command.build_scripts',
-                        'distutils.command.check', 'distutils.command.clean',
-                        'distutils.command.config',
-                        'distutils.command.install',
-                        'distutils.command.install_data',
-                        'distutils.command.install_egg_info',
-                        'distutils.command.install_headers',
-                        'distutils.command.install_lib',
-                        'distutils.command.install_scripts',
-                        'distutils.command.register',
-                        'distutils.command.sdist',
-                        'distutils.command.upload')),
+        PythonModule(),
 
     'distutils.command.bdist':
         PythonModule(
@@ -714,12 +626,7 @@ standard_library = {
         PythonModule(deps='re'),
 
     'email':
-        PythonModule(deps='email.parser',
-                modules=('email.charset', 'email.contentmanager',
-                        'email.encoders', 'email.errors', 'email.generator',
-                        'email.header', 'email.headerregistry',
-                        'email.iterators', 'email.message', 'email.mime',
-                        'email.parser', 'email.policy', 'email.utils')),
+        PythonModule(deps='email.parser'),
 
     'email.charset':
         PythonModule(
@@ -768,11 +675,7 @@ standard_library = {
                         'io', 'quopri', 're', 'uu'))),
 
     'email.mime':
-        PythonModule(deps='email',
-                modules=('email.mime.application', 'email.mime.audio',
-                        'email.mime.base', 'email.mime.image',
-                        'email.mime.message', 'email.mime.multipart',
-                        'email.mime.nonmultipart', 'email.mime.text')),
+        PythonModule(deps='email'),
 
     'email.mime.application':
         PythonModule(
@@ -833,14 +736,11 @@ standard_library = {
                         'urllib.parse')),
 
     'encodings': (
-        PythonModule(version=(3, 5), deps=('encodings.aliases', 'codecs'),
-                modules=_encodings_modules),
+        PythonModule(version=(3, 5), deps=('encodings.aliases', 'codecs')),
         PythonModule(version=(3, 6),
-                deps=('encodings.aliases', '_bootlocale', 'codecs'),
-                modules=_encodings_modules + ('encodings.oem', )),
+                deps=('encodings.aliases', '_bootlocale', 'codecs')),
         PythonModule(min_version=(3, 7),
-                deps=('encodings.aliases', 'codecs', 'win#_winapi'),
-                modules=_encodings_modules + ('encodings.oem', ))),
+                deps=('encodings.aliases', 'codecs', 'win#_winapi'))),
 
     'encodings.ascii':
         CodecModule(core=True),
@@ -1309,8 +1209,7 @@ standard_library = {
                 deps=('hashlib', '?_hashlib', '_operator', 'warnings'))),
 
     'html':
-        PythonModule(deps=('html.entities', 're'),
-                modules=('html.entities', 'html.parser')),
+        PythonModule(deps=('html.entities', 're')),
 
     'html.entities':
         PythonModule(deps='html'),
@@ -1319,9 +1218,7 @@ standard_library = {
         PythonModule(deps=('html', '_markupbase', 're', 'warnings')),
 
     'http':
-        PythonModule(deps='enum',
-                modules=('http.client', 'http.cookiejar', 'http.cookies',
-                        'http.server')),
+        PythonModule(deps='enum'),
 
     'http.client': (
         PythonModule(version=(3, 5),
@@ -1392,15 +1289,11 @@ standard_library = {
         CorePythonModule(max_version=(3, 6),
                 deps=('importlib._bootstrap', 'importlib._bootstrap_external',
                         '_imp', 'types'),
-                hidden_deps='warnings',
-                modules=('importlib.abc', 'importlib.machinery',
-                        'importlib.util')),
+                hidden_deps='warnings'),
         CorePythonModule(min_version=(3, 7),
                 deps=('importlib._bootstrap', 'importlib._bootstrap_external',
                         '_imp', 'types'),
-                hidden_deps='warnings',
-                modules=('importlib.abc', 'importlib.machinery',
-                        'importlib.resources', 'importlib.util'))),
+                hidden_deps='warnings')),
 
     'importlib.abc': (
         PythonModule(max_version=(3, 6),
@@ -1462,10 +1355,9 @@ standard_library = {
         CoreExtensionModule(),
 
     'json': (
-        PythonModule(version=(3, 5),
-                deps=('json.decoder', 'json.encoder'), modules=()),
+        PythonModule(version=(3, 5), deps=('json.decoder', 'json.encoder')),
         PythonModule(min_version=(3, 6),
-                deps=('codecs', 'json.decoder', 'json.encoder'), modules=())),
+                deps=('codecs', 'json.decoder', 'json.encoder'))),
 
     'keyword':
         PythonModule(),
@@ -1487,13 +1379,11 @@ standard_library = {
         PythonModule(max_version=(3, 6),
                 deps=('atexit', 'collections', 'io', 'os', 'string',
                         'threading', 'time', 'traceback', 'warnings',
-                        'weakref'),
-                modules=('logging.config', 'logging.handlers')),
+                        'weakref')),
         PythonModule(min_version=(3, 7),
                 deps=('atexit', 'collections.abc', 'io', 'os', 'pickle',
                         'string', 'threading', 'time', 'traceback', 'warnings',
-                        'weakref'),
-                modules=('logging.config', 'logging.handlers'))),
+                        'weakref'))),
 
     'logging.config': (
         PythonModule(max_version=(3, 6),
@@ -1567,23 +1457,17 @@ standard_library = {
 
     'msilib': (
         PythonModule(max_version=(3, 5, 1), target='win',
-                deps=('_msi', 'os', 're', 'string', 'tempfile'), modules=()),
+                deps=('_msi', 'os', 're', 'string', 'tempfile')),
         PythonModule(min_version=(3, 5, 2), max_version=(3, 5), target='win',
-                deps=('_msi', 'glob', 'os', 're', 'string', 'tempfile'),
-                modules=()),
+                deps=('_msi', 'glob', 'os', 're', 'string', 'tempfile')),
         PythonModule(min_version=(3, 6), target='win',
-                deps=('_msi', 'fnmatch', 'os', 're', 'string', 'tempfile'),
-                modules=())),
+                deps=('_msi', 'fnmatch', 'os', 're', 'string', 'tempfile'))),
 
     'msvcrt':
         CoreExtensionModule(target='win'),
 
     'multiprocessing':
-        PythonModule(
-                deps='multiprocessing.context',
-                modules=('multiprocessing.connection',
-                        'multiprocessing.managers', 'multiprocessing.pool',
-                        'multiprocessing.sharedctypes')),
+        PythonModule(deps='multiprocessing.context'),
 
     'multiprocessing.connection': (
         PythonModule(version=(3, 5),
@@ -1606,8 +1490,7 @@ standard_library = {
                 deps=('multiprocessing', 'array',
                         'multiprocessing.dummy.connection',
                         'multiprocessing.pool', 'queue', 'threading',
-                        'weakref'),
-                modules=()),
+                        'weakref')),
 
     'multiprocessing.managers': (
         PythonModule(version=(3, 5),
@@ -1836,7 +1719,8 @@ standard_library = {
                         'sre_constants', 'sre_parse'))),
 
     'readline':
-        ExtensionModule(target='!win', source='readline.c', xdep='Readline'),
+        ExtensionModule(target='!win', source='readline.c',
+                deps='Readline:readline'),
 
     'reprlib':
         PythonModule(deps=('itertools', '_thread')),
@@ -1930,7 +1814,7 @@ standard_library = {
                         'threading'))),
 
     'sqlite3':
-        PythonModule(deps='sqlite3.dbapi2', modules=('sqlite3.dbapi2')),
+        PythonModule(deps='sqlite3.dbapi2'),
 
     'ssl': (
         PythonModule(max_version=(3, 5, 1),
@@ -2110,9 +1994,7 @@ standard_library = {
         ExtensionModule(source='unicodedata.c', pyd='unicodedata.pyd'),
 
     'urllib':
-        PythonModule(
-                modules=('urllib.error', 'urllib.parse', 'urllib.request',
-                        'urllib.response', 'urllib.robotparser')),
+        PythonModule(),
 
     'urllib.error':
         PythonModule(deps=('urllib', 'urllib.response')),
@@ -2219,10 +2101,7 @@ standard_library = {
                 libs='-lwinmm', pyd='winsound.pyd'),
 
     'wsgiref':
-        PythonModule(
-                modules=('wsgiref.handlers', 'wsgiref.headers',
-                        'wsgiref.simple_server', 'wsgiref.util',
-                        'wsgiref.validate')),
+        PythonModule(),
 
     'wsgiref.handlers': (
         PythonModule(max_version=(3, 5, 1),
@@ -2256,12 +2135,10 @@ standard_library = {
         PythonModule(deps=('functools', 'io', 'struct')),
 
     'xml':
-        PythonModule(
-                modules=('xml.dom', 'xml.etree', 'xml.parsers', 'xml.sax')),
+        PythonModule(),
 
     'xml.dom':
-        PythonModule(deps=('xml', 'xml.dom.domreg'),
-                modules=('xml.dom.minidom', 'xml.dom.pulldom')),
+        PythonModule(deps=('xml', 'xml.dom.domreg')),
 
     'xml.dom.minidom':
         PythonModule(
@@ -2273,7 +2150,7 @@ standard_library = {
                 deps=('xml.dom', 'io', 'xml.dom.minidom', 'xml.sax.handler')),
 
     'xml.etree':
-        PythonModule(deps='xml', modules='xml.etree.ElementTree'),
+        PythonModule(deps='xml'),
 
     'xml.etree.ElementTree': (
         PythonModule(version=(3, 5),
@@ -2291,7 +2168,7 @@ standard_library = {
                         'xml.parsers.expat'))),
 
     'xml.parsers':
-        PythonModule(deps='xml', modules='xml.parsers.expat'),
+        PythonModule(deps='xml'),
 
     'xml.parsers.expat':
         PythonModule(deps=('xml.parsers', 'pyexpat')),
@@ -2299,9 +2176,7 @@ standard_library = {
     'xml.sax':
         PythonModule(
                 deps=('xml.sax', 'io', 'os', 'xml.sax._exceptions',
-                        'xml.sax.handler', 'xml.sax.xmlreader'),
-                modules=('xml.sax.handler', 'xml.sax.saxutils',
-                        'xml.sax.xmlreader')),
+                        'xml.sax.handler', 'xml.sax.xmlreader')),
 
     'xml.sax.handler':
         PythonModule(deps='xml.sax'),
@@ -2318,7 +2193,7 @@ standard_library = {
                         'xml.sax.saxutils')),
 
     'xmlrpc':
-        PythonModule(modules=('xmlrpc.client', 'xmlrpc.server')),
+        PythonModule(),
 
     'xmlrpc.client': (
         PythonModule(version=(3, 5),
@@ -2384,7 +2259,7 @@ standard_library = {
                         'zlib/uncompr.c', 'zlib/zutil.c'),
                 includepath='zlib'),
         ExtensionModule(min_version=(3, 7),
-                source='zlibmodule.c', xdep='zlib')),
+                source='zlibmodule.c', deps='zlib:zlib')),
 
     # These are internal modules.
 
@@ -2675,8 +2550,7 @@ standard_library = {
         PythonModule(min_version=(3, 7), internal=True, deps='asyncio')),
 
     'asyncio.unix_events': (
-        PythonModule(max_version=(3, 6),
-                internal=True, target='!win',
+        PythonModule(max_version=(3, 6), target='!win', internal=True,
                 deps=('asyncio', 'asyncio.base_events',
                         'asyncio.base_subprocess', 'asyncio.compat',
                         'asyncio.constants', 'asyncio.coroutines',
@@ -2685,7 +2559,7 @@ standard_library = {
                         'errno', 'fcntl', 'os', 'selectors', 'signal',
                         'socket', 'stat', 'subprocess', 'threading',
                         'warnings')),
-        PythonModule(min_version=(3, 7), internal=True, target='!win',
+        PythonModule(min_version=(3, 7), target='!win', internal=True,
                 deps=('asyncio', 'asyncio.base_events',
                         'asyncio.base_subprocess', 'asyncio.constants',
                         'asyncio.coroutines', 'asyncio.events',
@@ -2695,8 +2569,7 @@ standard_library = {
                         'stat', 'subprocess', 'threading', 'warnings'))),
 
     'asyncio.windows_events': (
-        PythonModule(max_version=(3, 6), target='win',
-                internal=True,
+        PythonModule(max_version=(3, 6), target='win', internal=True,
                 deps=('asyncio', 'asyncio.events', 'asyncio.base_subprocess',
                         'asyncio.coroutines', 'asyncio.futures', 'asyncio.log',
                         'asyncio.proactor_events', 'asyncio.selector_events',
@@ -2720,10 +2593,10 @@ standard_library = {
                         'time', 'weakref', '_winapi'))),
 
     'asyncio.windows_utils': (
-        PythonModule(max_version=(3, 6), internal=True, target='win',
+        PythonModule(max_version=(3, 6), target='win', internal=True,
                 deps=('asyncio', 'itertools', 'msvcrt', 'os', 'socket',
                         'subprocess', 'tempfile', 'warnings', '_winapi')),
-        PythonModule(min_version=(3, 7), internal=True, target='win',
+        PythonModule(min_version=(3, 7), target='win', internal=True,
                 deps=('asyncio', 'itertools', 'msvcrt', 'os', 'subprocess',
                         'tempfile', 'warnings', '_winapi'))),
 
@@ -2743,8 +2616,8 @@ standard_library = {
         PythonModule(internal=True, deps='_locale'),
 
     '_bz2':
-        ExtensionModule(internal=True, source='_bz2module.c', xdep='bzip2',
-                pyd='_bz2.pyd'),
+        ExtensionModule(internal=True, source='_bz2module.c',
+                deps='bzip2:bzip2', pyd='_bz2.pyd'),
 
     '_codecs':
         CoreExtensionModule(internal=True),
@@ -2807,14 +2680,13 @@ standard_library = {
                 source='_contextvarsmodule.c'),
 
     '_crypt':
-        ExtensionModule(internal=True, target='!win', source='_cryptmodule.c'),
+        ExtensionModule(target='!win', internal=True, source='_cryptmodule.c'),
 
     '_csv':
         ExtensionModule(internal=True, source='_csv.c'),
 
     '_ctypes':
-        ExtensionModule(internal=True,
-                target='linux|macos|win',
+        ExtensionModule(target='linux|macos|win', internal=True,
                 source=('_ctypes/_ctypes.c', '_ctypes/callbacks.c',
                         '_ctypes/callproc.c', '_ctypes/stgdict.c',
                         '_ctypes/cfield.c',
@@ -2839,37 +2711,34 @@ standard_library = {
                 pyd='_ctypes.pyd'),
 
     'ctypes._endian':
-        PythonModule(internal=True, target='linux|macos|win', deps='ctypes'),
+        PythonModule(target='linux|macos|win', internal=True, deps='ctypes'),
 
     'ctypes.macholib':
-        PythonModule(internal=True, target='macos', deps='ctypes',
-                modules=('ctypes.macholib.dyld', 'ctypes.macholib.dylib',
-                        'ctypes.macholib.framework')),
+        PythonModule(target='macos', internal=True, deps='ctypes'),
 
     'ctypes.macholib.dyld':
-        PythonModule(internal=True, target='macos',
+        PythonModule(target='macos', internal=True,
                 deps=('ctypes.macholib', 'ctypes.macholib.dylib',
                         'ctypes.macholib.framework', 'itertools', 'os')),
 
     'ctypes.macholib.dylib':
-        PythonModule(internal=True, target='macos',
+        PythonModule(target='macos', internal=True,
                 deps=('ctypes.macholib', 're')),
 
     'ctypes.macholib.framework':
-        PythonModule(internal=True, target='macos',
+        PythonModule(target='macos', internal=True,
                 deps=('ctypes.macholib', 're')),
 
     'curses.has_key':
-        PythonModule(internal=True, target='!win',
-                deps=('curses', '_curses')),
+        PythonModule(target='!win', internal=True, deps=('curses', '_curses')),
 
     '_curses':
-        ExtensionModule(internal=True, target='!win',
-                source='_cursesmodule.c', xdep='curses'),
+        ExtensionModule(target='!win', internal=True,
+                source='_cursesmodule.c', deps='curses:curses'),
 
     '_curses_panel':
-        ExtensionModule(internal=True, target='!win',
-                source='_curses_panel.c', xdep='panel'),
+        ExtensionModule(target='!win', internal=True,
+                source='_curses_panel.c', deps='curses:panel'),
 
     '_datetime': (
         ExtensionModule(max_version=(3, 5, 1), internal=True,
@@ -2879,7 +2748,7 @@ standard_library = {
 
     '_dbm':
         ExtensionModule(internal=True, source='_dbmmodule.c',
-                defines='HAVE_NDBM_H', xdep='ndbm'),
+                defines='HAVE_NDBM_H', deps='ndbm:ndbm'),
 
     'distutils.config':
         PythonModule(
@@ -2887,7 +2756,7 @@ standard_library = {
 
     '_distutils_findvs':
         ExtensionModule(min_version=(3, 6, 5), max_version=(3, 7, 1),
-                internal=True, target='win', source='../PC/_findvs.cpp',
+                target='win', internal=True, source='../PC/_findvs.cpp',
                 pyd='_distutils_findvs.pyd'),
 
     'distutils.msvc9compiler':
@@ -2974,21 +2843,22 @@ standard_library = {
 
     '_findvs':
         ExtensionModule(min_version=(3, 6, 3), max_version=(3, 6, 4),
-                internal=True, target='win', source='../PC/_findvs.cpp',
+                target='win', internal=True, source='../PC/_findvs.cpp',
                 pyd='_findvs.pyd'),
 
     '_functools':
         CoreExtensionModule(internal=True),
 
     '_gdbm':
-        ExtensionModule(internal=True, source='_gdbmmodule.c', xdep='gdbm'),
+        ExtensionModule(internal=True, source='_gdbmmodule.c',
+                deps='gdbm:gdbm'),
 
     'genericpath':
         PythonModule(internal=True, deps=('os', 'stat')),
 
     '_hashlib':
-        ExtensionModule(internal=True, source='_hashopenssl.c', xdep='OpenSSL',
-                pyd='_hashlib.pyd'),
+        ExtensionModule(internal=True, source='_hashopenssl.c',
+                deps='OpenSSL:openssl', pyd='_hashlib.pyd'),
 
     '_heapq':
         ExtensionModule(internal=True, source='_heapqmodule.c'),
@@ -3025,8 +2895,8 @@ standard_library = {
         ExtensionModule(internal=True, source=('_lsprof.c', 'rotatingtree.c')),
 
     '_lzma':
-        ExtensionModule(internal=True, source='_lzmamodule.c', xdep='LZMA',
-                pyd='_lzma.pyd'),
+        ExtensionModule(internal=True, source='_lzmamodule.c',
+                deps='LZMA:lzma', pyd='_lzma.pyd'),
 
     '_markupbase':
         PythonModule(internal=True, deps='re'),
@@ -3035,7 +2905,7 @@ standard_library = {
         ExtensionModule(internal=True, source='md5module.c')),
 
     '_msi':
-        ExtensionModule(internal=True, target='win', source='../PC/_msi.c',
+        ExtensionModule(target='win', internal=True, source='../PC/_msi.c',
                 libs=('-lfci', '-lmsi', '-lrpcrt4'), pyd='_msi.pyd'),
 
     '_multibytecodec':
@@ -3148,11 +3018,11 @@ standard_library = {
                         'os'))),
 
     'multiprocessing.popen_spawn_win32': (
-        PythonModule(version=(3, 5), internal=True, target='win',
+        PythonModule(version=(3, 5), target='win', internal=True,
                 deps=('multiprocessing', 'msvcrt', 'multiprocessing.context',
                         'multiprocessing.reduction', 'multiprocessing.spawn',
                         'multiprocessing.util', 'os', 'signal', '_winapi')),
-        PythonModule(min_version=(3, 6), internal=True, target='win',
+        PythonModule(min_version=(3, 6), target='win', internal=True,
                 deps=('multiprocessing', 'msvcrt', 'multiprocessing.context',
                         'multiprocessing.spawn', 'multiprocessing.util', 'os',
                         'signal', '_winapi'))),
@@ -3242,7 +3112,7 @@ standard_library = {
                         'tempfile', 'threading', 'traceback', 'weakref')),
 
     'nt':
-        CoreExtensionModule(internal=True, target='win'),
+        CoreExtensionModule(target='win', internal=True),
 
     'ntpath': (
         PythonModule(max_version=(3, 6), internal=True,
@@ -3252,7 +3122,7 @@ standard_library = {
                 deps=('genericpath', 'win#nt', 'os', 'stat', 'string'))),
 
     'nturl2path':
-        PythonModule(internal=True, target='win',
+        PythonModule(target='win', internal=True,
                 deps=('string', 'urllib.parse')),
 
     'opcode':
@@ -3265,11 +3135,11 @@ standard_library = {
         CoreExtensionModule(internal=True),
 
     '_overlapped':
-        ExtensionModule(internal=True, target='win', source='overlapped.c'),
+        ExtensionModule(target='win', internal=True, source='overlapped.c'),
 
     '_osx_support':
-        PythonModule(internal=True, deps=('contextlib', 'os', 're'),
-                target='ios|macos'),
+        PythonModule(target='ios|macos', internal=True,
+                deps=('contextlib', 'os', 're')),
 
     '_pickle':
         ExtensionModule(internal=True, source='_pickle.c'),
@@ -3280,7 +3150,7 @@ standard_library = {
                         'warnings')),
 
     '_posixsubprocess':
-        ExtensionModule(internal=True, target='!win',
+        ExtensionModule(target='!win', internal=True,
                 source='_posixsubprocess.c'),
 
     '_pydecimal': (
@@ -3308,7 +3178,7 @@ standard_library = {
         ExtensionModule(internal=True, source='_randommodule.c'),
 
     '_scproxy':
-        ExtensionModule(internal=True, target='macos', source='_scproxy.c'),
+        ExtensionModule(target='macos', internal=True, source='_scproxy.c'),
 
     '_sha1':
         ExtensionModule(internal=True, source='sha1module.c'),
@@ -3339,8 +3209,8 @@ standard_library = {
                         '_sqlite/util.c'),
                 defines=('MODULE_NAME=\\\\\\"sqlite3\\\\\\"',
                         'SQLITE_OMIT_LOAD_EXTENSION'),
-                includepath='_sqlite', xdep='SQLite', pyd='_sqlite3.pyd',
-                dlls='sqlite3.dll'),
+                includepath='_sqlite', deps='SQLite:sqlite3',
+                pyd='_sqlite3.pyd', dlls='sqlite3.dll'),
 
     'sqlite3.dbapi2':
         PythonModule(internal=True,
@@ -3361,7 +3231,7 @@ standard_library = {
         PythonModule(internal=True, deps=('sre_constants', 'warnings')),
 
     '_ssl':
-        ExtensionModule(internal=True, source='_ssl.c', xdep='OpenSSL',
+        ExtensionModule(internal=True, source='_ssl.c', deps='OpenSSL:openssl',
                 pyd='_ssl.pyd'),
 
     '_stat':
@@ -3388,19 +3258,19 @@ standard_library = {
         CoreExtensionModule(internal=True),
 
     '_sysconfigdata':
-        PythonModule(version=(3, 5), internal=True, target='!win'),
+        PythonModule(version=(3, 5), target='!win', internal=True),
 
     '_sysconfigdata_m_linux_android':
-        PythonModule(min_version=(3, 6), internal=True, target='android'),
+        PythonModule(min_version=(3, 6), target='android', internal=True),
 
     '_sysconfigdata_m_darwin_ios':
-        PythonModule(min_version=(3, 6), internal=True, target='ios'),
+        PythonModule(min_version=(3, 6), target='ios', internal=True),
 
     '_sysconfigdata_m_darwin_darwin':
-        PythonModule(min_version=(3, 6), internal=True, target='macos'),
+        PythonModule(min_version=(3, 6), target='macos', internal=True),
 
     '_sysconfigdata_m_linux_x86_64-linux-gnu':
-        PythonModule(min_version=(3, 6), internal=True, target='linux'),
+        PythonModule(min_version=(3, 6), target='linux', internal=True),
 
     '_tracemalloc':
         CoreExtensionModule(internal=True),
@@ -3408,7 +3278,7 @@ standard_library = {
     '_uuid':
         # Android doesn't implement uuid_t in uuid.h.  Linux (RHEL v7.2) and
         # Windows don't have uuid.h.
-        ExtensionModule(min_version=(3, 7), internal=True, target='ios|macos',
+        ExtensionModule(min_version=(3, 7), target='ios|macos', internal=True,
                 source='_uuidmodule.c'),
 
     '_warnings':
@@ -3421,7 +3291,7 @@ standard_library = {
         PythonModule(internal=True, deps='_weakref'),
 
     '_winapi':
-        ExtensionModule(internal=True, target='win', source='_winapi.c'),
+        ExtensionModule(target='win', internal=True, source='_winapi.c'),
 
     'xml.dom.domreg':
         PythonModule(internal=True, deps=('xml.dom', 'os')),
