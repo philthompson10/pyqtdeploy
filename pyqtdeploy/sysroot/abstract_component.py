@@ -566,10 +566,6 @@ class AbstractComponent(ABC):
         available.
         """
 
-        # Discard parts with missing external dependencies.
-        if part.xdep is not None and self.get_component(part.xdep, required=False) is None:
-            return False
-
         # Discard parts not applicable to the target architecture.
         if part.target != '' and not self._sysroot.target.is_targeted(part.target):
             return False

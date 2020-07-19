@@ -26,7 +26,7 @@
 
 import os
 
-from ... import Component, ComponentOption, VersionedPart
+from ... import Component, ComponentOption, ExtensionModule
 
 
 class PyQtWebEngineComponent(Component):
@@ -130,7 +130,7 @@ sip_module = PyQt5.sip
 
     @property
     def provides(self):
-        """ The dict of VersionedPart objects provided by the component. """
+        """ The dict of parts provided by the component. """
 
         widgets_deps = ('PyQt5.QtWebEngineCore', 'PyQt:PyQt5.QtNetwork',
                 'PyQt:PyQt5.QtPrintSupport', 'PyQt:PyQt5.QtWidgets')
@@ -140,14 +140,14 @@ sip_module = PyQt5.sip
 
         return {
             'PyQt5.QtWebEngine':
-                VersionedPart(deps='PyQt5.QtWebEngineCore',
+                ExtensionModule(deps='PyQt5.QtWebEngineCore',
                         libs='-lQtWebEngine', qmake_qt='webengine'),
             'PyQt5.QtWebEngineCore':
-                VersionedPart(
+                ExtensionModule(
                         deps=('PyQt:PyQt5.QtNetwork', 'PyQt:PyQt5.QtGui'),
                         libs='-lQtWebEngineCore', qmake_qt='webenginecore'),
             'PyQt5.QtWebEngineWidgets':
-                VersionedPart(deps=widgets_deps, libs='-lQtWebEngineWidgets',
+                ExtensionModule(deps=widgets_deps, libs='-lQtWebEngineWidgets',
                         qmake_cpp11=True, qmake_qt='webenginewidgets'),
         }
 

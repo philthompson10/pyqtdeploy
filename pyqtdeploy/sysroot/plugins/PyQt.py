@@ -26,120 +26,123 @@
 
 import os
 
-from ... import Component, ComponentOption, VersionedPart
+from ... import Component, ComponentOption, ExtensionModule, PythonModule
 
 
 # TODO: add uic
-# The VersionedPart objects for all parts that can be provided by the
-# component.
+# All the parts that can be provided by the component.
 _ALL_PARTS = {
-    'PyQt5': VersionedPart(),
+    'PyQt5': PythonModule(),
     'PyQt5.QAxContainer':
-        VersionedPart(target='win', deps='PyQt5.QtWidgets',
+        ExtensionModule(target='win', deps='PyQt5.QtWidgets',
                 libs='-lQAxContainer', qmake_qt='axcontainer'),
-    'PyQt5.Qt': VersionedPart(deps='PyQt5', libs='-lQt'),
+    'PyQt5.Qt': ExtensionModule(deps='PyQt5', libs='-lQt'),
     'PyQt5.QtAndroidExtras':
-        VersionedPart(target='android', deps='PyQt5.QtCore',
+        ExtensionModule(target='android', deps='PyQt5.QtCore',
                 libs='-lQtAndroidExtras', qmake_qt='androidextras'),
     'PyQt5.QtBluetooth':
-        VersionedPart(deps='PyQt5.QtCore', libs='-lQtBluetooth',
+        ExtensionModule(deps='PyQt5.QtCore', libs='-lQtBluetooth',
                 qmake_qt='bluetooth'),
     'PyQt5.QtCore':
-        VersionedPart(deps=('SIP:PyQt5.sip', 'PyQt5'), libs='-lQtCore'),
+        ExtensionModule(deps=('SIP:PyQt5.sip', 'PyQt5'), libs='-lQtCore'),
     'PyQt5.QtDBus':
-        VersionedPart(deps='PyQt5.QtCore', libs='-lQtDBus', qmake_qt='dbus'),
-    'PyQt5.QtGui': VersionedPart(deps='PyQt5.QtCore', libs='-lQtGui'),
+        ExtensionModule(deps='PyQt5.QtCore', libs='-lQtDBus', qmake_qt='dbus'),
+    'PyQt5.QtGui': ExtensionModule(deps='PyQt5.QtCore', libs='-lQtGui'),
     'PyQt5.QtHelp':
-        VersionedPart(deps='PyQt5.QtWidgets', libs='-lQtHelp',
+        ExtensionModule(deps='PyQt5.QtWidgets', libs='-lQtHelp',
                 qmake_qt='help'),
     'PyQt5.QtLocation':
-        VersionedPart(deps='PyQt5.QtPositioning', libs='-lQtLocation',
+        ExtensionModule(deps='PyQt5.QtPositioning', libs='-lQtLocation',
                 qmake_qt='location'),
     'PyQt5.QtMacExtras':
-        VersionedPart(target='ios|macos', deps='PyQt5.QtGui',
+        ExtensionModule(target='ios|macos', deps='PyQt5.QtGui',
                 libs='-lQtMacExtras', qmake_qt='macextras'),
     'PyQt5.QtMultimedia':
-        VersionedPart(deps=('PyQt5.QtGui', 'PyQt5.QtNetwork'),
+        ExtensionModule(deps=('PyQt5.QtGui', 'PyQt5.QtNetwork'),
                 libs='-lQtMultimedia', qmake_qt='multimedia'),
     'PyQt5.QtMultimediaWidgets':
-        VersionedPart(deps=('PyQt5.QtMultimedia', 'PyQt5.QtWidgets'),
+        ExtensionModule(deps=('PyQt5.QtMultimedia', 'PyQt5.QtWidgets'),
                 libs='-lQtMultimediaWidgets', qmake_qt='multimediawidgets'),
     'PyQt5.QtNetwork':
-        VersionedPart(deps='PyQt5.QtCore', libs='-lQtNetwork',
+        ExtensionModule(deps='PyQt5.QtCore', libs='-lQtNetwork',
                 qmake_qt='network'),
     'PyQt5.QtNetworkAuth':
-        VersionedPart(deps='PyQt5.QtNetwork', libs='-lQtNetworkAuth',
+        ExtensionModule(deps='PyQt5.QtNetwork', libs='-lQtNetworkAuth',
                 qmake_qt=('network', 'networkauth')),
     'PyQt5.QtNfc':
-        VersionedPart(deps='PyQt5.QtCore', libs='-lQtNfc', qmake_qt='nfc'),
+        ExtensionModule(deps='PyQt5.QtCore', libs='-lQtNfc', qmake_qt='nfc'),
     'PyQt5.QtOpenGL':
-        VersionedPart(deps='PyQt5.QtWidgets', libs='-lQtOpenGL',
+        ExtensionModule(deps='PyQt5.QtWidgets', libs='-lQtOpenGL',
                 qmake_qt='opengl'),
     'PyQt5.QtPositioning':
-        VersionedPart(deps='PyQt5.QtCore', libs='-lQtPositioning',
+        ExtensionModule(deps='PyQt5.QtCore', libs='-lQtPositioning',
                 qmake_qt='positioning'),
     'PyQt5.QtPrintSupport':
-        VersionedPart(deps='PyQt5.QtWidgets', libs='-lQtPrintSupport',
+        ExtensionModule(deps='PyQt5.QtWidgets', libs='-lQtPrintSupport',
                 qmake_qt='printsupport'),
     'PyQt5.QtQml':
-        VersionedPart(deps='PyQt5.QtNetwork', libs='-lQtQml', qmake_qt='qml'),
+        ExtensionModule(deps='PyQt5.QtNetwork', libs='-lQtQml',
+                qmake_qt='qml'),
     'PyQt5.QtQuick':
-        VersionedPart(deps=('PyQt5.QtGui', 'PyQt5.QtQml'), libs='-lQtQuick',
+        ExtensionModule(deps=('PyQt5.QtGui', 'PyQt5.QtQml'), libs='-lQtQuick',
                 qmake_qt='quick'),
     'PyQt5.QtQuick3D':
-        VersionedPart(min_version=(5, 15),
+        ExtensionModule(min_version=(5, 15),
                 deps=('PyQt5.QtGui', 'PyQt5.QtQml'), libs='-lQtQuick3D',
                 qmake_qt='quick3d'),
     'PyQt5.QtQuickWidgets':
-        VersionedPart(deps=('PyQt5.QtQuick', 'PyQt5.QtWidgets'),
+        ExtensionModule(deps=('PyQt5.QtQuick', 'PyQt5.QtWidgets'),
                 libs='-lQtQuickWidgets', qmake_qt='quickwidgets'),
     'PyQt5.QtRemoteObjects':
-        VersionedPart(deps='PyQt5.QtCore', libs='-lQtRemoteObjects',
+        ExtensionModule(deps='PyQt5.QtCore', libs='-lQtRemoteObjects',
                 qmake_qt='remoteobjects'),
     'PyQt5.QtSensors':
-        VersionedPart(deps='PyQt5.QtCore', libs='-lQtSensors',
+        ExtensionModule(deps='PyQt5.QtCore', libs='-lQtSensors',
                 qmake_qt='sensors'),
     'PyQt5.QtSerialPort':
-        VersionedPart(deps='PyQt5.QtCore', libs='-lQtSerialPort',
+        ExtensionModule(deps='PyQt5.QtCore', libs='-lQtSerialPort',
                 qmake_qt='serialport'),
     'PyQt5.QtSql':
-        VersionedPart(deps='PyQt5.QtWidgets', libs='-lQtSql', qmake_qt='sql'),
+        ExtensionModule(deps='PyQt5.QtWidgets', libs='-lQtSql',
+                qmake_qt='sql'),
     'PyQt5.QtSvg':
-        VersionedPart(deps='PyQt5.QtWidgets', libs='-lQtSvg', qmake_qt='svg'),
+        ExtensionModule(deps='PyQt5.QtWidgets', libs='-lQtSvg',
+                qmake_qt='svg'),
     'PyQt5.QtTest':
-        VersionedPart(deps='PyQt5.QtWidgets', libs='-lQtTest',
+        ExtensionModule(deps='PyQt5.QtWidgets', libs='-lQtTest',
                 qmake_qt='testlib'),
     'PyQt5.QtTextToSpeech':
-        VersionedPart(min_version=(5, 15, 1), deps='PyQt5.QtCore',
+        ExtensionModule(min_version=(5, 15, 1), deps='PyQt5.QtCore',
                 libs='-lQtTextToSpeech', qmake_qt='texttospeech'),
     'PyQt5.QtWebChannel':
-        VersionedPart(deps='PyQt5.QtCore', libs='-lQtWebChannel',
+        ExtensionModule(deps='PyQt5.QtCore', libs='-lQtWebChannel',
                 qmake_qt='webchannel'),
     'PyQt5.QtWebSockets':
-        VersionedPart(deps='PyQt5.QtNetwork', libs='-lQtWebSockets',
+        ExtensionModule(deps='PyQt5.QtNetwork', libs='-lQtWebSockets',
                 qmake_qt='websockets'),
     'PyQt5.QtWidgets':
-        VersionedPart(deps='PyQt5.QtGui', libs='-lQtWidgets',
+        ExtensionModule(deps='PyQt5.QtGui', libs='-lQtWidgets',
                 qmake_qt='widgets'),
     'PyQt5.QtWinExtras':
-        VersionedPart(target='win', deps='PyQt5.QtWidgets',
+        ExtensionModule(target='win', deps='PyQt5.QtWidgets',
                 libs='-lQtWinExtras', qmake_qt='winextras'),
     'PyQt5.QtX11Extras':
-        VersionedPart(target='linux', deps='PyQt5.QtCore',
+        ExtensionModule(target='linux', deps='PyQt5.QtCore',
                 libs='-lQtX11Extras', qmake_qt='x11extras'),
     'PyQt5.QtXml':
-        VersionedPart(deps='PyQt5.QtCore', libs='-lQtXml', qmake_qt='xml'),
+        ExtensionModule(deps='PyQt5.QtCore', libs='-lQtXml', qmake_qt='xml'),
     'PyQt5.QtXmlPatterns':
-        VersionedPart(deps='PyQt5.QtNetwork', libs='-lQtXmlPatterns',
+        ExtensionModule(deps='PyQt5.QtNetwork', libs='-lQtXmlPatterns',
                 qmake_qt='xmlpatterns'),
     'PyQt5._QOpenGLFunctions_2_0':
-        VersionedPart(deps='PyQt5.QtGui', libs='-l_QOpenGLFunctions_2_0'),
+        ExtensionModule(deps='PyQt5.QtGui', libs='-l_QOpenGLFunctions_2_0'),
     'PyQt5._QOpenGLFunctions_2_1':
-        VersionedPart(deps='PyQt5.QtGui', libs='-l_QOpenGLFunctions_2_1'),
+        ExtensionModule(deps='PyQt5.QtGui', libs='-l_QOpenGLFunctions_2_1'),
     'PyQt5._QOpenGLFunctions_4_1_Core':
-        VersionedPart(deps='PyQt5.QtGui', libs='-l_QOpenGLFunctions_4_1_Core'),
+        ExtensionModule(deps='PyQt5.QtGui',
+                libs='-l_QOpenGLFunctions_4_1_Core'),
     'PyQt5._QOpenGLFunctions_ES2':
-        VersionedPart(deps='PyQt5.QtGui', libs='-l_QOpenGLFunctions_ES2'),
+        ExtensionModule(deps='PyQt5.QtGui', libs='-l_QOpenGLFunctions_ES2'),
 }
 
 
@@ -266,7 +269,7 @@ pyqt_modules = {6}
 
     @property
     def provides(self):
-        """ The dict of VersionedPart objects provided by the component. """
+        """ The dict of parts provided by the component. """
 
         parts = {'PyQt5': _ALL_PARTS['PyQt5']}
 
