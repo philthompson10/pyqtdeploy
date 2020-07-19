@@ -24,7 +24,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from ..parts import Part
+from ..parts import DataFile, PythonModule
 
 
 class QrcPackage():
@@ -40,7 +40,7 @@ class QrcPackage():
 
     @property
     def parts(self):
-        """ Return the package as a dict of Part objects. """
+        """ Return the package as a dict of parts. """
 
         parts = {}
 
@@ -60,14 +60,13 @@ class QrcPackage():
                     self._add_part(child, node_name, parts)
             else:
                 if node_name.endswith('.py'):
-                    node_name = node_name[:-3]
-                    data_ext = None
+                    key = node_name[:-3]
+                    part = PythonModule()
                 else:
-                    name_parts = node.name.split('.', maxsplit=1)
-                    node_name = parent_name + '.' + name_parts[0]
-                    data_ext = '.' + name_parts[1] if len(name_parts) == 2 else ''
+                    key = parent_name + '.' + node.name.split('.', maxsplit=1)[0]
+                    part = DataFile(node_name)
 
-                parts[node_name] = Part(data_ext=data_ext)
+                parts[key] = part
 
 
 class QrcFile():

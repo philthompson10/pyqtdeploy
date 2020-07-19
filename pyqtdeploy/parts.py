@@ -31,7 +31,7 @@ class Part:
     """ Encapsulate the meta-data for a part. """
 
     def __init__(self, min_version=None, version=None, max_version=None,
-            target='', internal=False, deps=(), hidden_deps=(), core=False)
+            target='', internal=False, deps=(), hidden_deps=(), core=False):
         """ Initialise the part. """
 
         self._min_version = min_version

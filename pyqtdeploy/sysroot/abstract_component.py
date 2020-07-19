@@ -485,8 +485,8 @@ class AbstractComponent(ABC):
 
     @property
     def parts(self):
-        """ The map of Part instances, keyed by the name of the part, of the
-        parts provided by this version of the component.
+        """ The map of parts, keyed by the name of the part, provided by this
+        version of the component.
         """
 
         if self._parts is None:
@@ -518,9 +518,8 @@ class AbstractComponent(ABC):
         return self.get_component('Python').target_sitepackages_dir
 
     def _available_version(self, name, provides, openssl, result_cache):
-        """ Return the Part object for a part that is available for this
-        version and target and available components or None if it is not
-        available.
+        """ Return the part that is available for this version and target and
+        available components or None if it is not available.
         """
 
         # See if we have already determined if the part is available.
@@ -538,10 +537,8 @@ class AbstractComponent(ABC):
         if not isinstance(versions, tuple):
             versions = (versions, )
 
-        for versioned_part in versions:
-            if versioned_part.applies_to(self.version):
-                part = versioned_part.part
-
+        for part in versions:
+            if part.applies_to(self.version):
                 # Circular dependencies are valid (and presumably dealt with in
                 # the part implementation) so we assume the part will be
                 # available (to prevent recursive calls) and update the result
@@ -561,9 +558,8 @@ class AbstractComponent(ABC):
         return part
 
     def _is_available(self, part, provides, openssl, result_cache):
-        """ Return True if a Part object for a part is available for this
-        version and target and available components or None if it is not
-        available.
+        """ Return True if a part is available for this version and target and
+        available components or None if it is not available.
         """
 
         # Discard parts not applicable to the target architecture.
