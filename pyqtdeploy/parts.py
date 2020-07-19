@@ -30,23 +30,26 @@ from .version_number import VersionNumber
 class Part:
     """ Encapsulate the meta-data for a part. """
 
-    def __init__(self, internal=False, target='', deps=(), hidden_deps=(),
-            core=False, builtin=False, defines=None, xdep=None, modules=None,
-            source=None, libs=None, includepath=None, pyd=None, dlls=None,
-            data_ext=None, qmake_config=None, qmake_cpp11=False,
-            qmake_qt=None):
-        """ Initialise the object. """
+    def __init__(self, min_version=None, version=None, max_version=None,
+            target='', internal=False, deps=(), hidden_deps=(), core=False)
+        """ Initialise the part. """
+
+        self._min_version = min_version
+        self._max_version = max_version
+        self._version = version
 
         # The component that provides the part.
         self.component = None
 
-        # Set if the part is internal.
-        self.internal = internal
-
         # The target platform(s) of the part.
         self.target = target
 
-        # The sequence of parts that this one is dependent on.
+        # Set if the part is internal, ie. not part of a public API exposed to
+        # an application being deployed.
+        self.internal = internal
+
+        # The sequence of the names of parts that this one is dependent on.  A
+        # name is of the form '[component:]name'.
         self.deps = (deps, ) if isinstance(deps, str) else deps
 
         # The sequence of additional parts that this one is dependent on.
@@ -57,79 +60,13 @@ class Part:
         # stuff.
         self.hidden_deps = (hidden_deps, ) if isinstance(hidden_deps, str) else hidden_deps
 
-        # Set if the part is always compiled in to the interpreter library
+        # Set if the part is already compiled in to the interpreter library
         # (if it is an extension module) or if it is required (if it is a
         # Python module).
         self.core = core
 
-        # Set if the part is a core Python module that is embedded as a
-        # builtin.
-        self.builtin = builtin
-
-        # The sequence of (possibly scoped) DEFINES to add to the .pro file.
-        self.defines = (defines, ) if isinstance(defines, str) else defines
-
-        # The name of a required external component.
-        self.xdep = xdep
-
-        # The sequence of modules or sub-packages if this is a package,
-        # otherwise None.
-        # TODO: is this still used?
-        self.modules = (modules, ) if isinstance(modules, str) else modules
-
-        # The sequence of (possibly scoped) source files.
-        self.source = (source, ) if isinstance(source, str) else source
-
-        # The sequence of (possibly scoped) LIBS to add to the .pro file.
-        self.libs = (libs, ) if isinstance(libs, str) else libs
-
-        # The sequence of (possibly scoped) directories directory to add to
-        # INCLUDEPATH.
-        self.includepath = (includepath, ) if isinstance(includepath, str) else includepath
-
-        # The name of the extension module if it is implemented as a .pyd file
-        # included in the Windows installer from python.org.
-        self.pyd = pyd
-
-        # The sequence of additional DLLs needed by the extension module and
-        # included in the Windows installer from python.org.
-        self.dlls = (dlls, ) if isinstance(dlls, str) else dlls
-
-        # The file extension if the part is actually a data file.  Note that
-        # None and '' have different meanings.
-        self.data_ext = data_ext
-
-        # The sequence of strings to add the qmake's CONFIG variable.
-        self.qmake_config = (qmake_config, ) if isinstance(qmake_config, str) else qmake_config
-
-        # Set if C++11 compiler support is needed.
-        self.qmake_cpp11 = qmake_cpp11
-
-        # The sequence of strings to add the qmake's QT variable.
-        self.qmake_qt = (qmake_qt, ) if isinstance(qmake_qt, str) else qmake_qt
-
-
-class VersionedPart:
-    """ Encapsulate the meta-data common to all types of part. """
-
-    def __init__(self, min_version=None, version=None, max_version=None,
-            internal=False, target='', deps=(), hidden_deps=(), core=False,
-            builtin=False, defines=None, xdep=None, modules=None, source=None,
-            libs=None, includepath=None, pyd=None, dlls=None, data_ext=None,
-            qmake_config=None, qmake_cpp11=False, qmake_qt=None):
-        """ Initialise the object. """
-
-        self._min_version = min_version
-        self._max_version = max_version
-        self._version = version
-
-        self.part = Part(internal, target, deps, hidden_deps, core, builtin,
-                defines, xdep, modules, source, libs, includepath, pyd, dlls,
-                data_ext, qmake_config, qmake_cpp11, qmake_qt)
-
     def applies_to(self, version):
-        """ Returns True if the given version applies to this versioned part.
-        """
+        """ Returns True if the given version applies to this part. """
 
         if self._version is not None:
             return version == self._version
@@ -145,31 +82,103 @@ class VersionedPart:
         return True
 
 
-class ExtensionModule(VersionedPart):
-    """ Encapsulate the meta-data for a single extension module. """
+class DataFile(Part):
+    """ Encapsulate the meta-data for a part that is a data file. """
 
-    def __init__(self, source, libs=None, includepath=None, min_version=None,
-            version=None, max_version=None, internal=False, target='', deps=(),
-            hidden_deps=(), core=False, defines=None, xdep=None, pyd=None,
-            dlls=None):
-        """ Initialise the object. """
+    def __init__(self, name, min_version=None, version=None, max_version=None,
+            target=''):
+        """ Initialise the part. """
 
         super().__init__(min_version=min_version, version=version,
-                max_version=max_version, internal=internal, target=target,
-                deps=deps, hidden_deps=hidden_deps, core=core, defines=defines,
-                xdep=xdep, source=source, libs=libs, includepath=includepath,
-                pyd=pyd, dlls=dlls)
+                max_version=max_version, target='', internal=True)
+
+        # The name of the file.
+        self.name = name
 
 
-class PythonModule(VersionedPart):
-    """ Encapsulate the meta-data for a single Python module. """
+class CompiledPart(Part):
+    """ Encapsulate the meta-data for a part that is compiled. """
+
+    def __init__(self, min_version=None, version=None, max_version=None,
+            target='', internal=False, deps=(), hidden_deps=(), core=False,
+            defines=None, libs=None, includepath=None):
+        """ Initialise the part. """
+
+        super().__init__(min_version=min_version, version=version,
+                max_version=max_version, target=target, internal=internal,
+                deps=deps, hidden_deps=hidden_deps, core=core)
+
+        # The sequence of (possibly scoped) DEFINES to add to the .pro file.
+        self.defines = (defines, ) if isinstance(defines, str) else defines
+
+        # The sequence of (possibly scoped) LIBS to add to the .pro file.
+        self.libs = (libs, ) if isinstance(libs, str) else libs
+
+        # The sequence of (possibly scoped) directories directory to add to
+        # INCLUDEPATH.
+        self.includepath = (includepath, ) if isinstance(includepath, str) else includepath
+
+
+class ComponentLibrary(CompiledPart):
+    """ Encapsulate the meta-data for a component library. """
+
+    def __init__(self, min_version=None, version=None, max_version=None,
+            target='', defines=None, libs=None, includepath=None):
+        """ Initialise the part. """
+
+        super().__init__(min_version=min_version, version=version,
+                max_version=max_version, target=target, internal=True,
+                defines=defines, libs=libs, includepath=includepath)
+
+
+class ExtensionModule(CompiledPart):
+    """ Encapsulate the meta-data for an extension module. """
 
     def __init__(self, min_version=None, version=None, max_version=None,
             internal=False, target='', deps=(), hidden_deps=(), core=False,
-            builtin=False, modules=None):
-        """ Initialise the object. """
+            defines=None, libs=None, includepath=None, source=None,
+            qmake_config=None, qmake_cpp11=False, qmake_qt=None, pyd=None,
+            dlls=None):
+        """ Initialise the part. """
 
         super().__init__(min_version=min_version, version=version,
-                max_version=max_version, internal=internal, target=target,
-                deps=deps, hidden_deps=hidden_deps, core=core, builtin=builtin,
-                modules=modules)
+                max_version=max_version, target=target, internal=internal,
+                deps=deps, hidden_deps=hidden_deps, core=core, defines=defines,
+                libs=libs, includepath=includepath)
+
+        # The sequence of (possibly scoped) source files.
+        self.source = (source, ) if isinstance(source, str) else source
+
+        # The sequence of strings to add the qmake's CONFIG variable.
+        self.qmake_config = (qmake_config, ) if isinstance(qmake_config, str) else qmake_config
+
+        # Set if C++11 compiler support is needed.
+        self.qmake_cpp11 = qmake_cpp11
+
+        # The sequence of strings to add the qmake's QT variable.
+        self.qmake_qt = (qmake_qt, ) if isinstance(qmake_qt, str) else qmake_qt
+
+        # The name of the extension module if it is implemented as a .pyd file
+        # included in the Windows installer from python.org.
+        self.pyd = pyd
+
+        # The sequence of additional DLLs needed by the extension module and
+        # included in the Windows installer from python.org.
+        self.dlls = (dlls, ) if isinstance(dlls, str) else dlls
+
+
+class PythonModule(Part):
+    """ Encapsulate the meta-data for a single Python module. """
+
+    def __init__(self, min_version=None, version=None, max_version=None,
+            target='', internal=False, deps=(), hidden_deps=(), core=False,
+            builtin=False):
+        """ Initialise the part. """
+
+        super().__init__(min_version=min_version, version=version,
+                max_version=max_version, target=target, internal=internal,
+                deps=deps, hidden_deps=hidden_deps, core=core)
+
+        # Set if the part is a core Python module that is already embedded as a
+        # builtin.
+        self.builtin = builtin

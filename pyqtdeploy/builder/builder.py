@@ -65,8 +65,6 @@ class Builder:
 
         # TODO: What about when using an existing Python installation for the
         # target?
-        # TODO: Handle the linking of components that don't provide any Python
-        # or extension parts.
         project = self._project
 
         # Verify the sysroot.

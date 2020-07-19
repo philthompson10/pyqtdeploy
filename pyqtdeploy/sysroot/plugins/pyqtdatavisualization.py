@@ -26,7 +26,7 @@
 
 import os
 
-from ... import Component, ComponentOption, VersionedPart
+from ... import Component, ComponentOption, ExtensionModule
 
 
 class PyQtDataVisualizationComponent(Component):
@@ -39,10 +39,10 @@ class PyQtDataVisualizationComponent(Component):
     # this one.
     preinstalls = ['Python', 'PyQt', 'Qt', 'SIP']
 
-    # The dict of VersionedPart objects provided by the component.
+    # The dict of parts provided by the component.
     provides = {
         'PyQt5.QtDataVisualization':
-            VersionedPart(deps='PyQt:PyQt5.QtGui',
+            ExtensionModule(deps='PyQt:PyQt5.QtGui',
                     libs='-lQtDataVisualization', qmake_qt='datavisualization')
     }
 

@@ -26,7 +26,7 @@
 
 import os
 
-from ... import AbstractSIPComponent, ComponentOption, VersionedPart
+from ... import AbstractSIPComponent, ComponentOption, ExtensionModule
 
 
 class SIPComponent(AbstractSIPComponent):
@@ -85,7 +85,7 @@ class SIPComponent(AbstractSIPComponent):
 
     @property
     def provides(self):
-        """ The dict of VersionedPart objects provided by the component. """
+        """ The dict of parts provided by the component. """
 
         lib_dir = self.get_component('Python').target_sitepackages_dir
 
@@ -96,7 +96,7 @@ class SIPComponent(AbstractSIPComponent):
         # Note that there is no dependency on the containing package because we
         # don't know the name of the component that provides it.
         return {
-            self.module_name: VersionedPart(
+            self.module_name: ExtensionModule(
                     deps=('Python:atexit', 'Python:enum', 'Python:gc'),
                     libs=('-L' + lib_dir, '-lsip'))
         }

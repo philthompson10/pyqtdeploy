@@ -26,7 +26,7 @@
 
 import os
 
-from ... import Component, ComponentOption, VersionedPart
+from ... import Component, ComponentOption, ExtensionModule
 
 
 class PyQt3DComponent(Component):
@@ -39,29 +39,29 @@ class PyQt3DComponent(Component):
     # this one.
     preinstalls = ['Python', 'PyQt', 'Qt', 'SIP']
 
-    # The dict of VersionedPart objects provided by the component.
+    # The dict of parts provided by the component.
     provides = {
         'PyQt5.Qt3DAnimation':
-            VersionedPart(
+            ExtensionModule(
                     deps=('PyQt5.Qt3DCore', 'PyQt5.Qt3DRender',
                             'PyQt:PyQt5.QtCore'),
                     libs='-lQt3DAnimation', qmake_qt='3danimation'),
         'PyQt5.Qt3DCore':
-            VersionedPart(deps='PyQt:PyQt5.QtGui', libs='-lQt3DCore',
+            ExtensionModule(deps='PyQt:PyQt5.QtGui', libs='-lQt3DCore',
                     qmake_qt='3dcore'),
         'PyQt5.Qt3DExtras':
-            VersionedPart(
+            ExtensionModule(
                     deps=('PyQt5.Qt3DCore', 'PyQt5.Qt3DInput',
                             'PyQt5.Qt3DRender', 'PyQt:PyQt5.QtGui'),
                     libs='-lQt3DExtras', qmake_qt='3dextras'),
         'PyQt5.Qt3DInput':
-            VersionedPart(deps=('PyQt5.Qt3DCore', 'PyQt:PyQt5.QtGui'),
+            ExtensionModule(deps=('PyQt5.Qt3DCore', 'PyQt:PyQt5.QtGui'),
                     libs='-lQt3DInput', qmake_qt='3dinput'),
         'PyQt5.Qt3DLogic':
-            VersionedPart(deps='PyQt5.Qt3DCore', libs='-lQt3DLogic',
+            ExtensionModule(deps='PyQt5.Qt3DCore', libs='-lQt3DLogic',
                     qmake_qt='3dlogic'),
         'PyQt5.Qt3DRender':
-            VersionedPart(deps=('PyQt5.Qt3DCore', 'PyQt:PyQt5.QtGui'),
+            ExtensionModule(deps=('PyQt5.Qt3DCore', 'PyQt:PyQt5.QtGui'),
                     libs='-lQt3DRender', qmake_qt='3drender'),
     }
 

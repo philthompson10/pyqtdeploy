@@ -26,7 +26,7 @@
 
 import os
 
-from ... import Component, ComponentOption
+from ... import Component, ComponentLibrary, ComponentOption
 
 
 class zlibComponent(Component):
@@ -116,6 +116,12 @@ class zlibComponent(Component):
 
             if self.target_platform_name == 'ios':
                 del os.environ['CFLAGS']
+
+    @property
+    def provides(self):
+        """ The dict of parts provided by the component. """
+
+        return {'zlib': ComponentLibrary(libs='-lz')}
 
     def verify(self):
         """ Verify the component. """

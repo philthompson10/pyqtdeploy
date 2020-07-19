@@ -35,6 +35,6 @@ from .version import PYQTDEPLOY_RELEASE
 
 
 # These are for component plugins.
-from .parts import ExtensionModule, PythonModule, VersionedPart
+from .parts import ComponentLibrary, DataFile, ExtensionModule, PythonModule
 from .sysroot import (AbstractComponent, AbstractPythonComponent,
         AbstractQtComponent, AbstractSIPComponent, Component, ComponentOption)

@@ -28,7 +28,7 @@ import glob
 import os
 import shutil
 
-from ... import Component, ComponentOption
+from ... import Component, ComponentLibrary, ComponentOption
 
 
 # OpenSSL currently has 3 relevent 'releases': v1.0.2, v1.1.0 and v1.1.1.
@@ -92,6 +92,13 @@ class OpenSSLComponent(Component):
             self._install_1_1(common_options)
         else:
             self._install_1_0_2(common_options)
+
+    @property
+    def provides(self):
+        """ The dict of parts provided by the component. """
+
+        # TODO: library names on Windows.
+        return {'openssl': ComponentLibrary(libs=('-lcrypto', '-lssl'))}
 
     def sdk_configure(self, platform_name):
         """ Perform any platform-specific SDK configuration. """
