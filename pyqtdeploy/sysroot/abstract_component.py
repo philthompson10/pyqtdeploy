@@ -25,8 +25,11 @@
 
 
 from abc import ABC, abstractmethod
+import copy
 import os
 import shutil
+
+from ..parts import CompiledPart, ExtensionModule
 
 from .component_option import ComponentOption
 
@@ -491,19 +494,24 @@ class AbstractComponent(ABC):
 
         if self._parts is None:
             self._parts = {}
-            provides = self.provides
+
             openssl = self.get_component('OpenSSL', required=False)
-            result_cache = {}
 
-            for name in provides:
-                part = self._available_version(name, provides, openssl,
-                        result_cache)
-
+            # Get the provided version and target-specific parts.
+            provides = {}
+            for name, versions in self.provides.items():
+                part = self._normalised_part(versions)
                 if part is not None:
-                    # This saves the plugin having to set it.
-                    part.component = self
+                    provides[self._get_scoped_name(name)] = part
 
-                    self._parts[name] = part
+            # For each provided part remember the part or None if any of its
+            # dependencies are unavailable.
+            for name, part in provides.items():
+                self._add_part(name, part, openssl, provides)
+
+            # Remove all unavailable parts.
+            self._parts = {n: p for n, p in self._parts.items()
+                    if p is not None}
 
         return self._parts
 
@@ -517,87 +525,141 @@ class AbstractComponent(ABC):
         # site-packages directory.
         return self.get_component('Python').target_sitepackages_dir
 
-    def _available_version(self, name, provides, openssl, result_cache):
-        """ Return the part that is available for this version and target and
-        available components or None if it is not available.
+    def _add_part(self, name, part, openssl, provides):
+        """ Add a part if all its dependencies are available. """
+
+        # Handle the trivial case.
+        if name in self._parts:
+            return
+
+        # Save the part now (to handle recursion) assuming all its dependencies
+        # will be met.
+        self._parts[name] = part
+
+        # Check the dependencies.
+        for dep_name in part.deps:
+            component_name, part_name = dep_name.split(':', maxsplit=1)
+
+            if part_name.startswith('?'):
+                # The dependency is optional so its availability has no impact.
+                continue
+            elif part_name.startswith('!'):
+                # This is only provided if OpenSSL is not available.
+                if openssl is not None:
+                    continue
+
+                part_name = part_name[1:]
+
+            # See if it is an inter-component dependency.
+            if self.name == component_name:
+                dep_part = provides.get(dep_name)
+                if dep_part is None:
+                    part = None
+                    break
+
+                self._add_part(dep_name, dep_part, openssl, provides)
+            else:
+                component = self.get_component(component_name, required=False)
+
+                if component is None or dep_name not in component.parts:
+                    part = None
+                    break
+
+        # Update the part's entry now we know its availability.
+        self._parts[name] = part
+
+    def _get_scoped_name(self, unscoped_name):
+        """ Return a part name with the component scope applied. """
+
+        return self.name + ':' + unscoped_name
+
+    def _normalised_deps(self, deps):
+        """ Ensure a sequence of dependent parts is scoped by the providing
+        component name and eliminate any dependencies not for the current
+        target.
         """
 
-        # See if we have already determined if the part is available.
-        try:
-            return result_cache[name]
-        except KeyError:
-            pass
+        scoped_deps = []
 
-        # Try each version of the part.
-        try:
-            versions = provides[name]
-        except KeyError:
-            self.error("'{0}' is not provided by this component.".format(name))
+        for dep in deps:
+            if ':' in dep:
+                component_name, dep = dep.split(':', maxsplit=1)
+            else:
+                component_name = self.name
+
+            # Discard anything not for the current target.
+            dep = self._targeted_value(dep)
+            if dep is not None:
+                scoped_deps.append(component_name + ':' + dep)
+
+        return scoped_deps
+
+    def _normalised_part(self, versions):
+        """ Return a normalised part from a sequence of version-specific parts.
+        All target-specific values are resolved.
+        """
 
         if not isinstance(versions, tuple):
             versions = (versions, )
 
+        # Go through each version of the part.
         for part in versions:
             if part.applies_to(self.version):
-                # Circular dependencies are valid (and presumably dealt with in
-                # the part implementation) so we assume the part will be
-                # available (to prevent recursive calls) and update the result
-                # afterwards.
-                result_cache[name] = part
-
-                if not self._is_available(part, provides, openssl, result_cache):
+                # Discard parts for other targets.
+                if part.target != '' and not self._sysroot.target.is_targeted(part.target):
                     part = None
+                    break
+
+                # Don't modify the original part.
+                part = copy.deepcopy(part)
+
+                # Provide a link back to the component.
+                part.component = self
+
+                # Normalise the dependencies.
+                part.deps = self._normalised_deps(part.deps)
+                part.hidden_deps = self._normalised_deps(part.hidden_deps)
+
+                # Resolve all target-specific values.
+                if isinstance(part, CompiledPart):
+                    part.defines = self._normalised_values(part.defines)
+                    part.includepath = self._normalised_values(
+                            part.includepath)
+                    part.libs = self._normalised_values(part.libs)
+
+                if isinstance(part, ExtensionModule):
+                    part.source = self._normalised_values(part.source)
 
                 break
         else:
             part = None
 
-        # Cache the result.
-        result_cache[name] = part
-
         return part
 
-    def _is_available(self, part, provides, openssl, result_cache):
-        """ Return True if a part is available for this version and target and
-        available components or None if it is not available.
+    def _normalised_values(self, values):
+        """ Return a list of values that have target-specific elements
+        resolved.
         """
 
-        # Discard parts not applicable to the target architecture.
-        if part.target != '' and not self._sysroot.target.is_targeted(part.target):
-            return False
+        resolved_values = []
 
-        # Check any dependencies.
-        for dep in part.deps:
-            if dep.startswith('?'):
-                # The dependency is optional so its availability has no impact.
-                continue
-            elif dep.startswith('!'):
-                # This is only provided if OpenSSL is not available.
-                if openssl is not None:
-                    continue
+        if values is not None:
+            for value in values:
+                value = self._targeted_value(value)
+                if value is not None:
+                    resolved_values.append(value)
 
-                dep = dep[1:]
+        return resolved_values if resolved_values else None
 
-            # Ignore it if it isn't a dependency for this target.
-            if '#' in dep:
-                target, dep = dep.split('#', maxsplit=1)
+    def _targeted_value(self, value):
+        """ Return a value if appropriate for the current target or None if
+        not.
+        """
 
-                if not self._sysroot.target.is_targeted(target):
-                    continue
+        if '#' in value:
+            target, value = value.split('#', maxsplit=1)
 
-            # See if it is an inter-component dependency.
-            if ':' in dep:
-                component_name, dep = dep.split(':', maxsplit=1)
-                component = self.get_component(component_name, required=False)
-                if component is None:
-                    return False
+            if not self._sysroot.target.is_targeted(target):
+                return None
 
-                dep_part = component.parts.get(dep)
-            else:
-                dep_part = self._available_version(dep, provides, openssl,
-                        result_cache)
-
-            if dep_part is None:
-                return False
-
-        return True
+        return value

@@ -32,6 +32,7 @@ import shutil
 import tempfile
 
 from ..file_utilities import create_file, open_file
+from ..parts import ComponentLibrary, DataFile, ExtensionModule, PythonModule
 from ..project import Project
 from ..platforms import Architecture, Platform
 from ..sysroot import Sysroot
@@ -81,6 +82,8 @@ class Builder:
         # Get all the parts provided by the sysroot.
         available_parts = {}
         for component in self._sysroot.components:
+            if component.name == 'PyQt':
+                print(component.parts)
             available_parts.update(component.parts)
 
         # Get the required parts.
@@ -88,7 +91,7 @@ class Builder:
 
         # Always include the core Python modules.
         for part_name, part in python.parts.items():
-            if self._is_python_module(part) and part.core:
+            if isinstance(part, PythonModule) and part.core:
                 parts[part_name] = part
 
         for part_name in project.standard_library:
@@ -189,43 +192,31 @@ class Builder:
             self._add_project_part(parent_name, parts, available_parts)
 
         # Ignore parts that aren't provided by the sysroot (we assume the
-        # application will handle that) or that are built in.
+        # application will handle that).
         part = available_parts.get(part_name)
-        if part is None or part.builtin:
+        if part is None:
             return
 
         parts[part_name] = part
 
         # Now handle the dependencies.
         for dep in part.deps:
-            # Remove any meta-characters.
-            if dep[0] in '?!':
-                dep = dep[1:]
-
-            if '#' in dep:
-                dep = dep.split('#', maxsplit=1)[1]
-
             self._add_project_part(dep, parts, available_parts)
 
         for dep in part.hidden_deps:
             self._add_project_part(dep, parts, available_parts)
 
-    def _add_scoped_values(self, used_values, values, part,
-            is_filename=True):
-        """ Parse a sequence of possiblly scoped values and add them to a set
-        of used values.  The values are optionally treated as filenames where
-        they are converted to absolute filenames with UNIX separators.
+    def _add_values(self, used_values, values, part, is_filename=True):
+        """ Parse a sequence of values and add them to a set of used values.
+        The values are optionally treated as filenames where they are converted
+        to absolute filenames with UNIX separators.
         """
 
         # Handle the trivial case.
         if values is None:
             return
 
-        for scoped_value in values:
-            value = self._get_scoped_value(scoped_value)
-            if value is None:
-                continue
-
+        for value in values:
             # Convert potential filenames.
             if is_filename:
                 value = part.component.get_target_src_path(value)
@@ -293,22 +284,6 @@ class Builder:
                 os.path.join(build_dir, 'frozen_' + name + '.h'),
                 bootstrap_path, 'pyqtdeploy_' + name, as_c=True)
 
-    def _get_scoped_value(self, scoped_value):
-        """ Return the value from a (possibly) scoped value or None if the
-        value isn't valid for the target.
-        """
-
-        parts = scoped_value.split('#', maxsplit=1)
-        if len(parts) == 2:
-            scope, value = parts
-
-            if not self._target.is_targeted(scope):
-                value = None
-        else:
-            value = scoped_value
-
-        return value
-
     def _generate_resources(self, parts, job_writer, nr_resources):
         """ Generate the application resource files and return the names of
         the files relatve to the build directory.
@@ -360,14 +335,6 @@ class Builder:
         """
 
         return os.path.join(os.path.dirname(__file__), 'lib', name)
-
-    @staticmethod
-    def _is_python_module(part):
-        """ Return True if a part is a Python module rather than an extension
-        module.
-        """
-
-        return part.source is None and part.libs is None and part.qmake_config is None and part.qmake_qt is None
 
     def _run_freeze(self, python, job_filename, opt):
         """ Run the accumlated freeze jobs. """
@@ -496,8 +463,7 @@ int main(int argc, char **argv)
             resources_contents, job_writer):
         """ Write a Python module as a resource. """
 
-        # Discard extension modules.
-        if not self._is_python_module(part):
+        if not isinstance(part, (DataFile, PythonModule)):
             return
 
         # If the part root directory isn't specified then get it from the
@@ -508,10 +474,12 @@ int main(int argc, char **argv)
         # Determine the full path of the file and whether or not it needs
         # freezing.
         src_name = name.replace('.', os.sep)
-        src_path = os.path.join(part_root_dir, src_name)
 
-        if part.data_ext is None:
-            if os.path.isdir(src_path):
+        if isinstance(part, PythonModule):
+            if part.builtin:
+                return
+
+            if os.path.isdir(os.path.join(part_root_dir, src_name)):
                 src_name = os.path.join(src_name, '__init__')
 
             dst_name = src_name + '.pyo'
@@ -526,10 +494,10 @@ int main(int argc, char **argv)
 
             freeze = True
         else:
-            src_name += part.data_ext
-            src_path += part.data_ext
-
-            dst_name = src_name
+            src_path = os.path.join(
+                    os.path.dirname(os.path.join(part_root_dir, src_name)),
+                    part.name)
+            dst_name = part.name
 
             freeze = False
 
@@ -587,31 +555,35 @@ int main(int argc, char **argv)
         used_libs.add('-l' + python.target_py_lib)
 
         for part_name, part in parts.items():
-            # Ignore Python modules and core extension modules.
-            if self._is_python_module(part) or part.core:
+            # Ignore core parts.
+            if part.core:
                 continue
 
-            used_inittab.add(part_name)
+            if isinstance(part, ExtensionModule):
+                used_inittab.add(part_name)
 
-            if part.pyd is not None and target_platform == 'win':
-                used_dlls.add(part)
+                self._add_values(used_sources, part.source, part)
 
-            if part.qmake_config is not None:
-                qmake_config.update(part.qmake_config)
+                if part.qmake_config is not None:
+                    qmake_config.update(part.qmake_config)
 
-            if part.qmake_cpp11:
-                qmake_cpp11 = True
+                if part.qmake_cpp11:
+                    qmake_cpp11 = True
 
-            if part.qmake_qt is not None:
-                qmake_qt.update(part.qmake_qt)
+                if part.qmake_qt is not None:
+                    qmake_qt.update(part.qmake_qt)
 
-            self._add_scoped_values(used_defines, part.defines, part,
+                if part.pyd is not None and target_platform == 'win':
+                    used_dlls.add(part)
+            elif isinstance(part, ComponentLibrary):
+                pass
+            else:
+                continue
+
+            self._add_values(used_defines, part.defines, part,
                     is_filename=False)
-            self._add_scoped_values(used_includepath, part.includepath,
-                    part)
-            self._add_scoped_values(used_libs, part.libs, part,
-                    is_filename=False)
-            self._add_scoped_values(used_sources, part.source, part)
+            self._add_values(used_libs, part.libs, part, is_filename=False)
+            self._add_values(used_includepath, part.includepath, part)
 
         # Generate QT.
         if qmake_qt:
@@ -838,13 +810,7 @@ exists($$PDY_DLL) {
         lib_dir = ''
         lib_so = []
 
-        for scoped_value in self._split_quotes(libs):
-            # We support the use of scoped values (to be consistent) but it
-            # actually makes no sense in this context.
-            value = self._get_scoped_value(scoped_value)
-            if value is None:
-                continue
-
+        for value in self._split_quotes(libs):
             if value.startswith('-L'):
                 lib_dir = project.path_from_user(value[2:])
             elif value.startswith('-l'):
