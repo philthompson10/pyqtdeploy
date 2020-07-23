@@ -186,7 +186,8 @@ class PackagesPage(QWidget):
         else:
             parent = (self._stdlib_edit if stdlib else self._others_edit)
 
-        return self._add_part(parent, part_name, part=part)
+        return self._add_part(parent, part_name.split(':', maxsplit=1)[1],
+                part=part)
 
     def _set_implicit(self, part_item):
         """ Set a part's state (and that of all it's parents) to be partially
@@ -218,8 +219,7 @@ class PackagesPage(QWidget):
 
             # We have a global pool of all parts so the component doesn't
             # matter.
-            if ':' in dep:
-                _, dep = dep.split(':', maxsplit=1)
+            dep = dep.split(':', maxsplit=1)[1]
 
             dep_part_item = self._part_items.get(dep)
             if dep_part_item is not None and dep_part_item.checkState(0) == Qt.Unchecked:
