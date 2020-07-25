@@ -50,11 +50,11 @@ setup(
         version=version,
         license='BSD',
         python_requires='>=3.5.0',
-        install_requires=['toml'],
+        install_requires=['PyQt5', 'toml'],
         packages=find_packages(),
         package_data={
             'pyqtdeploy.builder': ['lib/*.*', 'lib/*/*.*'],
-            'pyqtdeploy.sysroot.plugins.python': ['configurations/*.*',
+            'pyqtdeploy.sysroot.plugins.Python': ['configurations/*.*',
                     'configurations/*/*.*']
         },
         entry_points={
