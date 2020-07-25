@@ -4,20 +4,19 @@ displays various pieces of information about what is included in the
 application.
 
 The build-demo.py will first build a sysroot (using the specification in
-sysroot.json) and then build the application itself.
+sysroot.toml) and then build the application itself.
 
-The '--no-sysroot' option to build-demo.py will skip the creation of the
-sysroot so that you can update and re-build pyqt-demo.py without having to
-re-build sysroot each time.
+build-demo.py will not build a sysroot if it finds an existing one.  The
+'--build-sysroot' option to build-demo.py will rebuild the sysroot even if one
+already exists.
 
 By default build-demo.py will build a native application.  On macOS the
 '--target' option can be used to build applications for iOS and Android.  It
 should also be possible to build Android applications on Windows and Linux but
 this isn't tested.
 
-By default build-demo.py expects to find the source code for the different
-components (Python, OpenSSL, Qt, SIP, PyQt etc.) in the current directory.  The
-'--source-dir' option can be used any number of times to specify different
-directories.  For iOS and Android targets the Qt installations (installed using
-the binary installers from The Qt Company) must be specified using the
-'--installed-qt-dir' option.
+build-demo.py will download the source code for the different components
+(Python, OpenSSL, Qt, SIP, PyQt etc.) automatically.  However for iOS and
+Android targets Qt must be installed using the binary installers from The Qt
+Company.  The '--qmake' option must be used to specify the full path of the
+qmake executable in the Qt installation.
