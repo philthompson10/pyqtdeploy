@@ -103,10 +103,9 @@ class Project(QObject):
         self.application_script = ''
         self.application_entry_point = ''
         self.sys_path = ''
-        self.standard_library = []
-        self.other_packages = []
         self.sysroot_toml = ''
         self.sysroots_dir = ''
+        self.parts = []
         self.qmake_configuration = ''
 
     def path_to_user(self, path):
@@ -143,14 +142,14 @@ class Project(QObject):
             from .legacy import load_xml as loader
 
             # Save the file using the current format.
-            load_from = name.replace('.pdy', '.pdt')
+            save_as = name.replace('.pdy', '.pdt')
         else:
             loader = cls._load_toml
-            load_from = name
+            save_as = name
 
         # Create the project and load it.
-        project = cls(name)
-        loader(project, load_from)
+        project = cls(save_as)
+        loader(project, name)
         project.load_sysroot()
 
         return project
@@ -254,8 +253,7 @@ class Project(QObject):
 
         project.sysroot_toml = root.get('sysroot', '')
         project.sysroots_dir = root.get('sysroots_dir', '')
-        project.standard_library = cls._get_list(root, 'standard_library')
-        project.other_packages = cls._get_list(root, 'other_packages')
+        project.parts = cls._get_list(root, 'parts')
 
         # The application specific configuration.
         application = cls._get_dict(root, 'Application')
@@ -286,8 +284,7 @@ class Project(QObject):
             'version': self.version,
             'sysroot': self.sysroot_toml,
             'sysroots_dir': self.sysroots_dir,
-            'standard_library': self.standard_library,
-            'other_packages': self.other_packages
+            'parts': self.parts,
         }
 
         application = {

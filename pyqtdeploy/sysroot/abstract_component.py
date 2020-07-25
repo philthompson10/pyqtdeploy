@@ -29,7 +29,7 @@ import copy
 import os
 import shutil
 
-from ..parts import CompiledPart, ExtensionModule
+from ..parts import CompiledPart, ExtensionModule, Part
 
 from .component_option import ComponentOption
 
@@ -488,8 +488,8 @@ class AbstractComponent(ABC):
 
     @property
     def parts(self):
-        """ The map of parts, keyed by the name of the part, provided by this
-        version of the component.
+        """ The mapping of parts, keyed by the scoped name of the part,
+        provided by this version of the component.
         """
 
         if self._parts is None:
@@ -499,10 +499,10 @@ class AbstractComponent(ABC):
 
             # Get the provided version and target-specific parts.
             provides = {}
-            for name, versions in self.provides.items():
-                part = self._normalised_part(versions)
+            for unscoped_name, versions in self.provides.items():
+                part = self._normalised_part(unscoped_name, versions)
                 if part is not None:
-                    provides[self._get_scoped_name(name)] = part
+                    provides[part.name] = part
 
             # For each provided part remember the part or None if any of its
             # dependencies are unavailable.
@@ -538,7 +538,7 @@ class AbstractComponent(ABC):
 
         # Check the dependencies.
         for dep_name in part.deps:
-            component_name, part_name = dep_name.split(':', maxsplit=1)
+            component_name, part_name = Part.get_name_parts(dep_name)
 
             if part_name.startswith('?'):
                 # The dependency is optional so its availability has no impact.
@@ -568,11 +568,6 @@ class AbstractComponent(ABC):
         # Update the part's entry now we know its availability.
         self._parts[name] = part
 
-    def _get_scoped_name(self, unscoped_name):
-        """ Return a part name with the component scope applied. """
-
-        return self.name + ':' + unscoped_name
-
     def _normalised_deps(self, deps):
         """ Ensure a sequence of dependent parts is scoped by the providing
         component name and eliminate any dependencies not for the current
@@ -582,19 +577,19 @@ class AbstractComponent(ABC):
         scoped_deps = []
 
         for dep in deps:
-            if ':' in dep:
-                component_name, dep = dep.split(':', maxsplit=1)
+            if Part.is_scoped_name(dep):
+                component_name, dep = Part.get_name_parts(dep)
             else:
                 component_name = self.name
 
             # Discard anything not for the current target.
             dep = self._targeted_value(dep)
             if dep is not None:
-                scoped_deps.append(component_name + ':' + dep)
+                scoped_deps.append(Part.get_name(component_name, dep))
 
         return scoped_deps
 
-    def _normalised_part(self, versions):
+    def _normalised_part(self, unscoped_name, versions):
         """ Return a normalised part from a sequence of version-specific parts.
         All target-specific values are resolved.
         """
@@ -613,8 +608,8 @@ class AbstractComponent(ABC):
                 # Don't modify the original part.
                 part = copy.deepcopy(part)
 
-                # Provide a link back to the component.
-                part.component = self
+                # Save the scoped name of the part.
+                part.name = Part.get_name(self.name, unscoped_name)
 
                 # Normalise the dependencies.
                 part.deps = self._normalised_deps(part.deps)

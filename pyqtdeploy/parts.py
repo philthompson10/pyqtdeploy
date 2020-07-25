@@ -38,8 +38,8 @@ class Part:
         self._max_version = max_version
         self._version = version
 
-        # The component that provides the part.
-        self.component = None
+        # The scoped name of the part.
+        self.name = None
 
         # The target platform(s) of the part.
         self.target = target
@@ -80,6 +80,52 @@ class Part:
                 return False
 
         return True
+
+    @property
+    def component_name(self):
+        """ The name of the component that provides the part. """
+
+        return self.name.split(':', maxsplit=1)[0]
+
+    @classmethod
+    def get_component_name(cls, name):
+        """ Return the component name from a scoped part name. """
+
+        return cls.get_name_parts(name)[0]
+
+    @staticmethod
+    def get_name(component_name, unscoped_name):
+        """ Return the scoped part name from the component name and the
+        unscoped part name.
+        """
+
+        return component_name + ':' + unscoped_name
+
+    @staticmethod
+    def get_name_parts(name):
+        """ Return a 2-tuple of the component name and unscoped part name from
+        a scoped part name.
+        """
+
+        return name.split(':', maxsplit=1)
+
+    @classmethod
+    def get_unscoped_name(cls, name):
+        """ Return the unscoped part name from a scoped part name. """
+
+        return cls.get_name_parts(name)[1]
+
+    @staticmethod
+    def is_scoped_name(name):
+        """ Return True if a name is a scoped part name. """
+
+        return ':' in name
+
+    @property
+    def unscoped_name(self):
+        """ The unscoped name of the part. """
+
+        return self.get_unscoped_name(self.name)
 
 
 class DataFile(Part):
