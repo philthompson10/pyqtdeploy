@@ -102,23 +102,39 @@ def load_xml(project, file_path):
     else:
         project.application_package = QrcPackage()
 
-    # Any PyQt modules.
-    project.other_packages = []
-
-    for pyqt_m in root.iterfind('PyQtModule'):
-        name = pyqt_m.get('name', '')
-        _assert(name != '', "Missing or empty 'PyQtModule.name' attribute.")
-
-        project.other_packages.append('PyQt5.' + name)
-
     # Any standard library modules.
-    project.standard_library = []
+    project.parts = []
 
     for stdlib_module_element in root.iterfind('StdlibModule'):
         name = stdlib_module_element.get('name')
         _assert(name is not None, "Missing 'StdlibModule.name' attribute.")
 
-        project.standard_library.append(name)
+        project.parts.append('Python:' + name)
+
+    # Any PyQt modules.
+    for pyqt_m in root.iterfind('PyQtModule'):
+        name = pyqt_m.get('name', '')
+        _assert(name != '', "Missing or empty 'PyQtModule.name' attribute.")
+
+        component_map = {
+            'Qsci':                 'QScintilla',
+            'Qt3DAnimation':        'PyQt3D',
+            'Qt3DCore':             'PyQt3D',
+            'Qt3DExtras':           'PyQt3D',
+            'Qt3DInput':            'PyQt3D',
+            'Qt3DLogic':            'PyQt3D',
+            'Qt3DRender':           'PyQt3D',
+            'QtChart':              'PyQtChart',
+            'QtDataVisualization':  'PyQtDataVisualization',
+            'QtPurchasing':         'PyQtPurchasing',
+            'QtWebEngine':          'PyQtWebEngine',
+            'QtWebEngineCore':      'PyQtWebEngineCore',
+            'QtWebEngineWidgets':   'PyQtWebEngineWidgets',
+            'sip':                  'SIP',
+        }
+
+        project.parts.append(
+                '{}:PyQt5.{}'.format(component_map.get(name, 'PyQt'), name))
 
 
 def _assert(ok, detail):

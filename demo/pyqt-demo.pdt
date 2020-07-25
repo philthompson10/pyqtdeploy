@@ -1,8 +1,7 @@
 version = 0
 sysroot = ""
 sysroots_dir = ""
-standard_library = [ "ssl", "sysconfig", "zlib", "importlib.resources",]
-other_packages = [ "PyQt5.QtWidgets", "PyQt5.QtPurchasing", "PyQt5.QtDataVisualization", "PyQt5.Qsci", "PyQt5.QtChart", "PyQt5.Qt3DCore", "PyQt5.QtNetwork", "PyQt5.QtAndroidExtras", "PyQt5.QtX11Extras", "PyQt5.QtWinExtras", "PyQt5.QtMacExtras", "PyQt5.QtGui", "PyQt5.sip", "PyQt5.QtCore",]
+parts = [ "Python:ssl", "Python:sysconfig", "Python:zlib", "Python:importlib.resources", "PyQt:PyQt5.QtWidgets", "PyQtPurchasing:PyQt5.QtPurchasing", "PyQtDataVisualization:PyQt5.QtDataVisualization", "QScintilla:PyQt5.Qsci", "PyQtChart:PyQt5.QtChart", "PyQt3D:PyQt5.Qt3DCore", "PyQt:PyQt5.QtNetwork", "PyQt:PyQt5.QtAndroidExtras", "PyQt:PyQt5.QtX11Extras", "PyQt:PyQt5.QtWinExtras", "PyQt:PyQt5.QtMacExtras",]
 
 [Application]
 entry_point = ""

@@ -32,7 +32,8 @@ import shutil
 import tempfile
 
 from ..file_utilities import create_file, open_file
-from ..parts import ComponentLibrary, DataFile, ExtensionModule, PythonModule
+from ..parts import (ComponentLibrary, DataFile, ExtensionModule, Part,
+        PythonModule)
 from ..project import Project
 from ..platforms import Architecture, Platform
 from ..sysroot import Sysroot
@@ -82,8 +83,6 @@ class Builder:
         # Get all the parts provided by the sysroot.
         available_parts = {}
         for component in self._sysroot.components:
-            if component.name == 'PyQt':
-                print(component.parts)
             available_parts.update(component.parts)
 
         # Get the required parts.
@@ -94,10 +93,7 @@ class Builder:
             if isinstance(part, PythonModule) and part.core:
                 parts[part_name] = part
 
-        for part_name in project.standard_library:
-            self._add_project_part(part_name, parts, available_parts)
-
-        for part_name in project.other_packages:
+        for part_name in project.parts:
             self._add_project_part(part_name, parts, available_parts)
 
         # Determine the application name.
@@ -188,7 +184,19 @@ class Builder:
 
         # Make sure any parent parts exist.
         if '.' in part_name:
-            parent_name = '.'.join(part_name.split('.')[:-1])
+            # Find the scoped name of the parent part.
+            unscoped_name = Part.get_unscoped_name(part_name)
+            unscoped_parent_name = '.'.join(unscoped_name.split('.')[:-1])
+
+            for component in self._sysroot.components:
+                if unscoped_parent_name in component.parts:
+                    parent_name = Part.get_name(component.name,
+                            unscoped_parent_name)
+                    break
+            else:
+                # Ignore parts whose parent is not provided.
+                return
+
             self._add_project_part(parent_name, parts, available_parts)
 
         # Ignore parts that aren't provided by the sysroot (we assume the
@@ -216,12 +224,14 @@ class Builder:
         if values is None:
             return
 
+        component = self._sysroot.get_component(part.component_name)
+
         for value in values:
             # Convert potential filenames.
             if is_filename:
-                value = part.component.get_target_src_path(value)
+                value = component.get_target_src_path(value)
             elif value.startswith('-L'):
-                value = '-L' + part.component.get_target_src_path(value[2:])
+                value = '-L' + component.get_target_src_path(value[2:])
 
             used_values.add(value)
 
@@ -469,7 +479,8 @@ int main(int argc, char **argv)
         # If the part root directory isn't specified then get it from the
         # component.
         if part_root_dir is None:
-            part_root_dir = part.component.target_modules_dir
+            component = self._sysroot.get_component(part.component_name)
+            part_root_dir = component.target_modules_dir
 
         # Determine the full path of the file and whether or not it needs
         # freezing.
@@ -554,13 +565,13 @@ int main(int argc, char **argv)
         used_libs.add('-L' + self._sysroot.target_lib_dir)
         used_libs.add('-l' + python.target_py_lib)
 
-        for part_name, part in parts.items():
+        for part in parts.values():
             # Ignore core parts.
             if part.core:
                 continue
 
             if isinstance(part, ExtensionModule):
-                used_inittab.add(part_name)
+                used_inittab.add(part.unscoped_name)
 
                 self._add_values(used_sources, part.source, part)
 

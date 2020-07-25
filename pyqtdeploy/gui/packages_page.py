@@ -29,6 +29,7 @@ from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (QSizePolicy, QSplitter, QTreeWidget,
         QTreeWidgetItem, QTreeWidgetItemIterator, QVBoxLayout, QWidget)
 
+from ..parts import Part
 from ..platforms import Architecture
 from ..sysroot import Sysroot
 
@@ -54,8 +55,19 @@ class PackagesPage(QWidget):
         # Create the page's GUI.
         layout = QVBoxLayout()
 
-        self._stdlib_edit = StdlibEditor(self)
-        self._others_edit = OthersEditor(self)
+        self._stdlib_edit = PartsEditor(self, "Standard Library",
+                "This shows the packages and modules in the target Python "
+                "version's standard library. Check those packages and modules "
+                "that are explicitly imported by the application. A module "
+                "will be partially checked (and automatically included) if "
+                "another module requires it.")
+
+        self._others_edit = PartsEditor(self, "Other Packages",
+                "This shows the packages and modules that are "
+                "available in the sysroot. Check those packages and modules "
+                "that are explicitly imported by the application. A module "
+                "will be partially checked (and automatically included) if "
+                "another module requires it.")
 
         splitter = QSplitter()
         splitter.setSizePolicy(
@@ -130,28 +142,30 @@ class PackagesPage(QWidget):
     def _add_part(self, parent, part_name, part=None):
         """ Make sure a part appears in the dict of all parts. """
 
+        unscoped_part_name = Part.get_unscoped_name(part_name)
+
         try:
-            part_item = self._part_items[part_name]
+            part_item = self._part_items[unscoped_part_name]
 
             # Update the part if it is currently just a place holder.
             if part_item.part is None:
                 part_item.part = part
         except KeyError:
-            part_item = PartItem(parent, part_name, part)
-            self._part_items[part_name] = part_item
+            part_item = PartItem(parent, part)
+            self._part_items[unscoped_part_name] = part_item
 
         return part_item
 
-    def _add_project_part(self, part_name, stdlib, checked=True):
+    def _add_project_part(self, part_name, checked=True):
         """ Make sure a part is in the dict of all parts. """
 
         # Make sure any parent part items exist.
         if '.' in part_name:
             parent_name = '.'.join(part_name.split('.')[:-1])
-            parent = self._add_project_part(parent_name, stdlib,
-                    checked=False)
+            parent = self._add_project_part(parent_name, checked=False)
             parent.setExpanded(True)
         else:
+            stdlib = Part.get_component_name(part_name) == 'Python'
             parent = (self._stdlib_edit if stdlib else self._others_edit)
 
         part_item = self._add_part(parent, part_name)
@@ -186,8 +200,7 @@ class PackagesPage(QWidget):
         else:
             parent = (self._stdlib_edit if stdlib else self._others_edit)
 
-        return self._add_part(parent, part_name.split(':', maxsplit=1)[1],
-                part=part)
+        return self._add_part(parent, part_name, part=part)
 
     def _set_implicit(self, part_item):
         """ Set a part's state (and that of all it's parents) to be partially
@@ -209,19 +222,8 @@ class PackagesPage(QWidget):
             return
 
         for dep in part_item.part.deps:
-            if dep.startswith('?'):
-                dep = dep[1:]
-            elif dep.startswith('!'):
-                if self._has_openssl:
-                    continue
-
-                dep = dep[1:]
-
-            # We have a global pool of all parts so the component doesn't
-            # matter.
-            dep = dep.split(':', maxsplit=1)[1]
-
-            dep_part_item = self._part_items.get(dep)
+            unscoped_dep = Part.get_unscoped_name(dep)
+            dep_part_item = self._part_items.get(unscoped_dep)
             if dep_part_item is not None and dep_part_item.checkState(0) == Qt.Unchecked:
                 self._set_implicit(dep_part_item)
                 self._set_implicit_deps(dep_part_item)
@@ -274,11 +276,8 @@ class PackagesPage(QWidget):
 
         # Ensure that any parts explicitly used by the project have an item
         # even if they are not provided by the sysroot.
-        for part_name in project.standard_library:
-            self._add_project_part(part_name, stdlib=True)
-
-        for part_name in project.other_packages:
-            self._add_project_part(part_name, stdlib=False)
+        for part_name in project.parts:
+            self._add_project_part(part_name)
 
         # Set the availability of each part.
         for part_item in self._part_items.values():
@@ -296,8 +295,7 @@ class PackagesPage(QWidget):
 
 
 class PartsEditor(QTreeWidget):
-    """ An editor for selecting a number of interdependent parts and
-    packages.
+    """ An editor for selecting a number of interdependent parts and packages.
     """
 
     def __init__(self, page, title, whats_this):
@@ -306,75 +304,25 @@ class PartsEditor(QTreeWidget):
         super().__init__(whatsThis=whats_this,
                 itemChanged=self._part_changed)
 
-        self.page = page
+        self._page = page
 
         self.setHeaderLabels([title])
 
     def _part_changed(self, itm, col):
         """ Invoked when a part changes. """
 
-        page = self.page
-
-        part_name = itm.part_name
+        page = self._page
+        project = page.project
+        parts = project.parts
 
         if itm.checkState(col) == Qt.Checked:
-            self.add_part_name(part_name)
+            parts.append(itm.part.name)
         else:
-            self.remove_part_name(part_name)
+            parts.remove(itm.part.name)
 
         page.update_dependencies()
 
-        page.project.modified = True
-
-
-class OthersEditor(PartsEditor):
-    """ An editor for selecting a number of other parts specified in the
-    sysroot.
-    """
-
-    def __init__(self, page):
-        """ Initialise the editor. """
-
-        super().__init__(page, "Other Packages",
-                "This shows the packages and modules that are "
-                "available in the sysroot. Check those packages and modules "
-                "that are explicitly imported by the application. A module "
-                "will be partially checked (and automatically included) if "
-                "another module requires it.")
-
-    def add_part_name(self, part_name):
-        """ Add the name of an external part to the project. """
-
-        self.page.project.other_packages.append(part_name)
-
-    def remove_part_name(self, part_name):
-        """ Remove the name of an external part from the project. """
-
-        self.page.project.other_packages.remove(part_name)
-
-
-class StdlibEditor(PartsEditor):
-    """ An editor for selecting a number of standard library parts. """
-
-    def __init__(self, page):
-        """ Initialise the editor. """
-
-        super().__init__(page, "Standard Library",
-                "This shows the packages and modules in the target Python "
-                "version's standard library. Check those packages and modules "
-                "that are explicitly imported by the application. A module "
-                "will be partially checked (and automatically included) if "
-                "another module requires it.")
-
-    def add_part_name(self, part_name):
-        """ Add the name of a standard library part to the project. """
-
-        self.page.project.standard_library.append(part_name)
-
-    def remove_part_name(self, part_name):
-        """ Remove the name of a standard library part from the project. """
-
-        self.page.project.standard_library.remove(part_name)
+        project.modified = True
 
 
 class PartItem(QTreeWidgetItem):
@@ -386,16 +334,15 @@ class PartItem(QTreeWidgetItem):
     # The colour to use for parts that are only available for some targets.
     _SOME_TARGETS = QColor('#f08000')
 
-    def __init__(self, parent, part_name, part):
+    def __init__(self, parent, part):
         """ Initialise the item. """
 
-        super().__init__(parent, part_name.split('.')[-1:])
+        super().__init__(parent, part.unscoped_name.split('.')[-1:])
 
         self.setFlags(Qt.ItemIsEnabled|Qt.ItemIsUserCheckable)
         self.setCheckState(0, Qt.Unchecked)
 
         self.part = part
-        self.part_name = part_name
         self.target_count = 0
 
     def set_availability(self):
