@@ -219,6 +219,9 @@ class QtComponent(AbstractQtComponent):
 
         # Android-specific checks.
         if self.target_platform_name == 'android':
+            if self.android_api < 21:
+                self.error("Android API level 21 or greater is required")
+
             if self.android_sdk_version < (26, 1, 1):
                 self.warning(
                         "versions of the SDK earlier than v26.1.1 are untested")
