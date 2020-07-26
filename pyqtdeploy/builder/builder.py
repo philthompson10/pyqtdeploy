@@ -214,9 +214,10 @@ class Builder:
             unscoped_parent_name = '.'.join(unscoped_name.split('.')[:-1])
 
             for component in self._sysroot.components:
-                if unscoped_parent_name in component.parts:
-                    parent_name = Part.get_name(component.name,
-                            unscoped_parent_name)
+                parent_name = Part.get_name(component.name,
+                        unscoped_parent_name)
+
+                if parent_name in component.parts:
                     break
             else:
                 # Ignore parts whose parent is not provided.
@@ -500,6 +501,10 @@ int main(int argc, char **argv)
 
         if not isinstance(part, (DataFile, PythonModule)):
             return
+
+        # Remove any scope from the name.
+        if Part.is_scoped_name(name):
+            name = Part.get_unscoped_name(name)
 
         # If the part root directory isn't specified then get it from the
         # component.
