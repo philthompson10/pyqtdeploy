@@ -169,12 +169,17 @@ class ComponentLibrary(CompiledPart):
     """ Encapsulate the meta-data for a component library. """
 
     def __init__(self, min_version=None, version=None, max_version=None,
-            target='', defines=None, libs=None, includepath=None):
+            target='', defines=None, libs=None, includepath=None,
+            bundle_shared_libs=False):
         """ Initialise the part. """
 
         super().__init__(min_version=min_version, version=version,
                 max_version=max_version, target=target, internal=True,
                 defines=defines, libs=libs, includepath=includepath)
+
+        # True if the libs are shared and need to be bundled with the
+        # application.  Currently this is only applicable to Android targets.
+        self.bundle_shared_libs = bundle_shared_libs
 
 
 class ExtensionModule(CompiledPart):

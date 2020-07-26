@@ -175,6 +175,31 @@ class Builder:
 
         self._run_freeze(python, job_filename, opt)
 
+    def _add_bundled_shared_libs(self, libs, bundled_shared_libs):
+        """ Add the shared library files to be bundled with the application.
+        """
+
+        project = self._project
+
+        lib_dir = self._sysroot.target_lib_dir
+        lib_so = []
+
+        for value in libs:
+            if value.startswith('-L'):
+                lib_dir = project.path_from_user(value[2:])
+            elif value.startswith('-l'):
+                lib_so.append('lib' + value[2:] + '.so')
+
+        if lib_dir != '':
+            for lib in lib_so:
+                lib_path = os.path.join(lib_dir, lib)
+
+                if not os.path.isfile(lib_path):
+                    raise UserException(
+                            "Bundled shared library '{0}' does not exist.".format(lib_path))
+
+                bundled_shared_libs.add(lib_path)
+
     def _add_project_part(self, part_name, parts, available_parts):
         """ Make sure a part is in the dict of all parts. """
 
@@ -549,6 +574,7 @@ int main(int argc, char **argv)
         f.write('\n')
 
         # Accumulate all the values of all the qmake variables.
+        bundled_shared_libs = set()
         qmake_cpp11 = False
         qmake_config = set()
         qmake_qt = set()
@@ -587,7 +613,9 @@ int main(int argc, char **argv)
                 if part.pyd is not None and target_platform == 'win':
                     used_dlls.add(part)
             elif isinstance(part, ComponentLibrary):
-                pass
+                if part.bundle_shared_libs:
+                    self._add_bundled_shared_libs(part.libs,
+                            bundled_shared_libs)
             else:
                 continue
 
@@ -618,39 +646,6 @@ int main(int argc, char **argv)
 
         if qmake_config:
             f.write('CONFIG += %s\n' % ' '.join(qmake_config))
-
-        ## Handle any required external libraries.
-        #android_extra_libs = []
-
-        #external_libs = project.external_libraries.get(target_platform, ())
-
-        #for required_lib in required_libraries:
-        #    # Skip any external libraries that are not for the current target.
-        #    required_lib = self._get_scoped_value(required_lib)
-        #    if required_lib is None:
-        #        continue
-
-        #    defines = includepath = libs = ''
-
-        #    for xlib in external_libs:
-        #        if xlib.name == required_lib:
-        #            defines = xlib.defines
-        #            includepath = xlib.includepath
-        #            libs = xlib.libs
-        #            break
-        #    else:
-        #        # Use the defaults.
-        #        for xlib in external_libraries_metadata:
-        #            if xlib.name == required_lib:
-        #                if target_platform not in project.python_use_platform:
-        #                    defines = xlib.defines
-        #                    includepath = xlib.includepath
-        #                    libs = xlib.get_libs(target_platform)
-
-        #                break
-
-        #    if target_platform == 'android':
-        #        self._add_android_extra_libs(libs, android_extra_libs)
 
         # Python v3.6.0 requires C99 at least.  Note that specifying 'c++11' in
         # 'CONFIG' doesn't affect 'CFLAGS'.
@@ -707,10 +702,12 @@ int main(int argc, char **argv)
             f.write('\n')
             self._write_used_values(f, used_libs, 'LIBS')
 
-        ## Add the library files to be added to an Android APK.
-        #if android_extra_libs and target_platform == 'android':
-        #    f.write('\n')
-        #    f.write('ANDROID_EXTRA_LIBS += %s\n' % ' '.join(android_extra_libs))
+        # Add the library files to be added to an Android APK.
+        if bundled_shared_libs and target_platform == 'android':
+            f.write('\n')
+            f.write(
+                    'ANDROID_EXTRA_LIBS += %s\n' % ' '.join(
+                            bundled_shared_libs))
 
         ## If we are using the platform Python on Windows then copy in the
         ## required DLLs if they can be found.
@@ -719,6 +716,7 @@ int main(int argc, char **argv)
 
         # Add the project independent post-configuration stuff.
         with open_file(self._get_lib_path('post_configuration.pro')) as pro_f:
+            f.write('\n')
             f.write(pro_f.read())
 
         # Add any application specific stuff.
@@ -812,48 +810,3 @@ exists($$PDY_DLL) {
     }
 }
 ''' % (py_lib_dir, py_major, py_minor, name))
-
-    def _add_android_extra_libs(self, libs, android_extra_libs):
-        """ Add the shared library files for Android. """
-
-        project = self._project
-
-        lib_dir = ''
-        lib_so = []
-
-        for value in self._split_quotes(libs):
-            if value.startswith('-L'):
-                lib_dir = project.path_from_user(value[2:])
-            elif value.startswith('-l'):
-                lib_so.append('lib' + value[2:] + '.so')
-
-        if lib_dir != '':
-            for lib in lib_so:
-                android_extra_libs.append(lib_dir + '/' + lib)
-
-    @staticmethod
-    def _split_quotes(s):
-        """ A generator for a splitting a string allowing for quoted spaces.
-        """
-
-        s = s.lstrip()
-
-        while s != '':
-            quote_stack = []
-            i = 0
-
-            for ch in s:
-                if ch in '\'"':
-                    if len(quote_stack) == 0 or quote_stack[-1] != ch:
-                        quote_stack.append(ch)
-                    else:
-                        quote_stack.pop()
-                elif ch == ' ':
-                    if len(quote_stack) == 0:
-                        break
-
-                i += 1
-
-            yield s[:i]
-
-            s = s[i:].lstrip()

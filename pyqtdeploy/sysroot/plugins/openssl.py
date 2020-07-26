@@ -97,8 +97,14 @@ class OpenSSLComponent(Component):
     def provides(self):
         """ The dict of parts provided by the component. """
 
+        bundle_shared_libs = self.target_platform_name == 'android'
+
         # TODO: library names on Windows.
-        return {'openssl': ComponentLibrary(libs=('-lcrypto', '-lssl'))}
+        return {
+            'openssl':
+                ComponentLibrary(libs=('-lcrypto', '-lssl'),
+                        bundle_shared_libs=bundle_shared_libs)
+        }
 
     def sdk_configure(self, platform_name):
         """ Perform any platform-specific SDK configuration. """
