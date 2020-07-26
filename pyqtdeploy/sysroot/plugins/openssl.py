@@ -240,6 +240,10 @@ class OpenSSLComponent(Component):
         with open('Makefile') as f:
             mf = f.read()
 
+        # For v1.1.1.
+        mf = mf.replace('.$(SHLIB_VERSION_NUMBER)', '')
+
+        # For v1.1.0.
         mf = mf.replace('.$(SHLIB_MAJOR).$(SHLIB_MINOR)', '')
 
         if using_clang:
