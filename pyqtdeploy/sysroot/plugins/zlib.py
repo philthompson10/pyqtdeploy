@@ -86,22 +86,20 @@ class zlibComponent(Component):
             os.environ['CROSS_PREFIX'] = self.android_toolchain_prefix
             os.environ['CC'] = self.android_toolchain_cc
 
-            cflags = self.android_toolchain_cflags
-
             # It isn't clear why this is needed, possibly a clang bug.
-            if self.target_arch_name == 'android-32' and self.android_ndk_version >= 16:
-                cflags.append('-fPIC')
-
-            os.environ['CFLAGS'] = ' '.join(cflags)
+            if self.target_arch_name == 'android-32':
+                os.environ['CFLAGS'] = '-fPIC'
 
             self.run('./configure', '--static', '--prefix=' + self.sysroot_dir)
             self.run(self.host_make,
                     'AR=' + self.android_toolchain_prefix + 'ar cqs',
                     'install')
 
+            if self.target_arch_name == 'android-32':
+                del os.environ['CFLAGS']
+
             del os.environ['CROSS_PREFIX']
             del os.environ['CC']
-            del os.environ['CFLAGS']
             os.environ['PATH'] = original_path
 
         else:

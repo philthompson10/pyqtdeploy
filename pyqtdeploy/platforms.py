@@ -302,24 +302,16 @@ class AndroidArchitecture(Architecture):
         android_host = '{}-x86_64'.format(
                 'darwin' if sys.platform == 'darwin' else 'linux')
 
-        # We use clang for r16 and later.
-        # TODO: remove android_toolchain_cflags
-        cflags = []
-
-        if self.platform.android_ndk_version >= 16:
-            self.android_toolchain_cc = '{}{}-clang'.format(self.clang_prefix,
-                    android_api)
-            toolchain_dir = 'llvm'
-
-        self.android_toolchain_cflags = cflags
-
         # Check the toolchain bin directory.
         self.android_toolchain_bin = os.path.join(ndk_root, 'toolchains',
-                toolchain_dir, 'prebuilt', android_host, 'bin')
+                'llvm', 'prebuilt', android_host, 'bin')
 
         self.platform.android_check_exists(self.android_toolchain_bin)
 
         # Check the compiler.
+        self.android_toolchain_cc = '{}{}-clang'.format(self.clang_prefix,
+                android_api)
+
         self.platform.android_check_exists(
                 os.path.join(self.android_toolchain_bin,
                         self.android_toolchain_cc))
