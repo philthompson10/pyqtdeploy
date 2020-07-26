@@ -455,7 +455,7 @@ class AbstractComponent(ABC):
 
         return self._sysroot.apple_sdk
 
-    def ensure_installed(self, all_components):
+    def ensure_installed(self, build_dir, all_components):
         """ Ensure the component is installed. """
 
         if self._install_status == self._IS_NOT_INSTALLED:
@@ -467,9 +467,10 @@ class AbstractComponent(ABC):
                 for preinstall in self.preinstalls:
                     component = self.get_component(preinstall, required=False)
                     if component is not None:
-                        component.ensure_installed(all_components)
+                        component.ensure_installed(build_dir, all_components)
 
             self.progress("Installing component...")
+            os.chdir(build_dir)
             self.install()
 
             self._install_status = self._IS_INSTALLED

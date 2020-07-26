@@ -163,8 +163,7 @@ class Sysroot:
         self.building_for_target = True
 
         for component in components:
-            os.chdir(build_dir)
-            component.ensure_installed(all_components)
+            component.ensure_installed(build_dir, all_components)
 
         # Remove the build directory if requested.
         os.chdir(cwd)
