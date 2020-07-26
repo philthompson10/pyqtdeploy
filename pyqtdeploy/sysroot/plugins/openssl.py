@@ -244,6 +244,11 @@ class OpenSSLComponent(Component):
 
             os.symlink(versioned, link)
 
+        # Install the header files.
+        headers_dir = os.path.join(self.target_include_dir, 'openssl')
+        shutil.rmtree(headers_dir, ignore_errors=True)
+        shutil.copytree(os.path.join('include', 'openssl'), headers_dir)
+
         # Restore the environment.
         os.environ['PATH'] = original_path
 
