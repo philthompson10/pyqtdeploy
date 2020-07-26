@@ -467,7 +467,7 @@ class AbstractComponent(ABC):
                 for preinstall in self.preinstalls:
                     component = self.get_component(preinstall, required=False)
                     if component is not None:
-                        component.ensure_installed()
+                        component.ensure_installed(all_components)
 
             self.progress("Installing component...")
             self.install()
