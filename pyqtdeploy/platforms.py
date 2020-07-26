@@ -314,7 +314,7 @@ class AndroidArchitecture(Architecture):
         # We use clang for r16 and later.
         cflags = []
 
-        if self.platform.android_ndk_version >= (16, 0):
+        if self.platform.android_ndk_version >= 16:
             self.android_toolchain_cc = '{}{}-clang'.format(self.clang_prefix,
                     android_api)
             toolchain_dir = 'llvm'
