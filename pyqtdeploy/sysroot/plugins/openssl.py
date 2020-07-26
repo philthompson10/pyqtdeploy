@@ -208,23 +208,14 @@ class OpenSSLComponent(Component):
         """ Install v1.1 for Android on either Linux or MacOS hosts. """
 
         # Configure the environment.
-        using_clang = (self.android_ndk_version >= 16)
-
         original_path = self.add_to_path(self.android_toolchain_bin)
 
         configure_args = ['perl', 'Configure']
 
-        if using_clang:
-            os.environ['CC'] = self.android_toolchain_cc
-            os.environ['AR'] = self.android_toolchain_prefix + 'ar'
-            os.environ['RANLIB'] = self.android_toolchain_prefix + 'ranlib'
-        else:
-            configure_args.append('--cross-compile-prefix=' + self.android_toolchain_prefix)
-
-            os.environ['CROSS_SYSROOT'] = os.path.join(
-                    self.android_ndk_sysroot)
-
         configure_args.extend(common_options)
+
+        configure_args.append('shared')
+        configure_args.append('-D__ANDROID_API__={}'.format(self.android_api))
 
         if self.target_arch_name == 'android-32':
             os_compiler = 'android-arm'
@@ -235,38 +226,25 @@ class OpenSSLComponent(Component):
 
         self.run(*configure_args)
 
-        # Fix the Makefile so that it creates .so files without version
-        # numbers for qmake to be able to handle.
-        with open('Makefile') as f:
-            mf = f.read()
+        self.run(self.host_make, 'SHLIB_VERSION_NUMBER=', 'SHLIB_EXT=_1_1.so',
+                'build_libs')
 
-        # For v1.1.1.
-        mf = mf.replace('.$(SHLIB_VERSION_NUMBER)', '')
-
-        # For v1.1.0.
-        mf = mf.replace('.$(SHLIB_MAJOR).$(SHLIB_MINOR)', '')
-
-        if using_clang:
-            mf = mf.replace('-mandroid', '')
-            mf = mf.replace('--sysroot=$(CROSS_SYSROOT)', '')
-
-        with open('Makefile', 'w') as f:
-            f.write(mf)
-
-        self.run(self.host_make)
-        self.run(self.host_make, 'install')
-
+        # Install the shared libraries.  Qt requires the versioned name and
+        # Python requires the unversioned symbolic link.
         for lib in ('libcrypto', 'libssl'):
-            # Remove the static library that was also built.
-            os.remove(os.path.join(self.target_lib_dir, lib + '.a'))
+            versioned = lib + '_1_1.so'
 
-        if using_clang:
-            del os.environ['CC']
-            del os.environ['AR']
-            del os.environ['RANLIB']
-        else:
-            del os.environ['CROSS_SYSROOT']
+            shutil.copy(versioned, self.target_lib_dir)
 
+            link = os.path.join(self.target_lib_dir, lib + '.so')
+            try:
+                os.remove(link)
+            except:
+                pass
+
+            os.symlink(versioned, link)
+
+        # Restore the environment.
         os.environ['PATH'] = original_path
 
     def _install_1_1_win(self, common_options):
@@ -320,8 +298,6 @@ class OpenSSLComponent(Component):
         """ Install v1.0.2 for Android on either Linux or MacOS hosts. """
 
         # Configure the environment.
-        using_clang = (self.android_ndk_version >= 16)
-
         original_path = self.add_to_path(self.android_toolchain_bin)
         os.environ['MACHINE'] = 'arm7'
         os.environ['RELEASE'] = '2.6.37'
@@ -329,13 +305,9 @@ class OpenSSLComponent(Component):
         os.environ['ARCH'] = 'arm'
         os.environ['ANDROID_DEV'] = os.path.join(self.android_ndk_sysroot,
                 'usr')
-
-        if using_clang:
-            os.environ['CC'] = self.android_toolchain_cc
-            os.environ['AR'] = self.android_toolchain_prefix + 'ar'
-            os.environ['RANLIB'] = self.android_toolchain_prefix + 'ranlib'
-        else:
-            os.environ['CROSS_COMPILE'] = self.android_toolchain_prefix
+        os.environ['CC'] = self.android_toolchain_cc
+        os.environ['AR'] = self.android_toolchain_prefix + 'ar'
+        os.environ['RANLIB'] = self.android_toolchain_prefix + 'ranlib'
 
         # Configure, build and install.
         args = ['perl', 'Configure', 'shared']
@@ -345,14 +317,13 @@ class OpenSSLComponent(Component):
         self.run(*args)
 
         # Patch the Makefile for clang.
-        if using_clang:
-            with open('Makefile') as f:
-                mf = f.read()
+        with open('Makefile') as f:
+            mf = f.read()
 
-            mf = mf.replace('-mandroid', '')
+        mf = mf.replace('-mandroid', '')
 
-            with open('Makefile', 'w') as f:
-                f.write(mf)
+        with open('Makefile', 'w') as f:
+            f.write(mf)
 
         self.run(self.host_make, 'depend')
         self.run(self.host_make,
@@ -373,13 +344,9 @@ class OpenSSLComponent(Component):
             os.remove(installed_lib_so)
             self.copy_file(lib_so, installed_lib_so)
 
-        if using_clang:
-            del os.environ['CC']
-            del os.environ['AR']
-            del os.environ['RANLIB']
-        else:
-            del os.environ['CROSS_COMPILE']
-
+        del os.environ['CC']
+        del os.environ['AR']
+        del os.environ['RANLIB']
         del os.environ['MACHINE']
         del os.environ['RELEASE']
         del os.environ['SYSTEM']

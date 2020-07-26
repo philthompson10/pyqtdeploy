@@ -192,7 +192,7 @@ class Builder:
 
         if lib_dir != '':
             for lib in lib_so:
-                lib_path = os.path.join(lib_dir, lib)
+                lib_path = os.path.realpath(os.path.join(lib_dir, lib))
 
                 if not os.path.isfile(lib_path):
                     raise UserException(

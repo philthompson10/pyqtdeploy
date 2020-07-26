@@ -290,9 +290,6 @@ class AndroidArchitecture(Architecture):
     # The architecture-specific clang prefix.
     clang_prefix = ''
 
-    # The architecture-specific gcc compiler flags.
-    gcc_toolchain_cflags = []
-
     def verify_as_target(self, message_handler):
         """ Verify the architecture as a target. """
 
@@ -305,28 +302,14 @@ class AndroidArchitecture(Architecture):
         android_host = '{}-x86_64'.format(
                 'darwin' if sys.platform == 'darwin' else 'linux')
 
-        # TODO: confirm the commented out value is wrong.
-        #self.android_ndk_sysroot = os.path.join(ndk_root, 'platforms',
-        #        'android-{}'.format(android_api), self.android_platform_arch)
-
-        #self._check_exists(self.android_ndk_sysroot)
-
         # We use clang for r16 and later.
+        # TODO: remove android_toolchain_cflags
         cflags = []
 
         if self.platform.android_ndk_version >= 16:
             self.android_toolchain_cc = '{}{}-clang'.format(self.clang_prefix,
                     android_api)
             toolchain_dir = 'llvm'
-        else:
-            # The architecture-neutral gcc flags.
-            cflags.append('--sysroot=' + self.android_ndk_sysroot)
-
-            cflags.extend(self.gcc_toolchain_cflags)
-
-            toolchain_version = self.platform.ndk_toolchain_version
-            self.android_toolchain_cc = toolchain_prefix + 'gcc'
-            toolchain_dir = toolchain_prefix + toolchain_version
 
         self.android_toolchain_cflags = cflags
 
@@ -355,8 +338,6 @@ class Android_arm_32(AndroidArchitecture):
     android_platform_arch = 'arch-arm'
     android_toolchain_prefix = 'arm-linux-androideabi-'
     clang_prefix = 'armv7a-linux-androideabi'
-    gcc_toolchain_cflags = ['-march=armv7-a', '-mfloat-abi=softfp',
-            '-mfpu=vfp', '-fno-builtin-memmove', '-mthumb']
 
 
 class Android_arm_64(AndroidArchitecture):
@@ -443,13 +424,11 @@ class Android(Platform):
         if self.android_ndk_version is None:
             raise UserException("Unable to determine the NDK revision.")
 
-        # Blacklist r11-13 as they have problems finding standard library .h
-        # files.  It is probably something simple, like a missing --sysroot
-        # flag.  Also blacklist r16-18 to avoid having to deal with
-        # make-standalone-toolchain.sh for clang.
+        # Require a minimum of r19 so that we can assume the compiler is clang
+        # and that it works properly.
         revision = self.android_ndk_version.major
-        if revision in (11, 12, 13, 16, 17, 18):
-            raise UserException("NDK r{0} is not supported.".format(revision))
+        if revision < 19:
+            raise UserException("NDK r19 or later is required.")
 
         # Issue a warning for untested NDK revision.
         if revision > 19:
