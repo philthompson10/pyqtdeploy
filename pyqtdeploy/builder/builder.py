@@ -535,10 +535,10 @@ int main(int argc, char **argv)
 
             freeze = True
         else:
-            src_path = os.path.join(
-                    os.path.dirname(os.path.join(part_root_dir, src_name)),
-                    part.name)
-            dst_name = part.name
+            part_path = os.path.join(os.path.dirname(src_name), part.name)
+
+            src_path = os.path.join(part_root_dir, part_path)
+            dst_name = part_path
 
             freeze = False
 
