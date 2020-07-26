@@ -1184,7 +1184,8 @@ standard_library = {
         PythonModule(deps=('fnmatch', 'os', 're')),
 
     'grp':
-        ExtensionModule(target='!win', source='grpmodule.c'),
+        ExtensionModule(target='!win', min_android_api=26,
+                source='grpmodule.c'),
 
     'gzip':
         PythonModule(

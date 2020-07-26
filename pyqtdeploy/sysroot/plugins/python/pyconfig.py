@@ -501,7 +501,7 @@ pyconfig = (
     Config('HAVE_GETPRIORITY', default=1),
 
     # Define to 1 if you have the `getpwent' function.
-    Config('HAVE_GETPWENT', default=1, android=None),
+    Config('HAVE_GETPWENT', default=1, api=26),
 
     # Define to 1 if the getrandom() function is available.
     Config('HAVE_GETRANDOM'),

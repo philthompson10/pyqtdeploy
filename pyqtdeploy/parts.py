@@ -31,7 +31,8 @@ class Part:
     """ Encapsulate the meta-data for a part. """
 
     def __init__(self, min_version=None, version=None, max_version=None,
-            target='', internal=False, deps=(), hidden_deps=(), core=False):
+            target='', min_android_api=None, internal=False, deps=(),
+            hidden_deps=(), core=False):
         """ Initialise the part. """
 
         self._min_version = min_version
@@ -43,6 +44,9 @@ class Part:
 
         # The target platform(s) of the part.
         self.target = target
+
+        # The minimum Android API required.
+        self.min_android_api = min_android_api
 
         # Set if the part is internal, ie. not part of a public API exposed to
         # an application being deployed.
@@ -136,7 +140,7 @@ class DataFile(Part):
         """ Initialise the part. """
 
         super().__init__(min_version=min_version, version=version,
-                max_version=max_version, target='', internal=True)
+                max_version=max_version, target=target, internal=True)
 
         # The name of the file.
         self.name = name
@@ -146,13 +150,15 @@ class CompiledPart(Part):
     """ Encapsulate the meta-data for a part that is compiled. """
 
     def __init__(self, min_version=None, version=None, max_version=None,
-            target='', internal=False, deps=(), hidden_deps=(), core=False,
-            defines=None, libs=None, includepath=None):
+            target='', min_android_api=None, internal=False, deps=(),
+            hidden_deps=(), core=False, defines=None, libs=None,
+            includepath=None):
         """ Initialise the part. """
 
         super().__init__(min_version=min_version, version=version,
-                max_version=max_version, target=target, internal=internal,
-                deps=deps, hidden_deps=hidden_deps, core=core)
+                max_version=max_version, target=target,
+                min_android_api=min_android_api, internal=internal, deps=deps,
+                hidden_deps=hidden_deps, core=core)
 
         # The sequence of (possibly scoped) DEFINES to add to the .pro file.
         self.defines = (defines, ) if isinstance(defines, str) else defines
@@ -186,16 +192,17 @@ class ExtensionModule(CompiledPart):
     """ Encapsulate the meta-data for an extension module. """
 
     def __init__(self, min_version=None, version=None, max_version=None,
-            internal=False, target='', deps=(), hidden_deps=(), core=False,
-            defines=None, libs=None, includepath=None, source=None,
-            qmake_config=None, qmake_cpp11=False, qmake_qt=None, pyd=None,
-            dlls=None):
+            min_android_api=None, internal=False, target='', deps=(),
+            hidden_deps=(), core=False, defines=None, libs=None,
+            includepath=None, source=None, qmake_config=None,
+            qmake_cpp11=False, qmake_qt=None, pyd=None, dlls=None):
         """ Initialise the part. """
 
         super().__init__(min_version=min_version, version=version,
-                max_version=max_version, target=target, internal=internal,
-                deps=deps, hidden_deps=hidden_deps, core=core, defines=defines,
-                libs=libs, includepath=includepath)
+                max_version=max_version, target=target,
+                min_android_api=min_android_api, internal=internal, deps=deps,
+                hidden_deps=hidden_deps, core=core, defines=defines, libs=libs,
+                includepath=includepath)
 
         # The sequence of (possibly scoped) source files.
         self.source = (source, ) if isinstance(source, str) else source
@@ -222,13 +229,14 @@ class PythonModule(Part):
     """ Encapsulate the meta-data for a single Python module. """
 
     def __init__(self, min_version=None, version=None, max_version=None,
-            target='', internal=False, deps=(), hidden_deps=(), core=False,
-            builtin=False):
+            target='', min_android_api=None, internal=False, deps=(),
+            hidden_deps=(), core=False, builtin=False):
         """ Initialise the part. """
 
         super().__init__(min_version=min_version, version=version,
-                max_version=max_version, target=target, internal=internal,
-                deps=deps, hidden_deps=hidden_deps, core=core)
+                max_version=max_version, target=target,
+                min_android_api=min_android_api, internal=internal, deps=deps,
+                hidden_deps=hidden_deps, core=core)
 
         # Set if the part is a core Python module that is already embedded as a
         # builtin.

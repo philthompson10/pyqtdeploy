@@ -606,6 +606,11 @@ class AbstractComponent(ABC):
                     part = None
                     break
 
+                # For Android also check the API level.
+                if self.target_platform_name == 'android' and part.min_android_api is not None and part.min_android_api > self.android_api:
+                    part = None
+                    break
+
                 # Don't modify the original part.
                 part = copy.deepcopy(part)
 
