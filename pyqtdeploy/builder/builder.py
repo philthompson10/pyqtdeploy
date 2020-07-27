@@ -232,6 +232,10 @@ class Builder:
         if part is None:
             return
 
+        # For Android check the API level.
+        if self._target.platform.name == 'android' and part.min_android_api is not None and part.min_android_api > self._target.android_api:
+            return
+
         parts[part_name] = part
 
         # Now handle the dependencies.

@@ -594,13 +594,10 @@ class AbstractComponent(ABC):
         # Go through each version of the part.
         for part in versions:
             if part.applies_to(self.version):
-                # Discard parts for other targets.
+                # Discard parts for other targets.  Note that we can't check
+                # the Android API level because we don't yet know which level
+                # is being targeted.
                 if part.target != '' and not self._sysroot.target.is_targeted(part.target):
-                    part = None
-                    break
-
-                # For Android also check the API level.
-                if self.target_platform_name == 'android' and part.min_android_api is not None and part.min_android_api > self.android_api:
                     part = None
                     break
 
