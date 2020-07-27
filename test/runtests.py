@@ -137,7 +137,7 @@ class TestCase:
         if error:
             raise UserException(failure_message)
 
-    def run(self, source_dirs, python, qmake, no_clean, verbose):
+    def run(self, python, qmake, no_clean, verbose):
         """ Re-implemented to run a test. """
 
         raise NotImplementedError
@@ -149,7 +149,7 @@ class SysrootTest(TestCase):
     # The filename exyension of pyqtdeploy-sysroot tests.
     test_extension = '.toml'
 
-    def run(self, source_dirs, python, qmake, no_clean, verbose):
+    def run(self, python, qmake, no_clean, verbose):
         """ Run a pyqtdeploy-sysroot test. """
 
         print("Building sysroot from {}".format(self.test))
@@ -158,10 +158,6 @@ class SysrootTest(TestCase):
         test_name = os.path.basename(self.test)
         if test_name.endswith(self.test_extension):
             test_name = test_name[:-len(self.test_extension)]
-
-        sysroot = os.path.join('sysroot',
-                '{0}-{1}'.format(self.target, test_name))
-        shutil.rmtree(sysroot, ignore_errors=True)
 
         # Extract the name of the component.
         component = test_name.split('_')[0]
@@ -175,9 +171,6 @@ class SysrootTest(TestCase):
         if verbose:
             args.append('--verbose')
 
-        for s in source_dirs:
-            args.extend(['--source-dir', s])
-
         if python is not None:
             args.extend(['--python', python])
 
@@ -185,7 +178,7 @@ class SysrootTest(TestCase):
             args.extend(['--qmake', qmake])
 
         args.extend(['--target', self.target])
-        args.extend(['--sysroot', sysroot])
+        args.extend(['--sysroots-dir', os.path.join('sysroot', test_name)])
         args.append(self.test)
 
         self.call(args, verbose,
@@ -201,14 +194,10 @@ class StdlibTest(TestCase):
     # The filename exyension of pyqtdeploy-build tests.
     test_extension = '.pdt'
 
-    def run(self, source_dirs, python, qmake, no_clean, verbose):
+    def run(self, python, qmake, no_clean, verbose):
         """ Run a pyqtdeploy-build test. """
 
         print("Building application from {}".format(self.test))
-
-        # The name of the sysroot directory to use.
-        sysroot = os.path.join('sysroot',
-                '{}-python_stdlib'.format(self.target))
 
         # Run pyqtdeploy-build.
         args = ['pyqtdeploy-build']
@@ -219,8 +208,13 @@ class StdlibTest(TestCase):
         if verbose:
             args.append('--verbose')
 
+        if python is not None:
+            args.extend(['--python', python])
+
+        if qmake is not None:
+            args.extend(['--qmake', qmake])
+
         args.extend(['--target', self.target])
-        args.extend(['--sysroot', sysroot])
         args.append(self.test)
 
         self.call(args, verbose,
@@ -228,7 +222,6 @@ class StdlibTest(TestCase):
 
         # Change to the build directory and run qmake and make.
         build_dir = 'build-' + self.target
-        qmake = os.path.abspath(os.path.join(sysroot, 'host', 'bin', 'qmake'))
         make = 'nmake' if sys.platform == 'win32' else 'make'
 
         os.chdir(build_dir)
@@ -293,9 +286,6 @@ if __name__ == '__main__':
             metavar="FILE")
     parser.add_argument('--show', help="show the tests that would be run",
             action='store_true')
-    parser.add_argument('--source-dir',
-            help="a directory containing the source archives",
-            metavar='DIR', dest='source_dirs', action='append')
     parser.add_argument('--test',
             help="a test directory, TOML specification file or project file")
     parser.add_argument('--target', help="the target platform")
@@ -307,7 +297,6 @@ if __name__ == '__main__':
     # Convert to absolute paths.
     python = os.path.abspath(args.python) if args.python else 'python'
     qmake = os.path.abspath(args.qmake) if args.qmake else None
-    source_dirs = [os.path.abspath(s) for s in args.source_dirs] if args.source_dirs else []
 
     # Anchor everything from the directory containing this script.
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -351,15 +340,15 @@ if __name__ == '__main__':
                 if args.show:
                     print(test + " (expected to fail)" if expected_fail else '')
                 else:
-                    SysrootTest(test, expected_fail, target).run(source_dirs,
-                            python, qmake, args.no_clean, args.verbose)
+                    SysrootTest(test, expected_fail, target).run(python, qmake,
+                            args.no_clean, args.verbose)
 
         for test, expected_fail in tests:
             if test.endswith(StdlibTest.test_extension):
                 if args.show:
                     print(test + " (expected to fail)" if expected_fail else '')
                 else:
-                    StdlibTest(test, expected_fail, target).run(source_dirs,
+                    StdlibTest(test, expected_fail, target).run(python, qmake,
                             args.no_clean, args.verbose)
 
     except UserException as e:
