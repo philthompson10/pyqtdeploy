@@ -50,20 +50,13 @@ _COMPONENT_TYPES = {
 class SysrootSpecification:
     """ Encapsulate the specification of a system root directory. """
 
-    def __init__(self, specification_file, project_file=None):
+    def __init__(self, specification_file):
         """ Initialise the object. """
+
+        self.specification_file = specification_file
 
         self._plugins = {}
         self._spec = {}
-
-        # Determine the name of the specification file.
-        if specification_file == '':
-            self.specification_file = os.path.join(
-                    os.path.dirname(os.path.abspath(project_file)),
-                    'sysroot.toml')
-        else:
-            self.specification_file = os.path.abspath(
-                    os.path.expandvars(specification_file))
 
         # Load the TOML file.
         try:

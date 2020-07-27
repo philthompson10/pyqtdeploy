@@ -34,8 +34,6 @@ from ..platforms import Architecture, Platform
 from ..user_exception import UserException
 from ..version_number import VersionNumber
 
-from .specification import SysrootSpecification
-
 
 class Sysroot:
     """ Encapsulate a target-specific system root directory. """
@@ -48,12 +46,6 @@ class Sysroot:
         self.host = host
         self.target = target
         self._message_handler = message_handler
-
-        if sysroots_dir:
-            sysroots_dir = os.path.abspath(sysroots_dir)
-        else:
-            sysroots_dir = os.path.dirname(
-                    self._specification.specification_file)
 
         self.sysroot_dir = os.path.join(sysroots_dir,
                 'sysroot-' + self.target.name)

@@ -24,6 +24,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
+import os
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (QSizePolicy, QSplitter, QTreeWidget,
@@ -183,6 +185,8 @@ class PackagesPage(QWidget):
         project.sysroots_dir = value
         project.modified = True
 
+        self._set_dir_edit_text()
+
     def _get_part_item(self, part_name, parts, stdlib):
         """ Return a PartItem object for a part or None if the part is
         internal.
@@ -201,6 +205,15 @@ class PackagesPage(QWidget):
             parent = (self._stdlib_edit if stdlib else self._others_edit)
 
         return self._add_part(parent, part_name, part=part)
+
+    def _set_dir_edit_text(self):
+        """ Set the sysroots directory editor text. """
+
+        project = self.project
+
+        self._dir_edit.setText(
+                os.path.relpath(project.sysroots_dir,
+                        os.path.dirname(project.sysroot_toml)))
 
     def _set_implicit(self, part_item):
         """ Set a part's state (and that of all it's parents) to be partially
@@ -228,6 +241,13 @@ class PackagesPage(QWidget):
                 self._set_implicit(dep_part_item)
                 self._set_implicit_deps(dep_part_item)
 
+    def _set_toml_edit_text(self):
+        """ Set the sysroot secification editor text. """
+
+        project = self.project
+
+        self._toml_edit.setText(project.minimal_path(project.sysroot_toml))
+
     def _toml_changed(self, value):
         """ Invoked when the user edits the specification file name. """
 
@@ -236,6 +256,8 @@ class PackagesPage(QWidget):
         project.sysroot_toml = value
         project.modified = True
 
+        self._set_toml_edit_text()
+
         project.load_sysroot()
 
     def _update_page(self):
@@ -243,8 +265,8 @@ class PackagesPage(QWidget):
 
         project = self.project
 
-        self._toml_edit.setText(project.sysroot_toml)
-        self._dir_edit.setText(project.sysroots_dir)
+        self._set_toml_edit_text()
+        self._set_dir_edit_text()
 
         # Create a non-verified sysroot for each target architecture and
         # determine the availability of each part.

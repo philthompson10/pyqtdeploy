@@ -134,8 +134,7 @@ class Project(QObject):
     def load_sysroot(self):
         """ Load the project's sysroot specification file. """
 
-        self.sysroot_specification = SysrootSpecification(self.sysroot_toml,
-                self._name)
+        self.sysroot_specification = SysrootSpecification(self.sysroot_toml)
 
         self.sysroot_loaded.emit()
 
@@ -257,8 +256,28 @@ class Project(QObject):
             raise UserException(
                     "The project's format is version {0} but only version {1} is supported.".format(version, cls.version))
 
-        project.sysroot_toml = root.get('sysroot', '')
-        project.sysroots_dir = root.get('sysroots_dir', '')
+        # Convert the specification file name to a native absolute path.
+        sysroot_toml = root.get('sysroot', '')
+
+        if sysroot_toml == '':
+            sysroot_toml = 'sysroot.toml'
+        else:
+            sysroot_toml = sysroot_toml.replace('/', os.sep)
+
+        project.sysroot_toml = project.project_path(sysroot_toml)
+
+        # Convert the sysroots directory name to a native absolute path.
+        sysroots_dir = root.get('sysroots_dir', '')
+
+        if sysroots_dir == '':
+            sysroots_dir = os.path.dirname(project.sysroot_toml)
+        else:
+            sysroots_dir = project.project_path(
+                    sysroots_dir.replace('/', os.sep))
+
+        project.sysroots_dir = sysroots_dir
+
+        # The parts we expect to be provided by the sysroot.
         project.parts = cls._get_list(root, 'parts')
 
         # The application specific configuration.
@@ -286,10 +305,14 @@ class Project(QObject):
         was an error.
         """
 
+        sysroot_toml = self.minimal_path(self.sysroot_toml).replace(os.sep, '/')
+        sysroots_dir = os.path.relpath(self.sysroots_dir,
+                os.path.dirname(self.sysroot_toml))
+
         root = {
             'version': self.version,
-            'sysroot': self.sysroot_toml,
-            'sysroots_dir': self.sysroots_dir,
+            'sysroot': sysroot_toml,
+            'sysroots_dir': sysroots_dir,
             'parts': self.parts,
         }
 
