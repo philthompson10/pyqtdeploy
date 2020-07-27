@@ -25,6 +25,7 @@
 
 
 import argparse
+import os
 
 from . import (Architecture, MessageHandler, PYQTDEPLOY_RELEASE, Sysroot,
         SysrootSpecification, UserException)
@@ -78,10 +79,17 @@ def main():
     message_handler = MessageHandler(args.quiet, args.verbose)
 
     try:
-        specification = SysrootSpecification(args.specification)
+        specification_file = os.path.abspath(args.specification)
+
+        if args.sysroots_dir:
+            sysroots_dir = os.path.abspath(args.sysroots_dir)
+        else:
+            sysroots_dir = os.path.dirname(specification_file)
+
+        specification = SysrootSpecification(specification_file)
         host = Architecture.architecture()
         target = Architecture.architecture(args.target)
-        sysroot = Sysroot(specification, host, target, args.sysroots_dir,
+        sysroot = Sysroot(specification, host, target, sysroots_dir,
                 message_handler=message_handler, python=args.python,
                 qmake=args.qmake)
 
