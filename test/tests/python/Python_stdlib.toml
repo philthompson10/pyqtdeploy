@@ -1,0 +1,11 @@
+# This is used to test packages in the Python standard library.
+
+
+[Python]
+version = "$PYTHON_VERSION"
+install_host_from_source = false
+
+
+[Qt]
+version = "$QT_VERSION"
+install_from_source = false
