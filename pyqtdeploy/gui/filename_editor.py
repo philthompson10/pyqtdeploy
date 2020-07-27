@@ -85,7 +85,7 @@ class FilenameEditor(QWidget):
 
         orig = default = self._line_edit.text()
         if default != '' and self._project is not None:
-            default = self._project.path_from_user(default)
+            default = self._project.project_path(default)
 
         if self._directory:
             name = QFileDialog.getExistingDirectory(self._line_edit,
@@ -96,7 +96,7 @@ class FilenameEditor(QWidget):
 
         if name != '':
             if self._project is not None:
-                name = self._project.path_to_user(name)
+                name = self._project.minimal_path(name)
 
             if name != orig:
                 self._line_edit.setText(name)
