@@ -49,7 +49,9 @@ class Sysroot:
         self.target = target
         self._message_handler = message_handler
 
-        if not sysroots_dir:
+        if sysroots_dir:
+            sysroots_dir = os.path.abspath(sysroots_dir)
+        else:
             sysroots_dir = os.path.dirname(
                     self._specification.specification_file)
 
