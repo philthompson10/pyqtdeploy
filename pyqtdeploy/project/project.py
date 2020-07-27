@@ -108,29 +108,6 @@ class Project(QObject):
         self.parts = []
         self.qmake_configuration = ''
 
-    def path_to_user(self, path):
-        """ Convert a file name to one that is relative to the project file if
-        possible and uses native separators.
-        """
-
-        if self._name is not None:
-            rel = self._name.dir().relativeFilePath(path)
-            if not rel.startswith('..'):
-                path = rel
-
-        return QDir.toNativeSeparators(path)
-
-    def project_path(self, path):
-        """ Return an absolute path.  If the original path is relative then
-        assume it is relative to the name of the project file.
-        """
-
-        if os.path.isabs(path):
-            return path
-
-        return os.path.normpath(
-                os.path.join(os.path.dirname(self._name), path))
-
     @classmethod
     def load(cls, name):
         """ Return a new project loaded from the given file.  Raise a
@@ -161,6 +138,35 @@ class Project(QObject):
                 self._name)
 
         self.sysroot_loaded.emit()
+
+    def minimal_path(self, path):
+        """ Return a relative form of the path if it is in the same directory
+        (or a sub-directory) as that containing the project file.  Otherwise
+        return an absolute path.
+        """
+
+        path = os.path.abspath(path)
+
+        try:
+            common_path = os.path.commonpath((path, self._name))
+        except ValueError:
+            return path
+
+        if common_path != os.path.dirname(self._name):
+            return path
+
+        return os.path.relpath(path, common_path)
+
+    def project_path(self, path):
+        """ Return an absolute path.  If the original path is relative then
+        assume it is relative to the name of the project file.
+        """
+
+        if os.path.isabs(path):
+            return path
+
+        return os.path.normpath(
+                os.path.join(os.path.dirname(self._name), path))
 
     def save(self):
         """ Save the project.  Raise a UserException if there was an error. """

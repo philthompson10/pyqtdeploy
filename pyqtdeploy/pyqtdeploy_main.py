@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,19 @@ def main():
     from . import Project, UserException
     from .gui import handle_user_exception, ProjectGUI
 
+    def excepthook(exc_type, exc_value, exc_tb):
+        if isinstance(exc_value, UserException):
+            handle_user_exception(exc_value, 'pyqtdeploy')
+        else:
+            import traceback
+
+            tb = ''.join(
+                    traceback.format_exception(exc_type, exc_value, exc_tb))
+
+            print(tb)
+
+            QApplication.exit(1)
+
     app = QApplication(sys.argv, applicationName='pyqtdeploy',
                 organizationDomain='riverbankcomputing.com',
                 organizationName='Riverbank Computing')
@@ -55,9 +68,10 @@ def main():
     try:
         gui = ProjectGUI(project)
     except UserException as e:
-        handle_user_exception(e, "Unable to Create GUI")
+        handle_user_exception(e, 'pyqtdeploy')
         return 1
 
+    sys.excepthook = excepthook
     gui.show()
 
     return app.exec()

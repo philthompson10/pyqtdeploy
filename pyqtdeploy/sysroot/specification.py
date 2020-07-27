@@ -53,6 +53,9 @@ class SysrootSpecification:
     def __init__(self, specification_file, project_file=None):
         """ Initialise the object. """
 
+        self._plugins = {}
+        self._spec = {}
+
         # Determine the name of the specification file.
         if specification_file == '':
             self.specification_file = os.path.join(
@@ -63,19 +66,21 @@ class SysrootSpecification:
                     os.path.expandvars(specification_file))
 
         # Load the TOML file.
-        with open(self.specification_file) as f:
-            try:
-                self._spec = toml.load(f, _dict=OrderedDict)
-            except Exception as e:
-                raise UserException(
-                        "{0}: {1}".format(self.specification_file, str(e)))
+        try:
+            with open(self.specification_file) as f:
+                try:
+                    self._spec = toml.load(f, _dict=OrderedDict)
+                except Exception as e:
+                    raise UserException(
+                            "{0}: {1}".format(self.specification_file, str(e)))
+        except FileNotFoundError:
+            # The specification will be empty.
+            return
 
         # Do a high level parse and import the plugins (ie. component
         # factories).
         default_plugin_dir = os.path.dirname(self.specification_file)
         package_root = '.'.join(__name__.split('.')[:-1])
-
-        self._plugins = {}
 
         for name, value in self._spec.items():
             # At the moment every name is a component name and every value is a

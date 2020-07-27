@@ -179,14 +179,15 @@ class Builder:
         """ Add the shared library files to be bundled with the application.
         """
 
-        project = self._project
-
         lib_dir = self._sysroot.target_lib_dir
         lib_so = []
 
         for value in libs:
             if value.startswith('-L'):
-                lib_dir = project.path_from_user(value[2:])
+                lib_dir = value[2:]
+
+                if not os.path.isabs(lib_dir):
+                    lib_dir = os.path.join(self._sysroot.sysroot_dir, lib_dir)
             elif value.startswith('-l'):
                 lib_so.append('lib' + value[2:] + '.so')
 

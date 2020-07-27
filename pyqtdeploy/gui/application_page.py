@@ -250,7 +250,7 @@ class _ApplicationPackageEditor(PackageEditor):
                 self.title, default)
 
         if root != '':
-            application_package.name = project.path_to_user(root)
+            application_package.name = project.project_path(root)
 
         return root
 
