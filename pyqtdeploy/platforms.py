@@ -423,7 +423,7 @@ class Android(Platform):
             raise UserException("NDK r19 or later is required.")
 
         # Issue a warning for untested NDK revision.
-        if revision > 19:
+        if revision > 21:
             message_handler.warning("NDK r{0} is untested.".format(revision))
 
         # Verify the SDK version.
