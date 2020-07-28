@@ -1,0 +1,13 @@
+version = 0
+sysroot = "Python_stdlib.toml"
+sysroots_dir = "../../sysroot/Python_stdlib"
+parts = [ "Python:xml.parsers.expat",]
+
+[Application]
+entry_point = ""
+is_console = false
+is_bundle = false
+name = ""
+qmake_configuration = ""
+script = "python_stdlib.py"
+syspath = ""
