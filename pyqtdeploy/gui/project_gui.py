@@ -38,6 +38,7 @@ from ..version import PYQTDEPLOY_RELEASE
 from .application_page import ApplicationPage
 from .exception_handlers import handle_user_exception
 from .packages_page import PackagesPage
+from .project_wrapper import ProjectWrapper
 
 
 class ProjectGUI(QMainWindow):
@@ -211,7 +212,7 @@ pyqtdeploy is a tool for deploying PyQt applications written using Python v3.5 o
     def _set_project(self, project):
         """ Set the GUI's project. """
 
-        self._project = project
+        self._project = ProjectWrapper(project)
 
         self._project.modified_changed.connect(self.setWindowModified)
 
