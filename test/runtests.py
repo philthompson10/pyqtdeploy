@@ -159,11 +159,8 @@ class SysrootTest(TestCase):
         if test_name.endswith(self.test_extension):
             test_name = test_name[:-len(self.test_extension)]
 
-        # Extract the name of the component.
-        component = test_name.split('_')[0]
-
         # Run pyqtdeploy-sysroot.
-        args = ['pyqtdeploy-sysroot', '--component', component]
+        args = ['pyqtdeploy-sysroot']
 
         if no_clean:
             args.append('--no-clean')
