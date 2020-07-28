@@ -135,9 +135,6 @@ class zlibComponent(Component):
 
         # We support native versions for everything except Windows.
         if self.target_platform_name == 'android':
-            # TODO: should android_sdk_system include the 'sysroot' directory
-            # itself? Is the value set in platform.py correct or should it be
-            # ndk_root + sysroot?
             root_dir = self.android_ndk_sysroot
         elif self.target_platform_name in ('ios', 'macos'):
             root_dir = self.apple_sdk

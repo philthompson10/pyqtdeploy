@@ -116,7 +116,6 @@ class PackagesPage(QWidget):
             self._toml_edit.set_project(value)
             self._dir_edit.set_project(value)
 
-            self._project.sysroot_loaded.connect(self._update_page)
             self._update_page()
 
     def update_dependencies(self):
@@ -253,6 +252,8 @@ class PackagesPage(QWidget):
         self._set_toml_edit_text()
 
         project.load_sysroot()
+
+        self._update_page()
 
     def _update_page(self):
         """ Update the page using the current project. """

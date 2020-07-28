@@ -82,9 +82,6 @@ class Project(QObject):
             self._name = value
             self.name_changed.emit(value)
 
-    # Emitted when the sysroot has been loaded.
-    sysroot_loaded = pyqtSignal()
-
     def __init__(self, name=None):
         """ Initialise the project. """
 
@@ -158,8 +155,6 @@ class Project(QObject):
         """ Load the project's sysroot specification file. """
 
         self.sysroot_specification = SysrootSpecification(self.sysroot_toml)
-
-        self.sysroot_loaded.emit()
 
     def minimal_path(self, path):
         """ Return a relative form of the path if it is in the same directory
