@@ -153,7 +153,7 @@ class PackagesPage(QWidget):
             if part_item.part is None:
                 part_item.part = part
         except KeyError:
-            part_item = PartItem(parent, part)
+            part_item = PartItem(parent, part_name, part)
             self._part_items[unscoped_part_name] = part_item
 
         return part_item
@@ -338,9 +338,9 @@ class PartsEditor(QTreeWidget):
         parts = project.parts
 
         if itm.checkState(col) == Qt.Checked:
-            parts.append(itm.part.name)
+            parts.append(itm.part_name)
         else:
-            parts.remove(itm.part.name)
+            parts.remove(itm.part_name)
 
         page.update_dependencies()
 
@@ -356,14 +356,16 @@ class PartItem(QTreeWidgetItem):
     # The colour to use for parts that are only available for some targets.
     _SOME_TARGETS = QColor('#f08000')
 
-    def __init__(self, parent, part):
+    def __init__(self, parent, part_name, part):
         """ Initialise the item. """
 
-        super().__init__(parent, part.unscoped_name.split('.')[-1:])
+        super().__init__(parent,
+                Part.get_unscoped_name(part_name).split('.')[-1:])
 
         self.setFlags(Qt.ItemIsEnabled|Qt.ItemIsUserCheckable)
         self.setCheckState(0, Qt.Unchecked)
 
+        self.part_name = part_name
         self.part = part
         self.target_count = 0
 
