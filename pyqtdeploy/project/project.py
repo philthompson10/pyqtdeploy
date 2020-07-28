@@ -127,6 +127,29 @@ class Project(QObject):
         # Create the project and load it.
         project = cls(save_as)
         loader(project, name)
+
+        # Convert the specification file name to a native absolute path.
+        sysroot_toml = project.sysroot_toml
+
+        if sysroot_toml == '':
+            sysroot_toml = 'sysroot.toml'
+        else:
+            sysroot_toml = sysroot_toml.replace('/', os.sep)
+
+        project.sysroot_toml = project.project_path(sysroot_toml)
+
+        # Convert the sysroots directory name to a native absolute path.
+        sysroots_dir = project.sysroots_dir
+
+        if sysroots_dir == '':
+            sysroots_dir = os.path.dirname(project.sysroot_toml)
+        else:
+            sysroots_dir = project.project_path(
+                    sysroots_dir.replace('/', os.sep))
+
+        project.sysroots_dir = sysroots_dir
+
+        # Load the sysroot specification.
         project.load_sysroot()
 
         return project
@@ -256,28 +279,8 @@ class Project(QObject):
             raise UserException(
                     "The project's format is version {0} but only version {1} is supported.".format(version, cls.version))
 
-        # Convert the specification file name to a native absolute path.
-        sysroot_toml = root.get('sysroot', '')
-
-        if sysroot_toml == '':
-            sysroot_toml = 'sysroot.toml'
-        else:
-            sysroot_toml = sysroot_toml.replace('/', os.sep)
-
-        project.sysroot_toml = project.project_path(sysroot_toml)
-
-        # Convert the sysroots directory name to a native absolute path.
-        sysroots_dir = root.get('sysroots_dir', '')
-
-        if sysroots_dir == '':
-            sysroots_dir = os.path.dirname(project.sysroot_toml)
-        else:
-            sysroots_dir = project.project_path(
-                    sysroots_dir.replace('/', os.sep))
-
-        project.sysroots_dir = sysroots_dir
-
-        # The parts we expect to be provided by the sysroot.
+        project.sysroot_toml = root.get('sysroot', '')
+        project.sysroots_dir = root.get('sysroots_dir', '')
         project.parts = cls._get_list(root, 'parts')
 
         # The application specific configuration.
