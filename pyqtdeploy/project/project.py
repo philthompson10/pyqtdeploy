@@ -179,6 +179,27 @@ class Project(QObject):
 
         return os.path.relpath(path, common_path)
 
+    @property
+    def normalised_sysroot_toml(self):
+        """ Return a normalised form of the sysroot specification file as seen
+        by the user and stored in the project file.
+        """
+
+        sysroot_toml = self.minimal_path(self.sysroot_toml)
+
+        return '' if sysroot_toml == 'sysroot.toml' else sysroot_toml
+
+    @property
+    def normalised_sysroots_dir(self):
+        """ Return a normalised form of the sysroots directory as seen by the
+        user and stored in the project file.
+        """
+
+        sysroots_dir = os.path.relpath(self.sysroots_dir,
+                os.path.dirname(self.sysroot_toml))
+
+        return '' if sysroots_dir == '.' else sysroots_dir
+
     def project_path(self, path):
         """ Return an absolute path.  If the original path is relative then
         assume it is relative to the name of the project file.
@@ -308,14 +329,10 @@ class Project(QObject):
         was an error.
         """
 
-        sysroot_toml = self.minimal_path(self.sysroot_toml).replace(os.sep, '/')
-        sysroots_dir = os.path.relpath(self.sysroots_dir,
-                os.path.dirname(self.sysroot_toml))
-
         root = {
             'version': self.version,
-            'sysroot': sysroot_toml,
-            'sysroots_dir': sysroots_dir,
+            'sysroot': self.normalised_sysroot_toml.replace(os.sep, '/'),
+            'sysroots_dir': self.normalised_sysroots_dir.replace(os.sep, '/'),
             'parts': self.parts,
         }
 
