@@ -270,6 +270,9 @@ class PackagesPage(QWidget):
         stdlib_blocked = self._stdlib_edit.blockSignals(True)
         others_blocked = self._others_edit.blockSignals(True)
 
+        self._stdlib_edit.clear()
+        self._others_edit.clear()
+
         self._has_openssl = False
 
         for target in Architecture.all_architectures:
