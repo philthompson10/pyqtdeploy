@@ -27,16 +27,13 @@
 import os
 import toml
 
-# TODO: refactor so that PyQt isn't used.
-from PyQt5.QtCore import QObject, pyqtSignal
-
 from ..sysroot import SysrootSpecification
 from ..user_exception import UserException
 
 from .project_parts import QrcDirectory, QrcFile, QrcPackage
 
 
-class Project(QObject):
+class Project:
     """ The encapsulation of a project. """
 
     # The minimum supported project version.  At the moment a project will be
@@ -45,26 +42,6 @@ class Project(QObject):
 
     # The current project version.
     version = 0
-
-    # Emitted when the modification state of the project changes.
-    modified_changed = pyqtSignal(bool)
-
-    @property
-    def modified(self):
-        """ The modified property getter. """
-
-        return self._modified
-
-    @modified.setter
-    def modified(self, value):
-        """ The modified property setter. """
-
-        if self._modified != value:
-            self._modified = value
-            self.modified_changed.emit(value)
-
-    # Emitted when the name of the project changes.
-    name_changed = pyqtSignal(str)
 
     @property
     def name(self):
@@ -76,20 +53,13 @@ class Project(QObject):
     def name(self, value):
         """ The name property setter. """
 
-        value = os.path.abspath(value)
-
-        if self._name is None or self._name != value:
-            self._name = value
-            self.name_changed.emit(value)
+        self._name = os.path.abspath(value)
 
     def __init__(self, name=None):
         """ Initialise the project. """
 
-        super().__init__()
-
         self._name = None if name is None else os.path.abspath(name)
 
-        self._modified = False
         self.sysroot_specification = None
 
         # Initialise the project data.
@@ -353,8 +323,6 @@ class Project(QObject):
         except Exception as e:
             raise UserException(
                     "There was an error writing the project file.", str(e))
-
-        self.modified = False
 
     @classmethod
     def _save_package(cls, qrc_package):
