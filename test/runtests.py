@@ -222,8 +222,15 @@ class StdlibTest(TestCase):
         make = 'nmake' if sys.platform == 'win32' else 'make'
 
         os.chdir(build_dir)
+
         self.call([qmake], verbose, "qmake failed")
         self.call([make], verbose, "make failed")
+
+        # Run the test if it is native.
+        if self.target.split('-')[0] in ('linux', 'macos', 'win'):
+            self.call([os.path.abspath('python_stdlib')], verbose,
+                    "python_stdlib failed")
+
         os.chdir('..')
 
         if not no_clean:
