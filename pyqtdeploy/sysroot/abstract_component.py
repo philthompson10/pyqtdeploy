@@ -527,7 +527,12 @@ class AbstractComponent(ABC):
             return
 
         # Save the part now (to handle recursion) assuming all its dependencies
-        # will be met.
+        # will be met.  Note that this doesn't handle complicated mutual
+        # dependencies correctly because we could end up with parts that were
+        # available based on this assumption but the assumption was later found
+        # to be incorrect.  However there are currently no examples of this in
+        # the standard library and other packages are unlikely to be that
+        # complicated.
         self._parts[name] = part
 
         # Check the dependencies.
