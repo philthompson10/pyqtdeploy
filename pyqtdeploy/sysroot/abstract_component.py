@@ -544,14 +544,21 @@ class AbstractComponent(ABC):
 
                 part_name = part_name[1:]
 
-            # See if it is an inter-component dependency.
+            # See if it is an intra-component dependency.
             if self.name == component_name:
+                # See if the dependency is theoretically provided (although it
+                # might not actually be available).
                 dep_part = provides.get(dep_name)
                 if dep_part is None:
                     part = None
                     break
 
                 self._add_part(dep_name, dep_part, openssl, provides)
+
+                # See if the dependency was actually available.
+                if self._parts[dep_name] is None:
+                    part = None
+                    break
             else:
                 component = self.get_component(component_name, required=False)
 
