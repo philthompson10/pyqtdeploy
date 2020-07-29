@@ -542,7 +542,7 @@ class AbstractComponent(ABC):
                 if openssl is not None:
                     continue
 
-                part_name = part_name[1:]
+                dep_name = Part.get_name(component_name, part_name[1:])
 
             # See if it is an intra-component dependency.
             if self.name == component_name:
