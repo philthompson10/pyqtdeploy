@@ -88,10 +88,10 @@ class Builder:
         # Get the required parts.
         parts = {}
 
-        # Always include the core Python modules.
+        # Always include the core Python modules and their dependencies.
         for part_name, part in python.parts.items():
             if isinstance(part, PythonModule) and part.core:
-                parts[part_name] = part
+                self._add_project_part(part_name, parts, available_parts)
 
         for part_name in project.parts:
             self._add_project_part(part_name, parts, available_parts)

@@ -220,6 +220,8 @@ class PackagesPage(QWidget):
                 part_item.setCheckState(0, Qt.PartiallyChecked)
 
             part_item = part_item.parent()
+            if part_item is not None:
+                self._set_implicit_deps(part_item)
 
     def _set_implicit_deps(self, part_item):
         """ Set a part's state (and that of all it's dependents) to be
