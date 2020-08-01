@@ -228,8 +228,9 @@ class StdlibTest(TestCase):
 
         # Run the test if it is native.
         if self.target.split('-')[0] in ('linux', 'macos', 'win'):
-            self.call([os.path.abspath('python_stdlib')], verbose,
-                    "python_stdlib failed")
+            test_package = self.test.split('_')[1].split('.')[0]
+            self.call([os.path.abspath('python_stdlib'), test_package],
+                    verbose, "python_stdlib failed")
 
         os.chdir('..')
 
