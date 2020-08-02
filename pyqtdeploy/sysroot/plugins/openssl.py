@@ -150,7 +150,7 @@ class OpenSSLComponent(Component):
                             host))
 
         # Check the required host tools are available.
-        tools = ['make', 'perl']
+        tools = ['perl']
 
         # See if we will need to apply a patch from the Python source code.
         if target == 'macos' and self.version == (1, 0, 2):
