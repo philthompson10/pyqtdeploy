@@ -230,9 +230,16 @@ class StdlibTest(TestCase):
         self.call([make], verbose, "make failed")
 
         # Run the test if it is native.
-        if self.target.split('-')[0] in ('linux', 'macos', 'win'):
+        target = self.target.split('-')[0]
+
+        if target in ('linux', 'macos', 'win'):
+            executable = 'python_stdlib'
+            if target == 'win':
+                executable = os.path.join('release', executable)
+
             test_package = self.test.split('_')[1].split('.')[0]
-            self.call([os.path.abspath('python_stdlib'), test_package],
+
+            self.call([os.path.abspath(executable), test_package],
                     verbose, "python_stdlib failed")
 
         os.chdir('..')
