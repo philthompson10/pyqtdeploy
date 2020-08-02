@@ -2687,6 +2687,7 @@ standard_library = {
         ExtensionModule(internal=True, source='_csv.c'),
 
     '_ctypes':
+        # Note: Python v3.8 on Windows has libffi-7.dll bundled.
         ExtensionModule(target='linux|macos|win', internal=True,
                 source=('_ctypes/_ctypes.c', '_ctypes/callbacks.c',
                         '_ctypes/callproc.c', '_ctypes/stgdict.c',
@@ -3231,9 +3232,12 @@ standard_library = {
     'sre_parse':
         PythonModule(internal=True, deps=('sre_constants', 'warnings')),
 
-    '_ssl':
-        ExtensionModule(internal=True, source='_ssl.c', deps='OpenSSL:openssl',
-                pyd='_ssl.pyd'),
+    '_ssl': (
+        ExtensionModule(max_version=(3, 6), internal=True, source='_ssl.c',
+                deps='OpenSSL:openssl', pyd='_ssl.pyd'),
+        ExtensionModule(min_version=(3, 7), internal=True, source='_ssl.c',
+                deps='OpenSSL:openssl', pyd='_ssl.pyd',
+                dlls=('libcrypto-1_1.dll', 'libssl-1_1.dll'))),
 
     '_stat':
         CoreExtensionModule(internal=True),
