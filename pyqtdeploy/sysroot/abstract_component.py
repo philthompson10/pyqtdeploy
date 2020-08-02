@@ -535,13 +535,19 @@ class AbstractComponent(ABC):
         # complicated.
         self._parts[name] = part
 
-        # Check the dependencies.
+        # Check (and possibly update) the dependencies.
+        updated_deps = []
+
         for dep_name in part.deps:
             component_name, part_name = Part.get_name_parts(dep_name)
 
+            required = True
+
             if part_name.startswith('?'):
                 # The dependency is optional so its availability has no impact.
-                continue
+                required = False
+
+                dep_name = Part.get_name(component_name, part_name[1:])
             elif part_name.startswith('!'):
                 # This is only provided if OpenSSL is not available.
                 if openssl is not None:
@@ -555,21 +561,30 @@ class AbstractComponent(ABC):
                 # might not actually be available).
                 dep_part = provides.get(dep_name)
                 if dep_part is None:
-                    part = None
-                    break
+                    if required:
+                        part = None
+                        break
+                else:
+                    self._add_part(dep_name, dep_part, openssl, provides)
 
-                self._add_part(dep_name, dep_part, openssl, provides)
-
-                # See if the dependency was actually available.
-                if self._parts[dep_name] is None:
-                    part = None
-                    break
+                    # See if the dependency was actually available.
+                    if self._parts[dep_name] is None:
+                        if required:
+                            part = None
+                            break
+                    else:
+                        updated_deps.append(dep_name)
             else:
                 component = self.get_component(component_name, required=False)
 
                 if component is None or dep_name not in component.parts:
-                    part = None
-                    break
+                    if required:
+                        part = None
+                else:
+                    updated_deps.append(dep_name)
+
+        if part is not None:
+            part.deps = updated_deps
 
         # Update the part's entry now we know its availability.
         self._parts[name] = part
