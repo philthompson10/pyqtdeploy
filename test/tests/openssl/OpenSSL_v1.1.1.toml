@@ -6,6 +6,10 @@ version = "1.1.1g"
 
 [Python]
 version = "3.7.4"
+install_host_from_source = true
+
+[Python.win]
+install_host_from_source = false
 
 
 [Qt]
