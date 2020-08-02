@@ -241,3 +241,21 @@ class PythonModule(Part):
         # Set if the part is a core Python module that is already embedded as a
         # builtin.
         self.builtin = builtin
+
+
+class PythonPackage(Part):
+    """ Encapsulate the meta-data for a Python package. """
+
+    def __init__(self, min_version=None, version=None, max_version=None,
+            target='', min_android_api=None, internal=False, deps=(),
+            hidden_deps=(), core=False, exclusions=()):
+        """ Initialise the part. """
+
+        super().__init__(min_version=min_version, version=version,
+                max_version=max_version, target=target,
+                min_android_api=min_android_api, internal=internal, deps=deps,
+                hidden_deps=hidden_deps, core=core)
+
+        # The sequence of file or directory names relative to the package to be
+        # excluded from the package.
+        self.exclusions = (exclusions, ) if isinstance(exclusions, str) else exclusions
