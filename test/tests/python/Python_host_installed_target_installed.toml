@@ -3,7 +3,6 @@
 
 [Python]
 version = "$PYTHON_VERSION"
-install_from_source = false
 
 
 [Qt]

@@ -86,7 +86,7 @@ class PythonComponent(AbstractPythonComponent):
 
         options.append(
                 ComponentOption('install_host_from_source', type=bool,
-                        default=True,
+                        default=False,
                         help="Install the host Python from a source package "
                                 "rather than an existing installation."))
 
