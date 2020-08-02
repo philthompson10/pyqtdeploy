@@ -5,7 +5,7 @@ parts = [ "Python:contextvars",]
 
 [Application]
 entry_point = ""
-is_console = false
+is_console = true
 is_bundle = false
 name = ""
 qmake_configuration = ""
