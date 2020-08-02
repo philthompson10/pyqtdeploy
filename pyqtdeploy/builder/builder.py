@@ -33,7 +33,7 @@ import tempfile
 
 from ..file_utilities import create_file, open_file
 from ..parts import (ComponentLibrary, DataFile, ExtensionModule, Part,
-        PythonModule)
+        PythonModule, PythonPackage)
 from ..project import Project
 from ..platforms import Architecture, Platform
 from ..sysroot import Sysroot
@@ -90,7 +90,7 @@ class Builder:
 
         # Always include the core Python modules and their dependencies.
         for part_name, part in python.parts.items():
-            if isinstance(part, PythonModule) and part.core:
+            if isinstance(part, (PythonModule, PythonPackage)) and part.core:
                 self._add_project_part(part_name, parts, available_parts)
 
         for part_name in project.parts:
@@ -370,6 +370,18 @@ class Builder:
 
         return resource_names
 
+    def _get_abs_resource_path(self, rel_resource_path):
+        """ Convert a relative path of a resource file to an absolute path and
+        make sure the directory that will contain the resource file exists.
+        """
+
+        abs_resource_path = os.path.join(self._build_dir, 'resources',
+                rel_resource_path)
+
+        os.makedirs(os.path.dirname(abs_resource_path), exist_ok=True)
+
+        return abs_resource_path
+
     @staticmethod
     def _get_lib_path(name):
         """ Get the pathname of a file or directory in the 'lib' sub-directory.
@@ -504,7 +516,7 @@ int main(int argc, char **argv)
             resources_contents, job_writer):
         """ Write a Python module as a resource. """
 
-        if not isinstance(part, (DataFile, PythonModule)):
+        if not isinstance(part, (DataFile, PythonModule, PythonPackage)):
             return
 
         # Remove any scope from the name.
@@ -521,6 +533,9 @@ int main(int argc, char **argv)
         # freezing.
         src_name = name.replace('.', os.sep)
 
+        to_freeze = []
+        to_copy = []
+
         if isinstance(part, PythonModule):
             if part.builtin:
                 return
@@ -533,31 +548,67 @@ int main(int argc, char **argv)
 
             src_path = os.path.join(part_root_dir, src_name)
 
-            # This can happen legitimately if the name corresponds to a simple
-            # directory rather than a Python package.
-            if not os.path.isfile(src_path):
-                return
+            # Check that the name corresponds to a Python package rather than a
+            # simple directory.
+            if os.path.isfile(src_path):
+                to_freeze.append((src_path, dst_name))
 
-            freeze = True
+        elif isinstance(part, PythonPackage):
+            root = os.path.join(part_root_dir, src_name)
+            exclusions = [os.path.join(root, exc) for exc in part.exclusions]
+
+            # Walk the package.
+            for dirpath, dirnames, filenames in os.walk(root):
+                if '__pycache__' in dirnames:
+                    dirnames.remove('__pycache__')
+
+                for name in dirnames:
+                    if os.path.join(dirpath, name) in exclusions:
+                        dirnames.remove(name)
+
+                for name in filenames:
+                    src_path = os.path.join(dirpath, name)
+
+                    if src_path in exclusions:
+                        continue
+
+                    if name.endswith('.pyc'):
+                        continue
+
+                    if name.endswith('.pyo'):
+                        continue
+
+                    rel_resource_path = os.path.relpath(src_path,
+                            part_root_dir)
+
+                    if name.endswith('.py'):
+                        # Convert '.py' to '.pyo'.
+                        rel_resource_path += 'o'
+
+                        to_freeze.append((src_path, rel_resource_path))
+                    else:
+                        to_copy.append(rel_resource_path)
+
         else:
-            part_path = os.path.join(os.path.dirname(src_name), part.name)
+            to_copy.append(os.path.join(os.path.dirname(src_name), part.name))
 
-            src_path = os.path.join(part_root_dir, part_path)
-            dst_name = part_path
+        # Freeze required resource files.
+        for src_path, rel_resource_path in to_freeze:
+            dst_path = self._get_abs_resource_path(rel_resource_path)
 
-            freeze = False
-
-        # Determine where the resource is to be created.
-        dst_path = os.path.join(self._build_dir, 'resources', dst_name)
-        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-
-        if freeze:
             self._freeze(job_writer, name, dst_path, src_path,
-                    dst_name.replace(os.sep, '/'))
-        else:
+                    rel_resource_path.replace(os.sep, '/'))
+
+            resources_contents.append(rel_resource_path)
+
+        # Copy required resource files.
+        for rel_resource_path in to_copy:
+            src_path = os.path.join(part_root_dir, rel_resource_path)
+            dst_path = self._get_abs_resource_path(rel_resource_path)
+
             shutil.copy2(src_path, dst_path)
 
-        resources_contents.append(dst_name)
+            resources_contents.append(rel_resource_path)
 
     def _write_python_modules(self, parts, resources_contents, job_writer,
             part_root_dir=None):

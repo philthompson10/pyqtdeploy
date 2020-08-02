@@ -26,10 +26,10 @@
 
 import os
 
-from ... import Component, ComponentOption, ExtensionModule, PythonModule
+from ... import (Component, ComponentOption, ExtensionModule, PythonModule,
+        PythonPackage)
 
 
-# TODO: add uic
 # All the parts that can be provided by the component.
 _ALL_PARTS = {
     'PyQt5': PythonModule(),
@@ -143,6 +143,11 @@ _ALL_PARTS = {
                 libs='-l_QOpenGLFunctions_4_1_Core'),
     'PyQt5._QOpenGLFunctions_ES2':
         ExtensionModule(deps='PyQt5.QtGui', libs='-l_QOpenGLFunctions_ES2'),
+    'PyQt5.uic':
+        PythonPackage(
+                deps=('Python:io', 'Python:logging', 'Python:os', 'Python:re',
+                        'Python:traceback', 'Python:xml.etree.ElementTree'),
+                exclusions=('port_v2', 'pyuic.py')),
 }
 
 
@@ -193,7 +198,8 @@ class PyQtComponent(Component):
 
         valid_modules = sorted(
                 [name[len('PyQt5.'):]
-                        for name in _ALL_PARTS if name != 'PyQt5'])
+                        for name in _ALL_PARTS
+                                if name not in ('PyQt5', 'PyQt5.uic')])
 
         options.append(
                 ComponentOption('installed_modules', type=list, required=True,
@@ -271,7 +277,10 @@ pyqt_modules = {6}
     def provides(self):
         """ The dict of parts provided by the component. """
 
-        parts = {'PyQt5': _ALL_PARTS['PyQt5']}
+        parts = {
+            'PyQt5': _ALL_PARTS['PyQt5'],
+            'PyQt5.uic': _ALL_PARTS['PyQt5.uic'],
+        }
 
         for name in self.installed_modules:
             name = 'PyQt5.' + name
