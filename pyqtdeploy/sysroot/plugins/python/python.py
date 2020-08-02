@@ -154,7 +154,8 @@ class PythonComponent(AbstractPythonComponent):
     def target_py_lib(self):
         """ The name of the target Python library. """
 
-        lib = self._py_subdir
+        lib = 'python{}{}' if self.target_platform_name == 'win' else 'python{}.{}'
+        lib = lib.format(self.version.major, self.version.minor)
 
         if not self.install_from_source and self.version <= (3, 7):
             lib += 'm'
@@ -469,15 +470,12 @@ build_time_vars = {
         minor = self.version.minor
 
         # The interpreter library.
-        lib_name = 'python{0}{1}.lib'.format(major, minor)
+        sysroot.copy_file(install_path + 'libs\\' + self.target_py_lib,
+                os.path.join(sysroot.target_lib_dir, self.target_py_lib))
 
-        sysroot.copy_file(install_path + 'libs\\' + lib_name,
-                os.path.join(sysroot.target_lib_dir, lib_name))
-
-        lib_name = 'python{0}.lib'.format(major)
-
-        sysroot.copy_file(install_path + 'libs\\' + lib_name,
-                os.path.join(sysroot.target_lib_dir, lib_name))
+        minimal_lib_name = 'python{0}.lib'.format(major)
+        sysroot.copy_file(install_path + 'libs\\' + minimal_lib_name,
+                os.path.join(sysroot.target_lib_dir, minimal_lib_name))
 
         # The DLLs and extension modules.
         sysroot.copy_dir(install_path + 'DLLs',
