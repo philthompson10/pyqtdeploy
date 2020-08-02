@@ -473,25 +473,31 @@ build_time_vars = {
         sysroot.copy_file(install_path + 'libs\\' + self.target_py_lib,
                 os.path.join(sysroot.target_lib_dir, self.target_py_lib))
 
-        minimal_lib_name = 'python{0}.lib'.format(major)
+        minimal_lib_name = 'python{}.lib'.format(major)
         sysroot.copy_file(install_path + 'libs\\' + minimal_lib_name,
                 os.path.join(sysroot.target_lib_dir, minimal_lib_name))
 
         # The DLLs and extension modules.
         sysroot.copy_dir(install_path + 'DLLs',
-                os.path.join(sysroot.target_lib_dir,
-                        'DLLs{0}.{1}'.format(major, minor)),
+                os.path.join(sysroot.target_lib_dir, 'DLLs'),
                 ignore=('*.ico', 'tcl*.dll', 'tk*.dll', '_tkinter.pyd'))
 
-        py_dll = 'python{0}{1}.dll'.format(major, minor)
-        py_dll_dir = install_path
-        vc_dll = 'vcruntime140.dll'
+        py_dll = 'python{}{}.dll'.format(major, minor)
+        sysroot.copy_file(install_path + py_dll,
+                os.path.join(sysroot.target_lib_dir, py_dll))
 
-        sysroot.copy_file(py_dll_dir + vc_dll,
+        minimal_py_dll = 'python{}.dll'.format(major)
+        sysroot.copy_file(install_path + minimal_py_dll,
+                os.path.join(sysroot.target_lib_dir, minimal_py_dll))
+
+        vc_dll = 'vcruntime140.dll'
+        sysroot.copy_file(install_path + vc_dll,
                 os.path.join(sysroot.target_lib_dir, vc_dll))
 
-        sysroot.copy_file(py_dll_dir + py_dll,
-                os.path.join(sysroot.target_lib_dir, py_dll))
+        if self.version >= (3, 8):
+            vc_1_dll = 'vcruntime140_1.dll'
+            sysroot.copy_file(install_path + vc_1_dll,
+                    os.path.join(sysroot.target_lib_dir, vc_1_dll))
 
         # The standard library.
         py_subdir = 'python{0}.{1}'.format(major, minor)

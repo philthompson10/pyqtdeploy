@@ -65,8 +65,6 @@ class Builder:
         there is an error.
         """
 
-        # TODO: What about when using an existing Python installation for the
-        # target?
         project = self._project
 
         # Verify the sysroot.
@@ -660,18 +658,18 @@ int main(int argc, char **argv)
             if isinstance(part, ExtensionModule):
                 used_inittab.add(part.unscoped_name)
 
-                self._add_values(used_sources, part.source, part)
+                if python.install_from_source:
+                    self._add_values(used_sources, part.source, part)
 
-                if part.qmake_config is not None:
-                    qmake_config.update(part.qmake_config)
+                    if part.qmake_config is not None:
+                        qmake_config.update(part.qmake_config)
 
-                if part.qmake_cpp11:
-                    qmake_cpp11 = True
+                    if part.qmake_cpp11:
+                        qmake_cpp11 = True
 
-                if part.qmake_qt is not None:
-                    qmake_qt.update(part.qmake_qt)
-
-                if part.pyd is not None and target_platform == 'win':
+                    if part.qmake_qt is not None:
+                        qmake_qt.update(part.qmake_qt)
+                elif target_platform == 'win' and part.pyd is not None:
                     used_dlls.add(part)
             elif isinstance(part, ComponentLibrary):
                 if part.bundle_shared_libs:
@@ -770,10 +768,10 @@ int main(int argc, char **argv)
                     'ANDROID_EXTRA_LIBS += %s\n' % ' '.join(
                             bundled_shared_libs))
 
-        ## If we are using the platform Python on Windows then copy in the
-        ## required DLLs if they can be found.
-        #if 'win' in project.python_use_platform and used_dlls and py_lib_dir is not None:
-        #    self._copy_windows_dlls(py_lib_dir, used_dlls, f)
+        # If we are using the installed Python on Windows then copy in the
+        # required DLLs.
+        if used_dlls:
+            self._copy_windows_dlls(python, used_dlls, f)
 
         # Add the project independent post-configuration stuff.
         with open_file(self._get_lib_path('post_configuration.pro')) as pro_f:
@@ -841,18 +839,12 @@ int main(int argc, char **argv)
 
             f.write('{0} += {1}\n'.format(qmake_var, value))
 
-    def _copy_windows_dlls(self, py_lib_dir, parts, f):
+    def _copy_windows_dlls(self, python, parts, f):
         """ Generate additional qmake commands to install additional Windows
         DLLs so that the application will be able to run.
         """
 
-        python_target_version = self._project.python_target_version
-
-        dlls = ['python{}{}.dll'.format(python_target_version._major,
-                python_target_version._minor)]
-
-        # TODO: MSVC2019 DLLs?
-        dlls.append('vcruntime140.dll')
+        dlls = []
 
         for part in parts:
             dlls.append(part.pyd)
@@ -860,9 +852,21 @@ int main(int argc, char **argv)
             if part.dlls is not None:
                 dlls.extend(part.dlls)
 
+        dlls = ['DLLs/' + dll for dll in dlls]
+
+        py_major = python.version.major
+        py_minor = python.version.minor
+
+        dlls.append('python{}{}.dll'.format(py_major, py_minor))
+        dlls.append('python{}.dll'.format(py_major))
+        dlls.append('vcruntime140.dll')
+
+        if python.version >= (3, 8):
+            dlls.append('vcruntime140_1.dll')
+
         for name in dlls:
             f.write('''
-PDY_DLL = %s/DLLs%d.%d/%s
+PDY_DLL = %s/%s
 exists($$PDY_DLL) {
     CONFIG(debug, debug|release) {
         QMAKE_POST_LINK += $(COPY_FILE) $$shell_path($$PDY_DLL) $$shell_path($$OUT_PWD/debug) &
@@ -870,4 +874,4 @@ exists($$PDY_DLL) {
         QMAKE_POST_LINK += $(COPY_FILE) $$shell_path($$PDY_DLL) $$shell_path($$OUT_PWD/release) &
     }
 }
-''' % (py_lib_dir, py_major, py_minor, name))
+''' % (python.target_py_lib.replace(os.sep, '/'), name))
