@@ -16,16 +16,19 @@ def default_target():
     if sys.platform.startswith('linux'):
         target = 'linux-64'
     elif sys.platform == 'win32':
-        # MSVC2015 is v14, MSVC2017 is v15.
+        # MSVC2015 is v14, MSVC2017 is v15, MSVC2019 is v16.
         vs_major = os.environ.get('VisualStudioVersion', '0.0').split('.')[0]
 
-        if vs_major == '15':
-            is_32 = (os.environ.get('VSCMD_ARG_TGT_ARCH') != 'x64')
+        if vs_major == '0':
+            # If there is no development environment then use the host
+            # platform.
+            from distutils.util import get_platform
+
+            is_32 = (get_platform() == 'win32')
         elif vs_major == '14':
             is_32 = (os.environ.get('Platform') != 'X64')
         else:
-            # Default to 64 bits.
-            is_32 = False
+            is_32 = (os.environ.get('VSCMD_ARG_TGT_ARCH') != 'x64')
 
         target = 'win-' + ('32' if is_32 else '64')
     elif sys.platform == 'darwin':
@@ -146,7 +149,7 @@ class TestCase:
 class SysrootTest(TestCase):
     """ Encapsulate a pyqtdeploy-sysroot test for a particular target. """
 
-    # The filename exyension of pyqtdeploy-sysroot tests.
+    # The filename extension of pyqtdeploy-sysroot tests.
     test_extension = '.toml'
 
     def run(self, python, qmake, no_clean, verbose):
@@ -188,7 +191,7 @@ class SysrootTest(TestCase):
 class StdlibTest(TestCase):
     """ Encapsulate a pyqtdeploy-build test for a particular target. """
 
-    # The filename exyension of pyqtdeploy-build tests.
+    # The filename extension of pyqtdeploy-build tests.
     test_extension = '.pdt'
 
     def run(self, python, qmake, no_clean, verbose):
