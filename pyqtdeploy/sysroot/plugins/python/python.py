@@ -109,7 +109,7 @@ class PythonComponent(AbstractPythonComponent):
                 self._host_python = os.path.join(self.host_dir, 'bin',
                         self.host_exe(self._py_subdir))
             elif self.host_platform_name == 'win':
-                self._host_python = self._get_python_install_path()
+                self._host_python = self.get_python_install_path(self.version.major, self.version.minor) + 'python.exe'
             else:
                 self._host_python = self.find_exe(
                         self.host_exe(self._py_subdir))
@@ -366,42 +366,6 @@ build_time_vars = {
 ''')
         scd.close()
 
-    def _get_py_install_path(self):
-        """ Return the name of the directory containing the root of the Python
-        installation directory.  It must not be called on a non-Windows
-        platform.
-        """
-
-        from winreg import HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, QueryValue
-
-        reg_version = '{0}.{1}'.format(self.version.major, self.version.minor)
-        if self.target_arch_name.endswith('-32'):
-            reg_version += '-32'
-
-        sub_key_user = 'Software\\Python\\PythonCore\\{}\\InstallPath'.format(
-                reg_version)
-        sub_key_all_users = 'Software\\Wow6432Node\\Python\\PythonCore\\{}\\InstallPath'.format(
-                reg_version)
-
-        queries = (
-            (HKEY_CURRENT_USER, sub_key_user),
-            (HKEY_LOCAL_MACHINE, sub_key_user),
-            (HKEY_LOCAL_MACHINE, sub_key_all_users))
-
-        for key, sub_key in queries:
-            try:
-                install_path = QueryValue(key, sub_key)
-            except OSError:
-                pass
-            else:
-                break
-        else:
-            self.error(
-                    "Unable to find an installation of Python v{0}.".format(
-                            reg_version))
-
-        return install_path
-
     def _install_host_from_source(self):
         """ Install the host Python from source. """
 
@@ -460,14 +424,14 @@ build_time_vars = {
         if self.target_platform_name != 'win':
             self._create_sysconfigdata()
 
-    def _install_target_from_existing_windows_version(self, sysroot):
+    def _install_target_from_existing_windows_version(self):
         """ Install the target Python from an existing installation on Windows.
         """ 
 
-        install_path = sysroot.get_python_install_path()
-
         major = self.version.major
         minor = self.version.minor
+
+        install_path = self.get_python_install_path(major, minor)
 
         # The interpreter library.
         sysroot.copy_file(install_path + 'libs\\' + self.target_py_lib,
