@@ -532,15 +532,6 @@ build_time_vars = {
                 patch_file.write(line)
 
     @staticmethod
-    def _patch_for_win_iomodule(orig_file, patch_file):
-        """ _iomodule.c in Python v3.6 includes consoleapi.h when it should
-        include windows.h (as it does in Python v3.7).
-        """
-
-        for line in orig_file:
-            patch_file.write(line.replace('consoleapi.h', 'windows.h'))
-
-    @staticmethod
     def _patch_for_win_expat(orig_file, patch_file):
         """ Python.h needs to be included before windows.h.  A regular build
         from python.org doesn't have this problem so it is likely that the
@@ -554,6 +545,15 @@ build_time_vars = {
                 patch_file.write('#include <Python.h>\n\n')
 
             patch_file.write(line)
+
+    @staticmethod
+    def _patch_for_win_iomodule(orig_file, patch_file):
+        """ _iomodule.c in Python v3.6 includes consoleapi.h when it should
+        include windows.h (as it does in Python v3.7).
+        """
+
+        for line in orig_file:
+            patch_file.write(line.replace('consoleapi.h', 'windows.h'))
 
     @staticmethod
     def _patch_for_win_winapi(orig_file, patch_file):
