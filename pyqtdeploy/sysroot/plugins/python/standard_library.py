@@ -3163,14 +3163,21 @@ standard_library = {
                 deps=('collections', 'contextvars', 'itertools', 'locale',
                         'math', 'numbers', 're'))),
 
-    'pyexpat':
-        ExtensionModule(internal=True,
-                source=('expat/xmlparse.c', 'expat/xmlrole.c',
-                        'expat/xmltok.c', 'pyexpat.c'),
+    'pyexpat': (
+        ExtensionModule(max_version=(3, 7, 4), internal=True,
+                source=('expat/loadlibrary.c', 'expat/xmlparse.c',
+                        'expat/xmlrole.c', 'expat/xmltok.c', 'pyexpat.c'),
                 defines=('XML_STATIC', 'win#COMPILED_FROM_DSP',
                         '!win#HAVE_EXPAT_CONFIG_H', '!win#XML_DEV_URANDOM'),
                 includepath='expat',
                 pyd='pyexpat.pyd'),
+        ExtensionModule(min_version=(3, 7, 5), internal=True,
+                source=('expat/xmlparse.c', 'expat/xmlrole.c',
+                        'expat/xmltok.c', 'pyexpat.c'),
+                defines=('XML_STATIC', '!win#HAVE_EXPAT_CONFIG_H',
+                        '!win#XML_DEV_URANDOM'),
+                includepath='expat',
+                pyd='pyexpat.pyd')),
 
     '_queue':
         ExtensionModule(min_version=(3, 7), internal=True,
