@@ -2,7 +2,7 @@
 
 
 [PyQt]
-version = "5.12.3"
+version = "5.15.0"
 
 [PyQt.android]
 disabled_features = ["PyQt_Desktop_OpenGL", "PyQt_Printer", "PyQt_PrintDialog",
@@ -52,7 +52,7 @@ installed_modules = ["QAxContainer", "QtBluetooth", "QtCore", "QtGui",
 
 
 [SIP]
-version = "4.19.18"
+version = "4.19.23"
 module_name = "PyQt5.sip"
 
 

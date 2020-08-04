@@ -2,11 +2,11 @@
 
 
 [PyQtWebEngine]
-version = "5.12.1"
+version = "5.15.0"
 
 
 [PyQt]
-version = "5.12.3"
+version = "5.15.0"
 installed_modules = ["QtCore", "QtGui"]
 
 [PyQt.android]
@@ -21,7 +21,7 @@ disabled_features = ["PyQt_Desktop_OpenGL", "PyQt_MacOSXOnly",
 
 
 [SIP]
-version = "4.19.18"
+version = "4.19.23"
 module_name = "PyQt5.sip"
 
 
