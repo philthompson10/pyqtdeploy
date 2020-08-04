@@ -25,8 +25,11 @@
 
 
 from abc import abstractmethod
+from html.parser import HTMLParser
 import os
 import shutil
+from urllib.error import HTTPError
+from urllib.request import urlopen
 
 from .abstract_component import AbstractComponent
 from .component_option import ComponentOption
@@ -70,20 +73,23 @@ class Component(AbstractComponent):
         # Try and download the archive into the cache.
         urls = self.get_archive_urls()
         if urls:
-            from urllib.request import urlopen
-
             self.create_dir(cache_dir)
 
             for url in urls:
                 archive_url = url + archive_name
 
-                self.verbose("Trying to download '{0}' from {1}".format(
+                self.verbose("Downloading '{0}' from {1}".format(
                         archive_name, url))
 
                 try:
                     with urlopen(archive_url) as response, open(archive, 'wb') as f:
                         shutil.copyfileobj(response, f)
+                except HTTPError:
+                    self.verbose("'{0}' was not found".format(archive_url))
+                    continue
                 except Exception as e:
+                    self.verbose(
+                            "Unable to download '{0}'".format(archive_url))
                     continue
 
                 self.verbose("Downloaded '{0}'".format(archive_url))
@@ -104,13 +110,33 @@ class Component(AbstractComponent):
         # This default implementation does not support downloads.
         return []
 
-    def get_pypi_urls(self, name):
+    def get_pypi_urls(self, pypi_project):
         """ Return a list of URLs (excluding the source archive name) where a
         source archive may be downloaded from a PyPI project.
         """
 
-        # TODO: scrape the project page.
-        return []
+        # The PyPI URL of the project page of the required version.
+        url = 'https://pypi.org/project/{}/{}/'.format(pypi_project,
+                self.version)
+
+        self.verbose("Reading '{0}'".format(url))
+
+        try:
+            with urlopen(url) as response:
+                page = response.read().decode('utf-8')
+        except Exception as e:
+            self.error("unable to read '{0}'".format(url), detail=str(e))
+
+        parser = PyPIPageParser(self.get_archive_name())
+        parser.feed(page)
+
+        if parser.archive_url is None:
+            self.verbose(
+                    "Unable to find link to '{0}' in '{1}'".format(
+                            self.get_archive_name(), url))
+            return []
+
+        return [parser.archive_url]
 
     def unpack_archive(self, archive, chdir=True):
         """ An archive is unpacked in the current directory.  If requested its
@@ -182,3 +208,26 @@ class Component(AbstractComponent):
                                     "existing installation."))
 
         return options
+
+
+class PyPIPageParser(HTMLParser):
+    """ An HTML parser for extract a source archive name from a PyPI project
+    page.
+    """
+
+    def __init__(self, archive):
+        """ Initialise the parser. """
+
+        super().__init__()
+
+        self._archive = archive
+        self.archive_url = None
+
+    def handle_starttag(self, tag, attrs):
+        """ Reimplemented to handle a start tag. """
+
+        if tag == 'a':
+            for name, value in attrs:
+                if name == 'href' and value.endswith(self._archive):
+                    self.archive_url = value[:-len(self._archive)]
+                    break
