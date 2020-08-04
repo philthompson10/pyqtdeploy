@@ -237,7 +237,11 @@ class StdlibTest(TestCase):
             if target == 'win':
                 executable = os.path.join('release', executable)
 
+            # Map tests to packages for non-trivial packages.
+            test_package_map = {'expat': 'xml.parsers.expat'}
+
             test_package = self.test.split('_')[1].split('.')[0]
+            test_package = test_package_map.get(test_package, test_package)
 
             self.call([os.path.abspath(executable), test_package],
                     verbose, "python_stdlib failed")
