@@ -656,9 +656,9 @@ int main(int argc, char **argv)
                 continue
 
             if isinstance(part, ExtensionModule):
-                used_inittab.add(part.unscoped_name)
-
                 if python.install_from_source:
+                    used_inittab.add(part.unscoped_name)
+
                     self._add_values(used_sources, part.source, part)
 
                     if part.qmake_config is not None:
@@ -852,7 +852,7 @@ int main(int argc, char **argv)
             if part.dlls is not None:
                 dlls.extend(part.dlls)
 
-        dlls = ['DLLs/' + dll for dll in dlls]
+        dlls = ['DLLs\\' + dll for dll in dlls]
 
         py_major = python.version.major
         py_minor = python.version.minor
@@ -866,7 +866,7 @@ int main(int argc, char **argv)
 
         for name in dlls:
             f.write('''
-PDY_DLL = %s/%s
+PDY_DLL = %s\\%s
 exists($$PDY_DLL) {
     CONFIG(debug, debug|release) {
         QMAKE_POST_LINK += $(COPY_FILE) $$shell_path($$PDY_DLL) $$shell_path($$OUT_PWD/debug) &
@@ -874,4 +874,4 @@ exists($$PDY_DLL) {
         QMAKE_POST_LINK += $(COPY_FILE) $$shell_path($$PDY_DLL) $$shell_path($$OUT_PWD/release) &
     }
 }
-''' % (python.target_py_lib.replace(os.sep, '/'), name))
+''' % (python.target_lib_dir, name))
