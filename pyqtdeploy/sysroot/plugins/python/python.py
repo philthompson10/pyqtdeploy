@@ -154,13 +154,15 @@ class PythonComponent(AbstractPythonComponent):
     def target_py_lib(self):
         """ The name of the target Python library. """
 
-        lib = 'python{}{}' if self.target_platform_name == 'win' else 'python{}.{}'
-        lib = lib.format(self.version.major, self.version.minor)
+        if self.target_platform_name == 'win':
+            lib = 'python{}{}'
+        else:
+            lib = 'python{}.{}'
 
-        if not self.install_from_source and self.version <= (3, 7):
-            lib += 'm'
+            if not self.install_from_source and self.version <= (3, 7):
+                lib += 'm'
 
-        return lib
+        return lib.format(self.version.major, self.version.minor)
 
     @property
     def target_sitepackages_dir(self):
@@ -434,45 +436,46 @@ build_time_vars = {
         install_path = self.get_python_install_path(major, minor)
 
         # The interpreter library.
-        sysroot.copy_file(install_path + 'libs\\' + self.target_py_lib,
-                os.path.join(sysroot.target_lib_dir, self.target_py_lib))
+        lib_name = self.target_py_lib + '.lib'
+        self.copy_file(install_path + 'libs\\' + lib_name,
+                os.path.join(self.target_lib_dir, lib_name))
 
         minimal_lib_name = 'python{}.lib'.format(major)
-        sysroot.copy_file(install_path + 'libs\\' + minimal_lib_name,
-                os.path.join(sysroot.target_lib_dir, minimal_lib_name))
+        self.copy_file(install_path + 'libs\\' + minimal_lib_name,
+                os.path.join(self.target_lib_dir, minimal_lib_name))
 
         # The DLLs and extension modules.
-        sysroot.copy_dir(install_path + 'DLLs',
-                os.path.join(sysroot.target_lib_dir, 'DLLs'),
+        self.copy_dir(install_path + 'DLLs',
+                os.path.join(self.target_lib_dir, 'DLLs'),
                 ignore=('*.ico', 'tcl*.dll', 'tk*.dll', '_tkinter.pyd'))
 
         py_dll = 'python{}{}.dll'.format(major, minor)
-        sysroot.copy_file(install_path + py_dll,
-                os.path.join(sysroot.target_lib_dir, py_dll))
+        self.copy_file(install_path + py_dll,
+                os.path.join(self.target_lib_dir, py_dll))
 
         minimal_py_dll = 'python{}.dll'.format(major)
-        sysroot.copy_file(install_path + minimal_py_dll,
-                os.path.join(sysroot.target_lib_dir, minimal_py_dll))
+        self.copy_file(install_path + minimal_py_dll,
+                os.path.join(self.target_lib_dir, minimal_py_dll))
 
         vc_dll = 'vcruntime140.dll'
-        sysroot.copy_file(install_path + vc_dll,
-                os.path.join(sysroot.target_lib_dir, vc_dll))
+        self.copy_file(install_path + vc_dll,
+                os.path.join(self.target_lib_dir, vc_dll))
 
         if self.version >= (3, 8):
             vc_1_dll = 'vcruntime140_1.dll'
-            sysroot.copy_file(install_path + vc_1_dll,
-                    os.path.join(sysroot.target_lib_dir, vc_1_dll))
+            self.copy_file(install_path + vc_1_dll,
+                    os.path.join(self.target_lib_dir, vc_1_dll))
 
         # The standard library.
         py_subdir = 'python{0}.{1}'.format(major, minor)
 
-        sysroot.copy_dir(install_path + 'Lib',
-                os.path.join(sysroot.target_lib_dir, py_subdir),
+        self.copy_dir(install_path + 'Lib',
+                os.path.join(self.target_lib_dir, py_subdir),
                 ignore=('site-packages', '__pycache__', '*.pyc', '*.pyo'))
 
         # The header files.
-        sysroot.copy_dir(install_path + 'include',
-                os.path.join(sysroot.target_include_dir, py_subdir))
+        self.copy_dir(install_path + 'include',
+                os.path.join(self.target_include_dir, py_subdir))
 
     def _patch_source_for_target(self):
         """ Patch the source code as necessary for the target. """
