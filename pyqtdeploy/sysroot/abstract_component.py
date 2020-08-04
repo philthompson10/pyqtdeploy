@@ -65,6 +65,27 @@ class AbstractComponent(ABC):
 
         self._sysroot.building_for_target = value
 
+    def copy_dir(self, src, dst, ignore=None):
+        """ Copy a directory and its contents optionally ignoring a sequence of
+        patterns.  If the destination directory already exists its contents
+        will be first deleted.
+        """
+
+        # Make sure the destination does not exist but can be created.
+        self.delete_dir(dst)
+        self.create_dir(os.path.dirname(dst))
+
+        self.verbose("Copying {0} to {1}".format(src, os.path.abspath(dst)))
+
+        if ignore is not None:
+            ignore = shutil.ignore_patterns(*ignore)
+
+        try:
+            shutil.copytree(src, dst, ignore=ignore)
+        except Exception as e:
+            self.error("unable to copy directory {0}".format(src),
+                    detail=str(e))
+
     def copy_file(self, src, dst, macros=None):
         """ Copy a file while expanding an optional dict of macros. """
 
@@ -102,6 +123,11 @@ class AbstractComponent(ABC):
         """ Create a text file and return the file object. """
 
         return self._sysroot.create_file(name, component=self)
+
+    def delete_dir(self, name):
+        """ Delete a directory and its contents. """
+
+        self._sysroot.delete_dir(name, component=self)
 
     def error(self, message, detail=''):
         """ Issue an error message.  This method will not return. """
