@@ -24,7 +24,7 @@ install_host_from_source = false
 # PyQt ########################################################################
 
 [PyQt]
-version = "5.12.3"
+version = "5.15.0"
 
 [PyQt.android]
 disabled_features = ["PyQt_Desktop_OpenGL", "PyQt_Printer"]
@@ -55,25 +55,25 @@ installed_modules = ["QtCore", "QtGui", "QtNetwork", "QtWidgets",
 # PyQt3D ######################################################################
 
 [PyQt3D]
-version = "5.12.0"
+version = "5.15.0"
 
 
 # PyQtChart ###################################################################
 
 [PyQtChart]
-version = "5.12.0"
+version = "5.15.0"
 
 
 # PyQtDataVisualization #######################################################
 
 [PyQtDataVisualization]
-version = "5.12.0"
+version = "5.15.0"
 
 
 # PyQtPurchasing ##############################################################
 
 [PyQtPurchasing]
-version = "5.12.0"
+version = "5.15.0"
 
 
 # QScintilla ##################################################################
@@ -85,7 +85,7 @@ version = "2.11.5"
 # Qt ##########################################################################
 
 [Qt]
-version = "5.12.9"
+version = "5.15.0"
 edition = "opensource"
 configure_options = ["-opengl", "desktop", "-no-dbus", "-qt-pcre"]
 skip = ["qtactiveqt", "qtconnectivity", "qtdoc", "qtgamepad", "qtlocation",
@@ -117,7 +117,7 @@ static_msvc_runtime = true
 # SIP #########################################################################
 
 [SIP]
-version = "4.19.18"
+version = "4.19.23"
 module_name = "PyQt5.sip"
 
 
