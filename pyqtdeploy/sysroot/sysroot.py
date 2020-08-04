@@ -416,15 +416,6 @@ class Sysroot:
         except UserException as e:
             self.error(str(e), component=component)
 
-    # TODO
-    def pip_install(self, package):
-        """ Use pip to install a package in the sysroot site-packages
-        directory.
-        """
-
-        self.run(self.host_pip, 'install', '--target',
-                self.target_sitepackages_dir, package)
-
     def progress(self, message, component=None):
         """ Issue a progress message. """
 
