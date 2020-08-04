@@ -170,7 +170,7 @@ class QtComponent(AbstractQtComponent):
         if self.version < (5, 12):
             self.unsupported()
 
-        if self.version >= (5, 13):
+        if self.version > (5, 15):
             self.untested()
 
         # If we are linking against OpenSSL then get its version number.
