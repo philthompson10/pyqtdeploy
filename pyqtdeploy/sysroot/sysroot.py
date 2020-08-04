@@ -334,27 +334,6 @@ class Sysroot:
 
         self._building_for_target = value
 
-    def copy_dir(self, src, dst, ignore=None):
-        """ Copy a directory and its contents optionally ignoring a sequence of
-        patterns.  If the destination directory already exists its contents
-        will be first deleted.
-        """
-
-        # Make sure the destination does not exist but can be created.
-        self.delete_dir(dst)
-        self.create_dir(os.path.dirname(dst))
-
-        self.verbose("Copying {0} to {1}".format(src, os.path.abspath(dst)))
-
-        if ignore is not None:
-            ignore = shutil.ignore_patterns(*ignore)
-
-        try:
-            shutil.copytree(src, dst, ignore=ignore)
-        except Exception as e:
-            self.error("unable to copy directory {0}".format(src),
-                    detail=str(e))
-
     def create_dir(self, name, empty=False, component=None):
         """ Ensure a directory exists and optionally delete its contents. """
 
@@ -382,14 +361,15 @@ class Sysroot:
         except UserException as e:
             self.error(str(e), component=component)
 
-    def delete_dir(self, name):
+    def delete_dir(self, name, component=None):
         """ Delete a directory and its contents. """
 
         if os.path.exists(name):
             if not os.path.isdir(name):
-                self.error("{0} exists but is not a directory".format(name))
+                self.error("{0} exists but is not a directory".format(name),
+                        component=component)
 
-            self.verbose("Deleting {0}".format(name))
+            self.verbose("Deleting {0}".format(name), component=component)
 
             # 32 bit applications on Windows have a 256 character limit on file
             # names which we can hit.  The Microsoft work around is to prepend
@@ -400,7 +380,7 @@ class Sysroot:
                 shutil.rmtree(name_hack)
             except Exception as e:
                 self.error("unable to remove directory {0}.".format(name),
-                        detail=str(e))
+                        detail=str(e), component=component)
 
     @property
     def host_arch_name(self):
