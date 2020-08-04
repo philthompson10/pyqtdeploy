@@ -304,7 +304,7 @@ pyqt_modules = {6}
         if self.version < (5, 12):
             self.unsupported()
 
-        if self.version >= (5, 13):
+        if self.version > (5, 15):
             self.untested()
 
         # Check the corresponding SIP version.
