@@ -488,13 +488,17 @@ build_time_vars = {
             self._patch_source(os.path.join('Modules', '_io', '_iomodule.c'),
                     self._patch_for_win_iomodule)
 
-           if self.version <= (3, 7, 4):
+            self._patch_source(
+                    os.path.join('Modules', 'expat', 'winconfig.h'),
+                    self._patch_for_win_expat)
+
+            if self.version <= (3, 7, 4):
                 self._patch_source(
                         os.path.join('Modules', 'expat', 'loadlibrary.c'),
-                        self._patch_for_win_loadlibrary)
+                        self._patch_for_win_expat)
 
-           self._patch_source(os.path.join('Modules', '_winapi.c'),
-                self._patch_for_win_winapi)
+            self._patch_source(os.path.join('Modules', '_winapi.c'),
+                    self._patch_for_win_winapi)
 
     def _patch_source(self, source, patcher):
         """ Invoke a patcher callable to patch a source file. """
@@ -537,12 +541,11 @@ build_time_vars = {
             patch_file.write(line.replace('consoleapi.h', 'windows.h'))
 
     @staticmethod
-    def _patch_for_win_loadlibrary(orig_file, patch_file):
-        """ Compiling loadlibrary.c triggers a missing definition of NMHDR.  A
-        regular build from python.org doesn't have this problem so it is
-        likely that the qmake build system is either not defining soemthing it
-        should or defining something it shouldn't.  Including Python.h seems
-        to work around the problem.
+    def _patch_for_win_expat(orig_file, patch_file):
+        """ Python.h needs to be included before windows.h.  A regular build
+        from python.org doesn't have this problem so it is likely that the
+        qmake build system is either not defining soemthing it should or
+        defining something it shouldn't.
         """
 
         for line in orig_file:
