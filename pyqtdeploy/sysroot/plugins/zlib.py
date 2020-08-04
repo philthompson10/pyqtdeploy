@@ -119,7 +119,7 @@ class zlibComponent(Component):
     def provides(self):
         """ The dict of parts provided by the component. """
 
-        return {'zlib': ComponentLibrary(libs='-lz')}
+        return {'zlib': ComponentLibrary(libs=('win#-lzlib', '!win#-lz'))}
 
     def verify(self):
         """ Verify the component. """

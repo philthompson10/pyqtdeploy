@@ -102,7 +102,9 @@ class OpenSSLComponent(Component):
         else:
             bundle_shared_libs = self.target_platform_name == 'android'
 
-            part = ComponentLibrary(libs=('-lcrypto', '-lssl'),
+            part = ComponentLibrary(
+                    libs=('win#-llibcrypto', '!win#-lcrypto', 'win#-llibssl',
+                            '!win#-lssl'),
                     bundle_shared_libs=bundle_shared_libs)
 
         return {'openssl': part}
