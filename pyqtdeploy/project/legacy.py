@@ -51,7 +51,7 @@ def load_xml(project, file_path):
         root = tree.parse(file_path)
     except Exception as e:
         raise UserException(
-                "There was an error reading the project file.", str(e))
+                "there was an error reading the project file", str(e))
 
     _assert(root.tag == 'Project',
             "Unexpected root tag '{0}', 'Project' expected.".format(root.tag))
@@ -68,11 +68,12 @@ def load_xml(project, file_path):
     _assert(version is not None, "Invalid 'version'.")
 
     if version < _MIN_VERSION:
-        raise UserException("The project's format is no longer supported.")
+        raise UserException("the project's format is no longer supported")
 
     if version > _LAST_VERSION:
         raise UserException(
-                "The project's format is version {0} but only version {1} is supported.".format(version, _LAST_VERSION))
+                "the project's format is version {0} but only version {1} is "
+                "supported".format(version, _LAST_VERSION))
 
     # The application specific configuration.
     application = root.find('Application')
@@ -141,7 +142,7 @@ def _assert(ok, detail):
     """ Validate an assertion and raise a UserException if it failed. """
 
     if not ok:
-        raise UserException("The project file is invalid.", detail)
+        raise UserException("the project file is invalid", detail)
 
 
 def _get_bool(element, name, context, default=None):

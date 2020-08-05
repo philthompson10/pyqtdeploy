@@ -75,7 +75,7 @@ class AbstractComponent(ABC):
         self.delete_dir(dst)
         self.create_dir(os.path.dirname(dst))
 
-        self.verbose("Copying {0} to {1}".format(src, os.path.abspath(dst)))
+        self.verbose("copying {0} to {1}".format(src, os.path.abspath(dst)))
 
         if ignore is not None:
             ignore = shutil.ignore_patterns(*ignore)
@@ -89,7 +89,7 @@ class AbstractComponent(ABC):
     def copy_file(self, src, dst, macros=None):
         """ Copy a file while expanding an optional dict of macros. """
 
-        self.verbose("Copying {0} to {1}".format(src, os.path.abspath(dst)))
+        self.verbose("copying {0} to {1}".format(src, os.path.abspath(dst)))
 
         if macros is None:
             try:
@@ -155,11 +155,11 @@ class AbstractComponent(ABC):
         """
 
         for source_dir in self._sysroot.source_dirs:
-            self.verbose("Looking for '{0}' in {1}".format(name, source_dir))
+            self.verbose("looking for '{0}' in {1}".format(name, source_dir))
 
             pathname = os.path.join(source_dir, name)
             if os.path.isfile(pathname):
-                self.verbose("Found '{0}' in {1}".format(name, source_dir))
+                self.verbose("found '{0}' in {1}".format(name, source_dir))
 
                 return pathname
 
@@ -204,7 +204,7 @@ class AbstractComponent(ABC):
                 break
         else:
             self.error(
-                    "Unable to find an installation of Python v{0}.".format(
+                    "unable to find an installation of Python v{0}".format(
                             reg_version))
 
         return install_path
@@ -215,7 +215,7 @@ class AbstractComponent(ABC):
         """
 
         self.verbose(
-                "Determining installed version from '{0}'".format(filename))
+                "determining installed version from '{0}'".format(filename))
 
         version_line = None
 
@@ -228,8 +228,7 @@ class AbstractComponent(ABC):
 
         if version_line is None:
             self.error(
-                    "Unable to find '{0}' in {1}.".format(identifier,
-                            filename))
+                    "unable to find '{0}' in {1}".format(identifier, filename))
 
         return version_line
 
@@ -366,12 +365,6 @@ class AbstractComponent(ABC):
         """ True if verbose messages are being displayed. """
 
         return self._sysroot.verbose_enabled
-
-    def verify_host_tools(self, tools):
-        """ Verify that a sequence of host tools is available. """
-
-        for tool in tools:
-            self.find_exe(tool)
 
     def warning(self, message):
         """ Issue a warning message. """

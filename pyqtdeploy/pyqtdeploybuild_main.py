@@ -72,7 +72,7 @@ def main():
 
     if args.resources < 1:
         message_handler.error(
-                "error: argument --resources: number must be at least 1")
+                "Error: argument --resources: number must be at least 1.")
         return 2
 
     try:

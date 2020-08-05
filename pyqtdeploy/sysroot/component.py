@@ -67,7 +67,7 @@ class Component(AbstractComponent):
 
         archive = os.path.join(cache_dir, archive_name)
         if os.path.isfile(archive):
-            self.verbose("Found '{0}' in download cache".format(archive_name))
+            self.verbose("found '{0}' in download cache".format(archive_name))
             return archive
 
         # Try and download the archive into the cache.
@@ -78,8 +78,8 @@ class Component(AbstractComponent):
             for url in urls:
                 archive_url = url + archive_name
 
-                self.verbose("Downloading '{0}' from {1}".format(
-                        archive_name, url))
+                self.progress(
+                        "downloading '{0}' from {1}".format(archive_name, url))
 
                 try:
                     with urlopen(archive_url) as response, open(archive, 'wb') as f:
@@ -89,10 +89,10 @@ class Component(AbstractComponent):
                     continue
                 except Exception as e:
                     self.verbose(
-                            "Unable to download '{0}'".format(archive_url))
+                            "unable to download '{0}'".format(archive_url))
                     continue
 
-                self.verbose("Downloaded '{0}'".format(archive_url))
+                self.verbose("downloaded '{0}'".format(archive_url))
 
                 return archive
 
@@ -119,7 +119,7 @@ class Component(AbstractComponent):
         url = 'https://pypi.org/project/{}/{}/'.format(pypi_project,
                 self.version)
 
-        self.verbose("Reading '{0}'".format(url))
+        self.verbose("reading '{0}'".format(url))
 
         try:
             with urlopen(url) as response:
@@ -132,7 +132,7 @@ class Component(AbstractComponent):
 
         if parser.archive_url is None:
             self.verbose(
-                    "Unable to find link to '{0}' in '{1}'".format(
+                    "unable to find link to '{0}' in '{1}'".format(
                             self.get_archive_name(), url))
             return []
 
@@ -151,7 +151,7 @@ class Component(AbstractComponent):
         archive_name = os.path.basename(archive)
 
         # Unpack the archive.
-        self.verbose("Unpacking '{}'".format(archive_name))
+        self.verbose("unpacking '{}'".format(archive_name))
 
         try:
             shutil.unpack_archive(archive_name)

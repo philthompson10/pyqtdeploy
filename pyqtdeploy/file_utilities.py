@@ -35,7 +35,7 @@ def create_file(file_name):
     try:
         return open(file_name, 'wt', encoding='UTF-8')
     except Exception as e:
-        raise UserException("Unable to create file {0}".format(file_name),
+        raise UserException("unable to create file {0}".format(file_name),
                 str(e))
 
 
@@ -47,5 +47,5 @@ def open_file(file_name):
     try:
         return open(file_name, 'rt')
     except Exception as e:
-        raise UserException("Unable to open file {0}".format(file_name),
+        raise UserException("unable to open file {0}".format(file_name),
                 str(e))

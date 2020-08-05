@@ -250,20 +250,21 @@ class Project:
             with open(file_path) as f:
                 root = toml.load(f)
         except Exception as e:
-            raise UserException(
-                "There was an error reading the project file.", str(e))
+            raise UserException("there was an error reading the project file",
+                    str(e))
 
         # Check the project version number.
         version = root.get('version')
         if version is None:
-            raise UserException("Missing 'version' attribute.")
+            raise UserException("missing 'version' attribute")
 
         if version < cls.min_version:
-            raise UserException("The project's format is no longer supported.")
+            raise UserException("the project's format is no longer supported")
 
         if version > cls.version:
             raise UserException(
-                    "The project's format is version {0} but only version {1} is supported.".format(version, cls.version))
+                    "the project's format is version {0} but only version {1} "
+                    "is supported".format(version, cls.version))
 
         project.sysroot_toml = root.get('sysroot', '')
         project.sysroots_dir = root.get('sysroots_dir', '')
@@ -321,8 +322,8 @@ class Project:
             with open(file_name, 'w') as f:
                 toml.dump(root, f)
         except Exception as e:
-            raise UserException(
-                    "There was an error writing the project file.", str(e))
+            raise UserException("there was an error writing the project file",
+                    str(e))
 
     @classmethod
     def _save_package(cls, qrc_package):

@@ -66,16 +66,14 @@ class Sysroot:
             if qt_component is not None:
                 qt_component.host_qmake = qmake
 
-    @staticmethod
-    def error(message, detail='', exception=None, component=None):
+    @classmethod
+    def error(cls, message, detail='', exception=None, component=None):
         """ Raise an exception that will report an error is a user friendly
         manner.
         """
 
-        if component is not None:
-            message = "{0}: {1}".format(component.name, message)
-
-        raise UserException(message, detail=detail) from exception
+        raise UserException(cls._format_message(message, component),
+                detail=detail) from exception
 
     def find_exe(self, name, required=True, component=None):
         """ Return the absolute pathname of an executable located on PATH. """
@@ -168,7 +166,7 @@ class Sysroot:
             try:
                 self.delete_dir(build_dir)
             except UserException as e:
-                self.verbose("Warning: " + e.text)
+                self.warning(e.text)
 
     def show_options(self, component_names):
         """ Show the options for a sequence of components.  If no names are
@@ -193,18 +191,17 @@ class Sysroot:
 
         # Verify the host and target.
         self.progress(
-                "Verifying host architecture '{0}'...".format(self.host.name))
+                "verifying host architecture '{0}'".format(self.host.name))
         self.host.verify_as_host(self.target, self._message_handler)
 
         self.progress(
-                "Verifying target architecture '{0}'...".format(
-                        self.target.name))
+                "verifying target architecture '{0}'".format(self.target.name))
         self.target.verify_as_target(self._message_handler)
 
         # Verify the components.
         for component in self.components:
             self.progress(
-                    "Verifying {0} v{1}...".format(component.name,
+                    "verifying {0} v{1}".format(component.name,
                             component.version))
 
             component.verify()
@@ -212,26 +209,8 @@ class Sysroot:
     def warning(self, message, component=None):
         """ Issue a warning message. """
 
-        if component is not None:
-            message = "{0}: {1}".format(component.name, message)
-
         assert self._message_handler is not None
-        self._message_handler.warning(message)
-
-    def _components_from_names(self, component_names):
-        """ Return a sequence of components from a sequence of names. """
-
-        components = []
-
-        for name in component_names:
-            for component in self.components:
-                if component.name == name:
-                    components.append(component)
-                    break
-            else:
-                self.error("unkown component '{0}'".format(name))
-
-        return components
+        self._message_handler.warning(self._format_message(message, component))
 
     @property
     def android_ndk_root(self):
@@ -345,7 +324,7 @@ class Sysroot:
                 self.error("{0} exists but is not a directory".format(name),
                         component=component)
         else:
-            self.verbose("Creating {0}".format(name), component=component)
+            self.verbose("creating {0}".format(name), component=component)
 
             try:
                 os.makedirs(name, exist_ok=True)
@@ -369,7 +348,7 @@ class Sysroot:
                 self.error("{0} exists but is not a directory".format(name),
                         component=component)
 
-            self.verbose("Deleting {0}".format(name), component=component)
+            self.verbose("deleting {0}".format(name), component=component)
 
             # 32 bit applications on Windows have a 256 character limit on file
             # names which we can hit.  The Microsoft work around is to prepend
@@ -379,7 +358,7 @@ class Sysroot:
             try:
                 shutil.rmtree(name_hack)
             except Exception as e:
-                self.error("unable to remove directory {0}.".format(name),
+                self.error("unable to remove directory {0}".format(name),
                         detail=str(e), component=component)
 
     @property
@@ -419,11 +398,9 @@ class Sysroot:
     def progress(self, message, component=None):
         """ Issue a progress message. """
 
-        if component is not None:
-            message = "{0}: {1}".format(component.name, message)
-
         assert self._message_handler is not None
-        self._message_handler.progress_message(message)
+        self._message_handler.progress_message(
+                self._format_message(message, component))
 
     def run(self, *args, capture=False):
         """ Run a command, optionally capturing stdout. """
@@ -453,11 +430,9 @@ class Sysroot:
     def verbose(self, message, component=None):
         """ Issue a verbose progress message. """
 
-        if component is not None:
-            message = "{0}: {1}".format(component.name, message)
-
         assert self._message_handler is not None
-        self._message_handler.verbose_message(message)
+        self._message_handler.verbose_message(
+                self._format_message(message, component))
 
     @property
     def verbose_enabled(self):
@@ -465,3 +440,29 @@ class Sysroot:
 
         assert self._message_handler is not None
         return self._message_handler.verbose
+
+    def _components_from_names(self, component_names):
+        """ Return a sequence of components from a sequence of names. """
+
+        components = []
+
+        for name in component_names:
+            for component in self.components:
+                if component.name == name:
+                    components.append(component)
+                    break
+            else:
+                self.error("unkown component '{0}'".format(name))
+
+        return components
+
+    @staticmethod
+    def _format_message(message, component):
+        """ Return a formatted message. """
+
+        if component is None:
+            message = '{}{}.'.format(message[0].upper(), message[1:])
+        else:
+            message = "{0}: {1}.".format(component.name, message)
+
+        return message
