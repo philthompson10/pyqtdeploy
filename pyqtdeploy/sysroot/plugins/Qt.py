@@ -222,6 +222,15 @@ class QtComponent(AbstractQtComponent):
             if self.android_api < 21:
                 self.error("Android API level 21 or greater is required")
 
+            if self.version >= (5, 13, 2) or (5, 12, 6) <= self.version <= (5, 13, 0):
+                if self.android_ndk_version not in (20, 21):
+                    self.error(
+                            "v{0} requires NDK r20 or r21".format(
+                                    self.version))
+            else:
+                if self.android_ndk_version != 19:
+                    self.error("v{0} requires NDK r19".format(self.version))
+
     def _install_from_source(self):
         """ Install Qt from source. """
 
