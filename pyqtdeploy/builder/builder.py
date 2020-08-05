@@ -129,7 +129,7 @@ class Builder:
             shutil.rmtree(self._build_dir, ignore_errors=True)
 
         # Now start the build.
-        self._create_directory(self._build_dir)
+        self._sysroot.create_directory(self._build_dir)
 
         # Create the job file and writer.
         job_dir = tempfile.TemporaryDirectory()
@@ -263,19 +263,6 @@ class Builder:
                 value = '-L' + component.get_target_src_path(value[2:])
 
             used_values.add(value)
-
-    def _create_directory(self, dir_name):
-        """ Create a directory which may already exist. """
-
-        self._message_handler.verbose_message(
-                "Creating directory {0}".format(dir_name))
-
-        try:
-            os.makedirs(dir_name, exist_ok=True)
-        except Exception as e:
-            raise UserException(
-                    "unable to create the '{0}' directory".format(dir_name),
-                    str(e))
 
     @staticmethod
     def _freeze(job_writer, label, out_file, in_file, name, as_c=False):

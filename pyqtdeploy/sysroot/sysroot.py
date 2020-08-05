@@ -30,9 +30,8 @@ import sys
 
 from ..file_utilities import (create_file as fu_create_file,
         open_file as fu_open_file)
-from ..platforms import Architecture, Platform
+from ..platforms import Platform
 from ..user_exception import UserException
-from ..version_number import VersionNumber
 
 
 class Sysroot:
@@ -65,208 +64,6 @@ class Sysroot:
             qt_component = self.get_component('Qt', required=False)
             if qt_component is not None:
                 qt_component.host_qmake = qmake
-
-    @classmethod
-    def error(cls, message, detail='', exception=None, component=None):
-        """ Raise an exception that will report an error is a user friendly
-        manner.
-        """
-
-        raise UserException(cls._format_message(message, component),
-                detail=detail) from exception
-
-    def find_exe(self, name, required=True, component=None):
-        """ Return the absolute pathname of an executable located on PATH. """
-
-        host_exe = self.host_exe(name)
-
-        for d in os.get_exec_path():
-            exe_path = os.path.join(d, host_exe)
-
-            if os.access(exe_path, os.X_OK):
-                return exe_path
-
-        if required:
-            self.error("'{0}' could not be found on PATH".format(name),
-                    component=component)
-
-        return None
-
-    def get_component(self, name, required=True, component=None):
-        """ Return the component object for the given name or None if the
-        component hasn't been specified.  If it has not been specified and it
-        is required then raise an exception.
-        """
-
-        for comp in self.components:
-            if comp.name == name:
-                return comp
-
-        if required:
-            self.error(
-                    "'{0}' must be specified as a component of the "
-                            "sysroot".format(name),
-                    component=component)
-
-        return None
-
-    def host_exe(self, name):
-        """ Convert a generic executable name to a host-specific version. """
-
-        return self.host.platform.exe(name)
-
-    def install_components(self, component_names, source_dirs, no_clean):
-        """ Install a sequence of components.  If no names are given then
-        create the system image root directory and install everything.  Raise a
-        UserException if there is an error.
-        """
-
-        # Verify the configuration.
-        self.verify()
-
-        # Normalise the list of source directories to search.
-        if source_dirs:
-            self.source_dirs = [os.path.abspath(s) for s in source_dirs]
-        else:
-            self.source_dirs = [
-                    os.path.dirname(self._specification.specification_file)]
-
-        self.target.configure()
-
-        if component_names:
-            components = self._components_from_names(component_names)
-            all_components = False
-        else:
-            components = self.components
-            all_components = True
-
-        self.create_dir(self.sysroot_dir, empty=all_components)
-        os.makedirs(self.host_dir, exist_ok=True)
-        os.makedirs(self.target_include_dir, exist_ok=True)
-        os.makedirs(self.target_lib_dir, exist_ok=True)
-        os.makedirs(self.target_src_dir, exist_ok=True)
-
-        # Create a new build directory.
-        build_dir = os.path.join(self.sysroot_dir, 'build')
-        self.create_dir(build_dir, empty=True)
-        cwd = os.getcwd()
-
-        # Install the components.
-        self.building_for_target = True
-
-        for component in components:
-            component.ensure_installed(build_dir, all_components)
-
-        # Remove the build directory if requested.
-        os.chdir(cwd)
-
-        if not no_clean:
-            # This can fail on Windows (complaining about non-empty
-            # directories).  Therefore we just warn that we couldn't do it.
-            try:
-                self.delete_dir(build_dir)
-            except UserException as e:
-                self.warning(e.text)
-
-    def show_options(self, component_names):
-        """ Show the options for a sequence of components.  If no names are
-        given then show the options of all components.  Raise a UserException
-        if there is an error.
-        """
-
-        if component_names:
-            components = self._components_from_names(component_names)
-        else:
-            components = self.components
-
-        assert self._message_handler is not None
-        self._specification.show_options(components, self._message_handler)
-
-    def verify(self):
-        """ Verify the configuration.  Raise a UserException if there is an
-        error.
-        """
-
-        assert self._message_handler is not None
-
-        # Verify the host and target.
-        self.progress(
-                "verifying host architecture '{0}'".format(self.host.name))
-        self.host.verify_as_host(self.target, self._message_handler)
-
-        self.progress(
-                "verifying target architecture '{0}'".format(self.target.name))
-        self.target.verify_as_target(self._message_handler)
-
-        # Verify the components.
-        for component in self.components:
-            self.progress(
-                    "verifying {0} v{1}".format(component.name,
-                            component.version))
-
-            component.verify()
-
-    def warning(self, message, component=None):
-        """ Issue a warning message. """
-
-        assert self._message_handler is not None
-        self._message_handler.warning(self._format_message(message, component))
-
-    @property
-    def android_ndk_root(self):
-        """ The path of the root of the Android NDK. """
-
-        return self.target.platform.android_ndk_root
-
-    @property
-    def android_ndk_sysroot(self):
-        """ The path of the Android NDK's sysroot directory. """
-
-        return self.target.platform.android_ndk_sysroot
-
-    @property
-    def android_ndk_version(self):
-        """ The VersionNumber object representing the version number of the
-        Android NDK.
-        """
-
-        ndk_version = self.target.platform.android_ndk_version
-
-        if ndk_version is None:
-            self.error("unable to determine the NDK version number")
-
-        return ndk_version
-
-    @property
-    def android_sdk_version(self):
-        """ The VersionNumber object representing the version number of the
-        Android SDK.
-        """
-
-        sdk_version = self.target.platform.android_sdk_version
-
-        if sdk_version is None:
-            self.error("unable to determine the SDK version number")
-
-        return sdk_version
-
-    @property
-    def android_toolchain_bin(self):
-        """ The path of the Android toolchain's bin directory. """
-
-        return self.target.android_toolchain_bin
-
-    @property
-    def android_toolchain_cc(self):
-        """ The name of the Android toolchain's C compiler. """
-
-        return self.target.android_toolchain_cc
-
-    @property
-    def android_toolchain_prefix(self):
-        """ The name of the Android toolchain's prefix. """
-
-        return self.target.android_toolchain_prefix
 
     @property
     def apple_sdk(self):
@@ -361,11 +158,49 @@ class Sysroot:
                 self.error("unable to remove directory {0}".format(name),
                         detail=str(e), component=component)
 
-    @property
-    def host_arch_name(self):
-        """ The name of the host architecture. """
+    @classmethod
+    def error(cls, message, detail='', exception=None, component=None):
+        """ Raise an exception that will report an error is a user friendly
+        manner.
+        """
 
-        return self.host.arch_name
+        raise UserException(cls._format_message(message, component),
+                detail=detail) from exception
+
+    def find_exe(self, name, required=True, component=None):
+        """ Return the absolute pathname of an executable located on PATH. """
+
+        host_exe = self.host_exe(name)
+
+        for d in os.get_exec_path():
+            exe_path = os.path.join(d, host_exe)
+
+            if os.access(exe_path, os.X_OK):
+                return exe_path
+
+        if required:
+            self.error("'{0}' could not be found on PATH".format(name),
+                    component=component)
+
+        return None
+
+    def get_component(self, name, required=True, component=None):
+        """ Return the component object for the given name or None if the
+        component hasn't been specified.  If it has not been specified and it
+        is required then raise an exception.
+        """
+
+        for comp in self.components:
+            if comp.name == name:
+                return comp
+
+        if required:
+            self.error(
+                    "'{0}' must be specified as a component of the "
+                            "sysroot".format(name),
+                    component=component)
+
+        return None
 
     @property
     def host_dir(self):
@@ -373,19 +208,63 @@ class Sysroot:
 
         return os.path.join(self.sysroot_dir, 'host')
 
-    @property
-    def host_make(self):
-        """ The name of the host make executable. """
+    def host_exe(self, name):
+        """ Convert a generic executable name to a host-specific version. """
 
-        return self.host.platform.make
+        return self.host.platform.exe(name)
 
-    @property
-    def host_pip(self):
-        """ The pathname of the host pip executable. """
+    def install_components(self, component_names, source_dirs, no_clean):
+        """ Install a sequence of components.  If no names are given then
+        create the system image root directory and install everything.  Raise a
+        UserException if there is an error.
+        """
 
-        self._check_python_component()
+        # Verify the configuration.
+        self.verify()
 
-        return os.path.join(self.host_bin_dir, self.host_exe('pip'))
+        # Normalise the list of source directories to search.
+        if source_dirs:
+            self.source_dirs = [os.path.abspath(s) for s in source_dirs]
+        else:
+            self.source_dirs = [
+                    os.path.dirname(self._specification.specification_file)]
+
+        self.target.configure()
+
+        if component_names:
+            components = self._components_from_names(component_names)
+            all_components = False
+        else:
+            components = self.components
+            all_components = True
+
+        self.create_dir(self.sysroot_dir, empty=all_components)
+        os.makedirs(self.host_dir, exist_ok=True)
+        os.makedirs(self.target_include_dir, exist_ok=True)
+        os.makedirs(self.target_lib_dir, exist_ok=True)
+        os.makedirs(self.target_src_dir, exist_ok=True)
+
+        # Create a new build directory.
+        build_dir = os.path.join(self.sysroot_dir, 'build')
+        self.create_dir(build_dir, empty=True)
+        cwd = os.getcwd()
+
+        # Install the components.
+        self.building_for_target = True
+
+        for component in components:
+            component.ensure_installed(build_dir, all_components)
+
+        # Remove the build directory if requested.
+        os.chdir(cwd)
+
+        if not no_clean:
+            # This can fail on Windows (complaining about non-empty
+            # directories).  Therefore we just warn that we couldn't do it.
+            try:
+                self.delete_dir(build_dir)
+            except UserException as e:
+                self.warning(e.text)
 
     def open_file(self, name, component=None):
         """ Open an existing text file and return the file object. """
@@ -409,6 +288,20 @@ class Sysroot:
         return Platform.run(*args, message_handler=self._message_handler,
                 capture=capture)
 
+    def show_options(self, component_names):
+        """ Show the options for a sequence of components.  If no names are
+        given then show the options of all components.  Raise a UserException
+        if there is an error.
+        """
+
+        if component_names:
+            components = self._components_from_names(component_names)
+        else:
+            components = self.components
+
+        assert self._message_handler is not None
+        self._specification.show_options(components, self._message_handler)
+
     @property
     def target_include_dir(self):
         """ The name of the directory containing target header files. """
@@ -427,6 +320,30 @@ class Sysroot:
 
         return os.path.join(self.sysroot_dir, 'src')
 
+    def verify(self):
+        """ Verify the configuration.  Raise a UserException if there is an
+        error.
+        """
+
+        assert self._message_handler is not None
+
+        # Verify the host and target.
+        self.progress(
+                "verifying host architecture '{0}'".format(self.host.name))
+        self.host.verify_as_host(self.target, self._message_handler)
+
+        self.progress(
+                "verifying target architecture '{0}'".format(self.target.name))
+        self.target.verify_as_target(self._message_handler)
+
+        # Verify the components.
+        for component in self.components:
+            self.progress(
+                    "verifying {0} v{1}".format(component.name,
+                            component.version))
+
+            component.verify()
+
     def verbose(self, message, component=None):
         """ Issue a verbose progress message. """
 
@@ -440,6 +357,12 @@ class Sysroot:
 
         assert self._message_handler is not None
         return self._message_handler.verbose
+
+    def warning(self, message, component=None):
+        """ Issue a warning message. """
+
+        assert self._message_handler is not None
+        self._message_handler.warning(self._format_message(message, component))
 
     def _components_from_names(self, component_names):
         """ Return a sequence of components from a sequence of names. """
