@@ -50,6 +50,64 @@ class AbstractComponent(ABC):
     provides = {}
 
     @property
+    def android_api(self):
+        """ The Android API to use. """
+
+        return self._sysroot.target.platform.android_api
+
+    @property
+    def android_ndk_root(self):
+        """ The path of the root of the Android NDK. """
+
+        return self._sysroot.target.platform.android_ndk_root
+
+    @property
+    def android_ndk_sysroot(self):
+        """ The path of the Android NDK's sysroot directory. """
+
+        return self._sysroot.target.platform.android_ndk_sysroot
+
+    @property
+    def android_ndk_version(self):
+        """ The VersionNumber object representing the version number of the
+        Android NDK.
+        """
+
+        return self._sysroot.target.platform.android_ndk_version
+
+    @property
+    def android_sdk_version(self):
+        """ The VersionNumber object representing the version number of the
+        Android SDK.
+        """
+
+        return self._sysroot.target.platform.android_sdk_version
+
+    @property
+    def android_toolchain_bin(self):
+        """ The path of the Android toolchain's bin directory. """
+
+        return self._sysroot.target.android_toolchain_bin
+
+    @property
+    def android_toolchain_cc(self):
+        """ The name of the Android toolchain's C compiler. """
+
+        return self._sysroot.target.android_toolchain_cc
+
+    @property
+    def android_toolchain_prefix(self):
+        """ The name of the Android toolchain's prefix. """
+
+        return self._sysroot.target.android_toolchain_prefix
+
+    @property
+    def apple_sdk(self):
+        """ The Apple SDK to use. """
+
+        return self._sysroot.apple_sdk
+
+    @property
     def building_for_target(self):
         """ This is set if building (ie. compiling and linking) for the target
         architecture.  Otherwise build for the host.  The default is True.
@@ -247,7 +305,7 @@ class AbstractComponent(ABC):
     def host_make(self):
         """ The name of the host make executable. """
 
-        return self._sysroot.host_make
+        return self._sysroot.host.platform.make
 
     @property
     def host_platform_name(self):
@@ -444,64 +502,6 @@ class AbstractComponent(ABC):
             os.environ['PATH'] = os.pathsep.join(path)
 
         return original_path
-
-    @property
-    def android_api(self):
-        """ The Android API to use. """
-
-        return self._sysroot.target.platform.android_api
-
-    @property
-    def android_ndk_root(self):
-        """ The path of the root of the Android NDK. """
-
-        return self._sysroot.android_ndk_root
-
-    @property
-    def android_ndk_sysroot(self):
-        """ The path of the Android NDK's sysroot directory. """
-
-        return self._sysroot.android_ndk_sysroot
-
-    @property
-    def android_ndk_version(self):
-        """ The VersionNumber object representing the version number of the
-        Android NDK.
-        """
-
-        return self._sysroot.android_ndk_version
-
-    @property
-    def android_sdk_version(self):
-        """ The VersionNumber object representing the version number of the
-        Android SDK.
-        """
-
-        return self._sysroot.android_sdk_version
-
-    @property
-    def android_toolchain_bin(self):
-        """ The path of the Android toolchain's bin directory. """
-
-        return self._sysroot.android_toolchain_bin
-
-    @property
-    def android_toolchain_cc(self):
-        """ The name of the Android toolchain's C compiler. """
-
-        return self._sysroot.android_toolchain_cc
-
-    @property
-    def android_toolchain_prefix(self):
-        """ The name of the Android toolchain's prefix. """
-
-        return self._sysroot.android_toolchain_prefix
-
-    @property
-    def apple_sdk(self):
-        """ The Apple SDK to use. """
-
-        return self._sysroot.apple_sdk
 
     def ensure_installed(self, build_dir, all_components):
         """ Ensure the component is installed. """

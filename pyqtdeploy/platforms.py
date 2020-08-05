@@ -360,36 +360,6 @@ class Android(Platform):
                     "'{0}' does not exist, make sure ANDROID_NDK_ROOT and "
                     "ANDROID_NDK_PLATFORM are set correctly".format(name))
 
-    def configure(self):
-        """ Configure the platform for building. """
-
-        self._original_toolchain_version = os.environ.get(
-                'ANDROID_NDK_TOOLCHAIN_VERSION')
-
-        if self._original_toolchain_version is None:
-            # This is only used by a gcc toolchain.
-            self.ndk_toolchain_version = '4.9'
-            os.environ['ANDROID_NDK_TOOLCHAIN_VERSION'] = self.ndk_toolchain_version
-        else:
-            self.ndk_toolchain_version = self._original_toolchain_version
-
-        # Force the gcc toolchain for r15 and earlier.
-        self._original_qmakespec = os.environ.get('QMAKESPEC')
-        os.environ['QMAKESPEC'] = 'android-g++' if self.android_ndk_version <= 15 else 'android-clang'
-
-    def deconfigure(self):
-        """ Deconfigure the platform for building. """
-
-        if self._original_qmakespec is None:
-            del os.environ['QMAKESPEC']
-        else:
-            os.environ['QMAKESPEC'] = self._original_qmakespec
-
-        if self._original_toolchain_version is None:
-            del os.environ['ANDROID_NDK_TOOLCHAIN_VERSION']
-        else:
-            os.environ['ANDROID_NDK_TOOLCHAIN_VERSION'] = self._original_toolchain_version
-
     # The environment variables that should be set.
     _REQUIRED_ENV_VARS = ('ANDROID_NDK_ROOT', 'ANDROID_NDK_PLATFORM',
             'ANDROID_SDK_ROOT')
@@ -407,7 +377,6 @@ class Android(Platform):
                                 name))
 
         self.android_ndk_root = os.environ['ANDROID_NDK_ROOT']
-        self.android_sdk_root = os.environ['ANDROID_SDK_ROOT']
 
         self.android_ndk_sysroot = os.path.join(self.android_ndk_root,
                 'sysroot')
@@ -430,6 +399,8 @@ class Android(Platform):
 
         # Verify the SDK version.
         self.android_sdk_version = self._get_sdk_version()
+        if self.android_sdk_version is None:
+            raise UserException("unable to determine the SDK version number")
 
         # Verify the API.
         self.android_api = self._get_api()
@@ -507,8 +478,8 @@ class Android(Platform):
         """ Return the version number of the SDK. """
 
         # Assume that source.properties should be available.
-        source_properties = os.path.join(self.android_sdk_root, 'tools',
-                'source.properties')
+        source_properties = os.path.join(os.environ['ANDROID_SDK_ROOT'],
+                'tools', 'source.properties')
 
         if not os.path.exists(source_properties):
             raise UserException(
