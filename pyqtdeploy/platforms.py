@@ -395,12 +395,21 @@ class Android(Platform):
 
         # Issue a warning for untested NDK revision.
         if revision > 21:
-            message_handler.warning("NDK r{0} is untested".format(revision))
+            message_handler.warning(
+                    "versions of the NDK later than r21 are untested")
 
         # Verify the SDK version.
         self.android_sdk_version = self._get_sdk_version()
         if self.android_sdk_version is None:
             raise UserException("unable to determine the SDK version number")
+
+        if self.android_sdk_version < (26, 1, 1):
+            message_handler.warning(
+                    "versions of the SDK earlier than v26.1.1 are untested")
+
+        if self.android_sdk_version > (26, 1, 1):
+            message_handler.warning(
+                    "versions of the SDK later than v26.1.1 are untested")
 
         # Verify the API.
         self.android_api = self._get_api()

@@ -222,22 +222,6 @@ class QtComponent(AbstractQtComponent):
             if self.android_api < 21:
                 self.error("Android API level 21 or greater is required")
 
-            if self.android_sdk_version < (26, 1, 1):
-                self.warning(
-                        "versions of the SDK earlier than v26.1.1 are untested")
-
-            if self.android_sdk_version > (26, 1, 1):
-                self.warning(
-                        "versions of the SDK later than v26.1.1 are untested")
-
-            if self.android_ndk_version < 19:
-                self.warning(
-                        "versions of the NDK earlier than r19 are untested")
-
-            if self.android_ndk_version > 19:
-                self.warning(
-                        "versions of the NDK later than r19 are untested")
-
     def _install_from_source(self):
         """ Install Qt from source. """
 
