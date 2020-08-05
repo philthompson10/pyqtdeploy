@@ -522,8 +522,8 @@ static PyObject *qrcimporter_find_loader(PyObject *self, PyObject *args)
 
 
 // Implement the standard find_module() method for the importer.  Note that we
-// implement this for Python v3 as well as v2 to support things (like
-// pkg_resources) that are still using the old API.
+// implement this for Python v3 to support things (like pkg_resources) that are
+// still using the old API.
 static PyObject *qrcimporter_find_module(PyObject *self, PyObject *args)
 {
     PyObject *py_fqmn, *path;
@@ -578,9 +578,6 @@ static PyObject *qrcimporter_load_module(PyObject *self, PyObject *args)
         // We use the imp module to load sub-packages that are dynamically
         // linked extension modules installed in the same directory as the
         // executable.
-        // TODO - Reimplement without using the imp module for Python v3.4 and
-        // later.  Change the meta-data for the imp module for Python v3.4 to
-        // be PythonModule rather than CorePythonModule.
         static PyObject *load_module = NULL;
         static PyObject *open_file = NULL;
 
