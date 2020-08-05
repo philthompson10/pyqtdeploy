@@ -53,7 +53,7 @@ class MessageHandler:
         """ Handle an exception. """
 
         if self.verbose and e.detail != '':
-            self.error("{0}: {1}".format(e.text, e.detail))
+            self.error("{0}: {1}".format(e.text[:-1], e.detail))
         else:
             self.error(e.text)
 
@@ -68,7 +68,8 @@ class MessageHandler:
         """ Handle a progress message. """
 
         if not self.quiet:
-            self.message(message)
+            # There should already be one trailing period.
+            self.message(message + '..')
 
     def verbose_message(self, message):
         """ Handle a verbose progress message. """

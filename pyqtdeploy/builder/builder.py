@@ -75,7 +75,7 @@ class Builder:
         # Check the sysroot directory exists.
         if not os.path.isdir(self._sysroot.sysroot_dir):
             raise UserException(
-                    "The sysroot directory '{0}' does not exist.".format(
+                    "the sysroot directory '{0}' does not exist".format(
                             self._sysroot.sysroot_dir))
 
         # Get all the parts provided by the sysroot.
@@ -107,13 +107,13 @@ class Builder:
         # Check there is an entry point or a script.
         if project.application_script == '':
             if project.application_entry_point == '':
-                raise UserException("Either the application script name or "
+                raise UserException("either the application script name or "
                         "the entry point must be specified")
             elif len(project.application_entry_point.split(':')) != 2:
-                raise UserException("An entry point must be a module name and "
-                        "a callable separated by a colon.")
+                raise UserException("an entry point must be a module name and "
+                        "a callable separated by a colon")
         elif project.application_entry_point != '':
-            raise UserException("Either the application script name or the "
+            raise UserException("either the application script name or the "
                     "entry point must be specified but not both")
 
         # Set the name of the build directory.
@@ -195,7 +195,7 @@ class Builder:
 
                 if not os.path.isfile(lib_path):
                     raise UserException(
-                            "Bundled shared library '{0}' does not exist.".format(lib_path))
+                            "bundled shared library '{0}' does not exist".format(lib_path))
 
                 bundled_shared_libs.add(lib_path)
 
@@ -274,7 +274,7 @@ class Builder:
             os.makedirs(dir_name, exist_ok=True)
         except Exception as e:
             raise UserException(
-                    "Unable to create the '{0}' directory".format(dir_name),
+                    "unable to create the '{0}' directory".format(dir_name),
                     str(e))
 
     @staticmethod

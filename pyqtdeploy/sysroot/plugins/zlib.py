@@ -142,8 +142,8 @@ class zlibComponent(Component):
             root_dir = ''
         else:
             self.error(
-                    "Using an existing installation is not supported for "
-                    "Windows targets.")
+                    "using an existing installation is not supported for "
+                    "Windows targets")
 
         version_file = root_dir + '/usr/include/zlib.h'
         version_line = self.get_version_from_file('ZLIB_VERSION', version_file)

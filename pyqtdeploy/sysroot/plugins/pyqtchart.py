@@ -112,7 +112,7 @@ sip_module = PyQt5.sip
             cfg += 'pyqt_disabled_features = {0}\n'.format(
                     ' '.join(pyqt.disabled_features))
 
-        cfg_name = 'pyqtchart-' + self.target_arch_name + '.cfg'
+        cfg_name = 'pyqtchart.cfg'
 
         with self.create_file(cfg_name) as cfg_file:
             cfg_file.write(cfg)

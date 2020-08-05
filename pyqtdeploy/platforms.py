@@ -79,7 +79,7 @@ class Platform:
             if platform.name == name:
                 return platform
 
-        raise UserException("'{0}' is not a supported platform.".format(name))
+        raise UserException("'{0}' is not a supported platform".format(name))
 
     @staticmethod
     def run(*args, message_handler, capture=False):
@@ -114,7 +114,7 @@ class Platform:
 
         if detail:
             raise UserException(
-                    "Execution of '{0}' failed: {1}".format(args[0], detail))
+                    "execution of '{0}' failed: {1}".format(args[0], detail))
 
         return ''.join(stdout).strip() if capture else None
 
@@ -166,7 +166,7 @@ class Architecture:
                     size = '64' if parts[1] == 'amd64' else '32'
             else:
                 raise UserException(
-                        "'{0}' is not a supported host platform.".format(
+                        "'{0}' is not a supported host platform".format(
                                 base_platform))
 
             name = '{}-{}'.format(name, size)
@@ -181,7 +181,7 @@ class Architecture:
                 return arch
 
         raise UserException(
-                "'{0}' is not a supported architecture.".format(name))
+                "'{0}' is not a supported architecture".format(name))
 
     def configure(self):
         """ Configure the architecture for building. """
@@ -271,7 +271,7 @@ class ApplePlatform(Platform):
 
         if not self.apple_sdk:
             raise UserException(
-                    "A valid '{0}' SDK could not be found.".format(
+                    "a valid '{0}' SDK could not be found".format(
                             self.sdk_name))
 
 
@@ -356,7 +356,9 @@ class Android(Platform):
         """ Raise an exception if something is missing from the NDK. """
 
         if not os.path.exists(name):
-            raise UserException("'{0}' does not exist, make sure ANDROID_NDK_ROOT and ANDROID_NDK_PLATFORM are set correctly".format(name))
+            raise UserException(
+                    "'{0}' does not exist, make sure ANDROID_NDK_ROOT and "
+                    "ANDROID_NDK_PLATFORM are set correctly".format(name))
 
     def configure(self):
         """ Configure the platform for building. """
@@ -401,7 +403,7 @@ class Android(Platform):
         for name in self._REQUIRED_ENV_VARS:
             if name not in os.environ:
                 raise UserException(
-                        "The {0} environment variable must be set.".format(
+                        "the {0} environment variable must be set".format(
                                 name))
 
         self.android_ndk_root = os.environ['ANDROID_NDK_ROOT']
@@ -414,17 +416,17 @@ class Android(Platform):
         # Verify the NDK revision.
         self.android_ndk_version = self._get_ndk_version()
         if self.android_ndk_version is None:
-            raise UserException("Unable to determine the NDK revision.")
+            raise UserException("unable to determine the NDK revision")
 
         # Require a minimum of r19 so that we can assume the compiler is clang
         # and that it works properly.
         revision = self.android_ndk_version.major
         if revision < 19:
-            raise UserException("NDK r19 or later is required.")
+            raise UserException("NDK r19 or later is required")
 
         # Issue a warning for untested NDK revision.
         if revision > 21:
-            message_handler.warning("NDK r{0} is untested.".format(revision))
+            message_handler.warning("NDK r{0} is untested".format(revision))
 
         # Verify the SDK version.
         self.android_sdk_version = self._get_sdk_version()
@@ -433,7 +435,8 @@ class Android(Platform):
         self.android_api = self._get_api()
         if self.android_api is None:
             raise UserException(
-                    "Unable to determine the API level from the ANDROID_NDK_PLATFORM environment variable.")
+                    "unable to determine the API level from the "
+                    "ANDROID_NDK_PLATFORM environment variable")
 
     def _get_api(self):
         """ Return the number of the Android API. """
@@ -442,7 +445,7 @@ class Android(Platform):
 
         if not os.path.isdir(os.path.join(self.android_ndk_root, 'platforms', ndk_platform)):
             raise UserException(
-                    "NDK r{0} does not support {1}.".format(
+                    "NDK r{0} does not support {1}".format(
                             self.android_ndk_version.major, ndk_platform))
 
         parts = ndk_platform.split('-')
@@ -508,7 +511,9 @@ class Android(Platform):
                 'source.properties')
 
         if not os.path.exists(source_properties):
-            raise UserException("'{0}' does not exist, make sure ANDROID_SDK_ROOT is set correctly".format(source_properties))
+            raise UserException(
+                    "'{0}' does not exist, make sure ANDROID_SDK_ROOT is set "
+                    "correctly".format(source_properties))
 
         return self._get_version(source_properties)
 
@@ -603,7 +608,7 @@ class WindowsArchitecture(Architecture):
 
         if target.platform.name == 'android':
             message_handler.warning(
-                    "Using Windows to host Android deployment is untested.")
+                    "using Windows to host Android deployment is untested")
 
             return True
 
@@ -624,7 +629,7 @@ class WindowsArchitecture(Architecture):
             if optional:
                 return None
 
-            raise UserException("Unable to detect any MSVC compiler.")
+            raise UserException("unable to detect any MSVC compiler")
 
         if vs_major == '14':
             is_32 = (os.environ.get('Platform') != 'X64')
@@ -648,7 +653,7 @@ class Windows_x86_32(WindowsArchitecture):
         super().verify_as_target(message_handler)
 
         if self.msvc_target() != '32':
-            raise UserException("MSVC is not configured for a 32-bit target.")
+            raise UserException("MSVC is not configured for a 32-bit target")
 
 
 class Windows_x86_64(WindowsArchitecture):
@@ -660,7 +665,7 @@ class Windows_x86_64(WindowsArchitecture):
         super().verify_as_target(message_handler)
 
         if self.msvc_target() != '64':
-            raise UserException("MSVC is not configured for a 64-bit target.")
+            raise UserException("MSVC is not configured for a 64-bit target")
 
 
 

@@ -100,8 +100,8 @@ class SysrootSpecification:
             plugin_type = _COMPONENT_TYPES.get(name)
             if plugin_type is not None and not issubclass(plugin, plugin_type):
                 raise UserException(
-                        "The {0} plugin must implement a subclass of "
-                                "{1}.".format(name, plugin_type.__name__))
+                        "the {0} plugin must implement a subclass of "
+                                "{1}".format(name, plugin_type.__name__))
 
             self._plugins[name] = plugin
 

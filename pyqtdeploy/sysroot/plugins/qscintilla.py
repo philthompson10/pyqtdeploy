@@ -110,7 +110,7 @@ sip_module = PyQt5.sip
             cfg += 'pyqt_disabled_features = {0}\n'.format(
                     ' '.join(disabled_features))
 
-        cfg_name = 'qscintilla-' + self.target_arch_name + '.cfg'
+        cfg_name = 'qscintilla.cfg'
 
         with self.create_file(cfg_name) as cfg_file:
             cfg_file.write(cfg)
@@ -156,7 +156,7 @@ sip_module = PyQt5.sip
         # The Scintilla code uses C++ library functions that are missing prior
         # to NDK v14.
         if self.target_platform_name == 'android' and self.android_ndk_version < 14:
-            self.error("Android NDK r14 or later is required.")
+            self.error("Android NDK r14 or later is required")
 
     @property
     def _is_print_support(self):

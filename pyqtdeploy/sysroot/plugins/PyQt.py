@@ -253,7 +253,7 @@ pyqt_modules = {6}
             cfg += 'pyqt_disabled_features = {0}\n'.format(
                     ' '.join(self.disabled_features))
 
-        cfg_name = 'pyqt5-' + self.target_arch_name + '.cfg'
+        cfg_name = 'pyqt5.cfg'
 
         with self.create_file(cfg_name) as cfg_file:
             cfg_file.write(cfg)

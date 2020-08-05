@@ -84,7 +84,7 @@ class OpenSSLComponent(Component):
 
         if self.host_platform_name == 'win' and self.find_exe('nasm', required=False) is None:
             self.verbose(
-                    "Disabling assembler optimisations as nasm isn't "
+                    "disabling assembler optimisations as nasm isn't "
                             "installed")
             common_options.append('no-asm')
 
@@ -184,7 +184,9 @@ class OpenSSLComponent(Component):
 
                 tools.append('patch')
 
-        self.verify_host_tools(tools)
+        # Check the host tools are available.
+        for tool in tools:
+            self.find_exe(tool)
 
     def _install_1_1(self, common_options):
         """ Install v1.1 for supported platforms. """
@@ -427,7 +429,7 @@ class OpenSSLComponent(Component):
         # We only support Linux native versions.
         if self.target_platform_name != 'linux':
             self.error(
-                    "Using an existing installation is only supported for "
+                    "using an existing installation is only supported for "
                     "Linux targets.")
 
         version_line = self.get_version_from_file('OPENSSL_VERSION_NUMBER',
@@ -443,7 +445,7 @@ class OpenSSLComponent(Component):
         try:
             version = int(version, base=16)
         except ValueError:
-            self.error("Unable to extract the version number.")
+            self.error("unable to extract the version number")
 
         major = (version >> 28) & 0xff
         minor = (version >> 20) & 0xff
