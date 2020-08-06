@@ -170,6 +170,9 @@ class QtComponent(AbstractQtComponent):
         if self.version < (5, 12):
             self.unsupported()
 
+        if self.target_platform_name == 'android' and self.version > (5, 14):
+            self.unsupported("on Android")
+
         if self.version > (5, 15):
             self.untested()
 
