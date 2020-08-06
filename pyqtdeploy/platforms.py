@@ -281,6 +281,10 @@ class ApplePlatform(Platform):
 class AndroidArchitecture(Architecture):
     """ A base class for any Android architecture. """
 
+    # The name of the Android platform's architecture ABI (as recognised by
+    # qmake).
+    android_abi = ''
+
     # The name of the Android platform's architecture.
     android_platform_arch = ''
 
@@ -327,6 +331,7 @@ class Android_arm_32(AndroidArchitecture):
     """ Encapsulate the Android 32-bit Arm architecture. """
 
     # Archtecture-specific values.
+    android_abi = 'armeabi-v7a'
     android_platform_arch = 'arch-arm'
     android_toolchain_prefix = 'arm-linux-androideabi-'
     clang_prefix = 'armv7a-linux-androideabi'
@@ -336,6 +341,7 @@ class Android_arm_64(AndroidArchitecture):
     """ Encapsulate the Android 64-bit Arm architecture. """
 
     # Archtecture-specific values.
+    android_abi = 'arm64-v8a'
     android_platform_arch = 'arch-arm64'
     android_toolchain_prefix = 'aarch64-linux-android-'
     clang_prefix = 'aarch64-linux-android'

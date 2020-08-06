@@ -68,6 +68,7 @@ win32 {
     android {
         DEFINES += PLATFORM=\\\"linux\\\"
         DEFINES += MULTIARCH=\\\"android\\\"
+        ANDROID_ABIS = @ANDROID_ABIS@
     }
     ios {
         DEFINES += PLATFORM=\\\"darwin\\\"

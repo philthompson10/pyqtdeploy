@@ -121,6 +121,10 @@ sip_module = PyQt5.sip
             '--no-sip-files', '--no-stubs', '--configuration', cfg_name,
             '--sip', sip.host_sip, '-c', '--pyqt', 'PyQt5', '--no-dist-info']
 
+        if self.target_platform_name == 'android' and self.version >= (2, 11, 6):
+            args.append('--android-abi')
+            args.append(self.android_abi)
+
         if self.verbose_enabled:
             args.append('--verbose')
 
@@ -149,6 +153,12 @@ sip_module = PyQt5.sip
         # We don't want to support old versions.
         if self.version < (2, 11):
             self.unsupported()
+
+        # Check if ANDROID_ABIS support is needed.
+        if self.target_platform_name == 'android':
+            if self.get_component('Qt').version >= (5, 14):
+                if self.version < (2, 11, 6):
+                    self.unsupported("with Qt v5.14 or later on Android")
 
         if self.version > (2, 11, 5):
             self.untested()

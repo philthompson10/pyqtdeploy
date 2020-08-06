@@ -334,12 +334,16 @@ class PythonComponent(AbstractPythonComponent):
 
         self.progress("installing {0}".format(python_pro_dst_file))
 
+        # This is needed by Qt v5.14 and later on Android.
+        android_abis = self.android_abi if self.target_platform_name == 'android' else ''
+
         self.copy_file(os.path.join(configurations_dir, 'python.pro'),
                 python_pro_dst_file, macros={
                     '@PY_MAJOR_VERSION@': str(self.version.major),
                     '@PY_MINOR_VERSION@': str(self.version.minor),
                     '@PY_PATCH_VERSION@': str(self.version.patch),
-                    '@PY_DYNAMIC_LOADING@': 'enabled' if self.dynamic_loading else 'disabled'})
+                    '@PY_DYNAMIC_LOADING@': 'enabled' if self.dynamic_loading else 'disabled',
+                    '@ANDROID_ABIS@': android_abis})
 
     def _create_sysconfigdata(self):
         """ Create the _sysconfigdata module. """

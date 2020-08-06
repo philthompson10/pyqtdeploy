@@ -50,6 +50,12 @@ class AbstractComponent(ABC):
     provides = {}
 
     @property
+    def android_abi(self):
+        """ The Android ABI to use. """
+
+        return self._sysroot.target.android_abi
+
+    @property
     def android_api(self):
         """ The Android API to use. """
 
