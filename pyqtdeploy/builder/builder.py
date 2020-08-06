@@ -129,7 +129,7 @@ class Builder:
             shutil.rmtree(self._build_dir, ignore_errors=True)
 
         # Now start the build.
-        self._sysroot.create_directory(self._build_dir)
+        self._sysroot.create_dir(self._build_dir)
 
         # Create the job file and writer.
         job_dir = tempfile.TemporaryDirectory()
@@ -231,7 +231,7 @@ class Builder:
             return
 
         # For Android check the API level.
-        if self._target.platform.name == 'android' and part.min_android_api is not None and part.min_android_api > self._target.android_api:
+        if self._target.platform.name == 'android' and part.min_android_api is not None and part.min_android_api > self._target.platform.android_api:
             return
 
         parts[part_name] = part
