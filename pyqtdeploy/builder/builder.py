@@ -748,12 +748,15 @@ int main(int argc, char **argv)
             f.write('\n')
             self._write_used_values(f, used_libs, 'LIBS')
 
-        # Add the library files to be added to an Android APK.
-        if bundled_shared_libs and target_platform == 'android':
+        # Additional configuration for Android.
+        if target_platform == 'android':
             f.write('\n')
-            f.write(
-                    'ANDROID_EXTRA_LIBS += %s\n' % ' '.join(
-                            bundled_shared_libs))
+            f.write('ANDROID_ABIS = {}\n'.format(self._target.android_abi))
+
+            if bundled_shared_libs and target_platform == 'android':
+                f.write(
+                        'ANDROID_EXTRA_LIBS += %s\n' % ' '.join(
+                                bundled_shared_libs))
 
         # If we are using the installed Python on Windows then copy in the
         # required DLLs.
