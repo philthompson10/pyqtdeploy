@@ -394,12 +394,17 @@ class AbstractComponent(ABC):
 
         return self._sysroot.target_src_dir
 
-    def unsupported(self):
+    def unsupported(self, detail=None):
         """ Issue an error message that the version of the component is
         unsupported.
         """
 
-        self.error("v{0} is unsupported".format(self.version))
+        message = "v{0} is unsupported".format(self.version)
+
+        if detail is not None:
+            message += ' ' + detail
+
+        self.error(message)
 
     def untested(self):
         """ Issue a warning message that the version of the component is
