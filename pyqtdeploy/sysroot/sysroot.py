@@ -67,11 +67,19 @@ class Sysroot:
 
     @property
     def apple_sdk(self):
-        """ The Apple SDK to use. """
+        """ The Apple SDK being used. """
 
         arch = self.target if self._building_for_target else self.host
 
         return arch.platform.apple_sdk
+
+    @property
+    def apple_sdk_version(self):
+        """ The version of the Apple SDK being used. """
+
+        arch = self.target if self._building_for_target else self.host
+
+        return arch.platform.apple_sdk_version
 
     @property
     def building_for_target(self):

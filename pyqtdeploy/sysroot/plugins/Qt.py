@@ -170,11 +170,26 @@ class QtComponent(AbstractQtComponent):
         if self.version < (5, 12):
             self.unsupported()
 
-        if self.target_platform_name == 'android' and self.version > (5, 14):
-            self.unsupported("on Android")
-
         if self.version > (5, 15):
             self.untested()
+
+        if self.target_platform_name == 'android':
+            if self.version > (5, 14):
+                self.unsupported("on Android")
+        elif self.target_platform_name == 'ios':
+            if self.version >= (5, 13) and self.apple_sdk_version < (13, 2):
+                self.error(
+                        "v{0} requires iOS SDK v13.2 (Xcode 11) or "
+                        "later".format(self.version))
+            elif self.apple_sdk_version < (12, 1):
+                self.error(
+                        "v{0} requires iOS SDK v12.1 (Xcode 10) or "
+                        "later".format(self.version))
+        elif self.target_platform_name == 'mac':
+            if self.apple_sdk_version < (10, 4):
+                self.error(
+                        "v{0} requires macOS SDK v10.4 (Xcode 10) or "
+                        "later".format(self.version))
 
         # If we are linking against OpenSSL then get its version number.
         if self.ssl == 'openssl-linked':
