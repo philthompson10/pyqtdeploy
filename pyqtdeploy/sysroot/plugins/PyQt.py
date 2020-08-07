@@ -266,12 +266,11 @@ pyqt_modules = {6}
             '--sip', sip.host_sip, '--confirm-license', '-c', '-j2',
             '--no-dist-info']
 
-        if self.target_platform_name == 'android' and self.version >= (5, 15, 1):
-            args.append('--android-abi')
-            args.append(self.android_abi)
-
         if self.verbose_enabled:
             args.append('--verbose')
+
+        if self.target_platform_name == 'android':
+            args.append('ANDROID_ABIS="{}"'.format(self.android_abi))
 
         self.run(*args)
         self.run(self.host_make)
@@ -307,12 +306,6 @@ pyqt_modules = {6}
 
         if self.version < (5, 12):
             self.unsupported()
-
-        # Check if ANDROID_ABIS support is needed.
-        if self.target_platform_name == 'android':
-            if self.get_component('Qt').version >= (5, 14):
-                if self.version < (5, 15, 1):
-                    self.unsupported("with Qt v5.14 or later on Android")
 
         if self.version > (5, 15):
             self.untested()

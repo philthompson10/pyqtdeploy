@@ -119,6 +119,10 @@ class SIPComponent(AbstractSIPComponent):
         if self.version >= 5:
             self.unsupported()
 
+        if self.target_platform_name == 'android':
+            if self.version <= (4, 19, 23) and self.get_component('Qt').version > (5, 14):
+                self.unsupported("with Qt v5.14 or later on Android")
+
     def _install_code_generator(self, archive):
         """ Install the code generator for the host. """
 
@@ -155,6 +159,9 @@ py_pylib_dir = {1}
 sip_module_dir = {2}
 '''.format(python.target_py_include_dir, self.target_lib_dir,
                 python.target_sitepackages_dir)
+
+        if self.target_platform_name == 'android':
+            cfg += 'android_abi = {}\n'.format(self.android_abi)
 
         cfg_name = 'sip.cfg'
 

@@ -96,7 +96,6 @@ skip = ["qtactiveqt", "qtconnectivity", "qtdoc", "qtgamepad", "qtlocation",
         "qtwebview", "qtxmlpatterns"]
 
 [Qt.android]
-version = "5.12.9"
 install_from_source = false
 ssl = "openssl-linked"
 
@@ -118,7 +117,7 @@ static_msvc_runtime = true
 # SIP #########################################################################
 
 [SIP]
-version = "4.19.23"
+version = "4.19.24"
 module_name = "PyQt5.sip"
 
 
