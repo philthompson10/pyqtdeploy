@@ -271,7 +271,7 @@ class PythonComponent(AbstractPythonComponent):
         config_c_src_file = 'config_py{0}.c'.format(self.version.major)
         config_c_dst_file = os.path.join(py_src_dir, 'Modules', 'config.c')
 
-        self.progress("installing {0}".format(config_c_dst_file))
+        self.verbose("installing {0}".format(config_c_dst_file))
 
         self.copy_file(os.path.join(configurations_dir, config_c_src_file),
                 config_c_dst_file)
@@ -282,7 +282,7 @@ class PythonComponent(AbstractPythonComponent):
         pyconfig_h_dst_file = os.path.join(py_src_dir, 'pyconfig.h')
 
         if self.target_platform_name == 'win':
-            self.progress("installing {0}".format(pyconfig_h_dst_file))
+            self.verbose("installing {0}".format(pyconfig_h_dst_file))
 
             # Find the pyconfig.h file appropriate for this version of Python.
             pyconfig_dir = os.path.join(configurations_dir, 'pyconfig')
@@ -325,14 +325,14 @@ class PythonComponent(AbstractPythonComponent):
                 except FileNotFoundError:
                     pass
         else:
-            self.progress("generating {0}".format(pyconfig_h_dst_file))
+            self.verbose("generating {0}".format(pyconfig_h_dst_file))
 
             generate_pyconfig_h(pyconfig_h_dst_file, self)
 
         # Copy the python.pro file.
         python_pro_dst_file = os.path.join(py_src_dir, 'python.pro')
 
-        self.progress("installing {0}".format(python_pro_dst_file))
+        self.verbose("installing {0}".format(python_pro_dst_file))
 
         # This is needed by Qt v5.14 and later on Android.
         android_abis = self.android_abi if self.target_platform_name == 'android' else ''
