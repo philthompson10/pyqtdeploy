@@ -528,7 +528,7 @@ class AbstractComponent(ABC):
                     if component is not None:
                         component.ensure_installed(build_dir, all_components)
 
-            self.progress("Installing component...")
+            self.progress("installing component")
             os.chdir(build_dir)
             self.install()
 
