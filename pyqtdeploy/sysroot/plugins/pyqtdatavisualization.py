@@ -128,7 +128,7 @@ sip_module = PyQt5.sip
             args.append('--verbose')
 
         if self.target_platform_name == 'android':
-            args.append('ANDROID_ABIS="{}"'.format(self.android_abi))
+            args.append('ANDROID_ABIS={}'.format(self.android_abi))
 
         self.run(*args)
         self.run(self.host_make)
