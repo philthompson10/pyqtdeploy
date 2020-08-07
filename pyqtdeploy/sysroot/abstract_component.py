@@ -109,9 +109,15 @@ class AbstractComponent(ABC):
 
     @property
     def apple_sdk(self):
-        """ The Apple SDK to use. """
+        """ The Apple SDK being used. """
 
         return self._sysroot.apple_sdk
+
+    @property
+    def apple_sdk_version(self):
+        """ The version number of the Apple SDK. """
+
+        return self._sysroot.apple_sdk_version
 
     @property
     def building_for_target(self):

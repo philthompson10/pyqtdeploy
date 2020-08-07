@@ -85,7 +85,8 @@ class Platform:
     def run(*args, message_handler, capture=False):
         """ Run a command, optionally capturing stdout. """
 
-        message_handler.verbose_message("Running '{0}'".format(' '.join(args)))
+        message_handler.verbose_message(
+                "Running '{0}'.".format(' '.join(args)))
 
         detail = None
         stdout = []
@@ -260,6 +261,9 @@ class ApplePlatform(Platform):
     # The name of the SDK.
     sdk_name = ''
 
+    # The prefix of the directory name of the SDK.
+    sdk_prefix = ''
+
     def verify_as_target(self, message_handler):
         """ Verify the platform as a target. """
 
@@ -273,6 +277,18 @@ class ApplePlatform(Platform):
             raise UserException(
                     "a valid '{0}' SDK could not be found".format(
                             self.sdk_name))
+
+        # Parse the version number.
+        version_str = os.path.basename(self.apple_sdk)
+
+        if version_str.startswith(self.sdk_prefix):
+            version_str = version_str[len(self.sdk_prefix):]
+
+        if version_str.endswith('.sdk'):
+            version_str = version_str[:-len('.sdk')]
+
+        self.apple_sdk_version = VersionNumber.parse_version_number(
+                version_str)
 
 
 # Define and implement the different platforms and architectures.  These should
@@ -521,6 +537,7 @@ class iOS(ApplePlatform):
 
     # Platform-specific values.
     sdk_name = 'iphoneos'
+    sdk_prefix = 'iPhoneOS'
 
     def __init__(self):
         """ Initialise the object. """
@@ -577,6 +594,7 @@ class macOS(ApplePlatform):
 
     # Platform-specific values.
     sdk_name = 'macosx'
+    sdk_prefix = 'MacOSX'
 
     def __init__(self):
         """ Initialise the object. """

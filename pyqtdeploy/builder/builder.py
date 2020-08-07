@@ -124,7 +124,7 @@ class Builder:
 
         # Remove any build directory if required.
         if clean:
-            self._sysroot.progress("cleaning {0}".format(self._build_dir))
+            self._sysroot.verbose("cleaning {0}".format(self._build_dir))
             shutil.rmtree(self._build_dir, ignore_errors=True)
 
         # Now start the build.
@@ -546,26 +546,26 @@ int main(int argc, char **argv)
                 if '__pycache__' in dirnames:
                     dirnames.remove('__pycache__')
 
-                for name in dirnames:
-                    if os.path.join(dirpath, name) in exclusions:
-                        dirnames.remove(name)
+                for dname in dirnames:
+                    if os.path.join(dirpath, dname) in exclusions:
+                        dirnames.remove(dname)
 
-                for name in filenames:
-                    src_path = os.path.join(dirpath, name)
+                for fname in filenames:
+                    src_path = os.path.join(dirpath, fname)
 
                     if src_path in exclusions:
                         continue
 
-                    if name.endswith('.pyc'):
+                    if fname.endswith('.pyc'):
                         continue
 
-                    if name.endswith('.pyo'):
+                    if fname.endswith('.pyo'):
                         continue
 
                     rel_resource_path = os.path.relpath(src_path,
                             part_root_dir)
 
-                    if name.endswith('.py'):
+                    if fname.endswith('.py'):
                         # Convert '.py' to '.pyo'.
                         rel_resource_path += 'o'
 

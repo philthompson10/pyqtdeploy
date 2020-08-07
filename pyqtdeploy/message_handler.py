@@ -74,10 +74,11 @@ class MessageHandler:
     def verbose_message(self, message):
         """ Handle a verbose progress message. """
 
-        if self.verbose:
-            self.progress_message(message)
+        if self.verbose and not self.quiet:
+            self.message(message)
 
     def warning(self, message):
         """ Handle a warning message. """
 
-        self.progress_message("WARNING: " + message)
+        if not self.quiet:
+            self.message("WARNING: " + message)
