@@ -142,12 +142,11 @@ sip_module = PyQt5.sip
             '--no-sip-files', '--no-stubs', '--configuration', cfg_name,
             '--sip', sip.host_sip, '-c', '--no-dist-info']
 
-        if self.target_platform_name == 'android' and self.version >= (5, 15, 1):
-            args.append('--android-abi')
-            args.append(self.android_abi)
-
         if self.verbose_enabled:
             args.append('--verbose')
+
+        if self.target_platform_name == 'android':
+            args.append('ANDROID_ABIS="{}"'.format(self.android_abi))
 
         self.run(*args)
         self.run(self.host_make)
@@ -155,12 +154,6 @@ sip_module = PyQt5.sip
 
     def verify(self):
         """ Verify the component. """
-
-        # Check if ANDROID_ABIS support is needed.
-        if self.target_platform_name == 'android':
-            if self.get_component('Qt').version >= (5, 14):
-                if self.version < (5, 15, 1):
-                    self.unsupported("with Qt v5.14 or later on Android")
 
         # Check that the version of PyQt has the same major.minor version.
         pyqt = self.get_component('PyQt')
