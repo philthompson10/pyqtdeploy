@@ -124,8 +124,7 @@ class Builder:
 
         # Remove any build directory if required.
         if clean:
-            self._message_handler.progress_message(
-                    "Cleaning {0}".format(self._build_dir))
+            self._sysroot.progress("cleaning {0}".format(self._build_dir))
             shutil.rmtree(self._build_dir, ignore_errors=True)
 
         # Now start the build.
