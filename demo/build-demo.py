@@ -168,18 +168,26 @@ else:
     run([make])
 
     if target.startswith('android'):
-        run([make, 'INSTALL_ROOT=pyqt-demo', 'install'])
-        run([os.path.join(os.path.dirname(qmake_path), 'androiddeployqt'),
-                '--gradle', '--input',
-                'android-libpyqt-demo.so-deployment-settings.json', '--output',
-                'pyqt-demo'])
+        if os.path.isfile('android-pyqt-demo-deployment-settings.json'):
+            # Qt v5.14 or later.
+            run([make, 'apk'])
+            apk = 'pyqt-demo.apk'
+            apk_dir = os.path.join(build_dir, 'android-build')
+        else:
+            # Qt v5.13 or earlier.
+            run([make, 'INSTALL_ROOT=pyqt-demo', 'install'])
+            run([os.path.join(os.path.dirname(qmake_path), 'androiddeployqt'),
+                    '--gradle', '--input',
+                    'android-libpyqt-demo.so-deployment-settings.json',
+                    '--output', 'pyqt-demo'])
+            apk = 'pyqt-demo-debug.apk'
+            apk_dir = os.path.join(build_dir, 'pyqt-demo', 'build', 'outputs',
+                    'apk', 'debug')
 
 # Tell the user where the demo is.
 if target.startswith('android'):
-    apk_dir = os.path.join(build_dir, 'pyqt-demo', 'build', 'outputs', 'apk',
-            'debug')
-    print("""The pyqt-demo-debug.apk file can be found in the '{0}'
-directory.  Run adb to install it to a simulator.""".format(apk_dir))
+    print("""The {0} file can be found in the '{1}'
+directory.  Run adb to install it to a simulator.""".format(apk, apk_dir))
 
 elif target.startswith('ios'):
     print("""The pyqt-demo.xcodeproj file can be found in the '{0}' directory.
