@@ -78,7 +78,15 @@ class QScintillaComponent(Component):
 
         # Build the static C++ library.
         os.chdir('Qt4Qt5')
-        self.run(qt.host_qmake, 'CONFIG+=staticlib', 'DEFINES+=SCI_NAMESPACE')
+
+        qmake_args = [qt.host_qmake, 'CONFIG+=staticlib',
+                'DEFINES+=SCI_NAMESPACE']
+
+        if self.target_platform_name == 'android':
+            qmake_args.append('ANDROID_ABIS={}'.format(self.android_abi))
+
+        self.run(*qmake_args)
+
         self.run(self.host_make)
         self.run(self.host_make, 'install')
         os.chdir('..')
@@ -125,7 +133,7 @@ sip_module = PyQt5.sip
             args.append('--verbose')
 
         if self.target_platform_name == 'android':
-            args.append('ANDROID_ABIS="{}"'.format(self.android_abi))
+            args.append('ANDROID_ABIS={}'.format(self.android_abi))
 
         self.run(*args)
         self.run(self.host_make)
