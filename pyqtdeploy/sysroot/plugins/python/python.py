@@ -485,88 +485,66 @@ build_time_vars = {
         """ Patch the source code as necessary for the target. """
 
         if self.target_platform_name == 'ios':
-            self._patch_source(os.path.join('Modules', 'posixmodule.c'),
+            self.patch_file(os.path.join('Modules', 'posixmodule.c'),
                     self._patch_for_ios_system)
 
         elif self.target_platform_name == 'win':
-            self._patch_source(os.path.join('Modules', '_io', '_iomodule.c'),
+            self.patch_file(os.path.join('Modules', '_io', '_iomodule.c'),
                     self._patch_for_win_iomodule)
 
-            self._patch_source(
+            self.patch_file(
                     os.path.join('Modules', 'expat', 'winconfig.h'),
                     self._patch_for_win_expat)
 
             if self.version <= (3, 7, 4):
-                self._patch_source(
+                self.patch_file(
                         os.path.join('Modules', 'expat', 'loadlibrary.c'),
                         self._patch_for_win_expat)
 
-            self._patch_source(os.path.join('Modules', '_winapi.c'),
+            self.patch_file(os.path.join('Modules', '_winapi.c'),
                     self._patch_for_win_winapi)
 
-    def _patch_source(self, source, patcher):
-        """ Invoke a patcher callable to patch a source file. """
-
-        # Ignore if the source file doesn't exist.
-        if not os.path.isfile(source):
-            return
-
-        orig = source + '.orig'
-        os.rename(source, orig)
-
-        orig_file = self.open_file(orig)
-        patch_file = self.create_file(source)
-
-        patcher(orig_file, patch_file)
-
-        orig_file.close()
-        patch_file.close()
-
     @staticmethod
-    def _patch_for_ios_system(orig_file, patch_file):
+    def _patch_for_ios_system(line, patch_file):
         """ iOS doesn't have system() and the POSIX module uses hard-coded
         configurations rather than the normal configure by introspection
         process.
         """
 
-        for line in orig_file:
-            # Just skip any line that sets HAVE_SYSTEM.
-            minimal = line.strip().replace(' ', '')
-            if minimal != '#defineHAVE_SYSTEM1':
-                patch_file.write(line)
+        # Just skip any line that sets HAVE_SYSTEM.
+        minimal = line.strip().replace(' ', '')
+        if minimal != '#defineHAVE_SYSTEM1':
+            patch_file.write(line)
 
     @staticmethod
-    def _patch_for_win_expat(orig_file, patch_file):
+    def _patch_for_win_expat(line, patch_file):
         """ Python.h needs to be included before windows.h.  A regular build
         from python.org doesn't have this problem so it is likely that the
         qmake build system is either not defining soemthing it should or
         defining something it shouldn't.
         """
 
-        for line in orig_file:
-            minimal = line.strip().replace(' ', '')
-            if minimal == '#include<windows.h>':
-                patch_file.write('#include <Python.h>\n\n')
+        minimal = line.strip().replace(' ', '')
+        if minimal == '#include<windows.h>':
+            patch_file.write('#include <Python.h>\n\n')
 
-            patch_file.write(line)
+        patch_file.write(line)
 
     @staticmethod
-    def _patch_for_win_iomodule(orig_file, patch_file):
+    def _patch_for_win_iomodule(line, patch_file):
         """ _iomodule.c in Python v3.6 includes consoleapi.h when it should
         include windows.h (as it does in Python v3.7).
         """
 
-        for line in orig_file:
-            patch_file.write(line.replace('consoleapi.h', 'windows.h'))
+        patch_file.write(line.replace('consoleapi.h', 'windows.h'))
 
     @staticmethod
-    def _patch_for_win_winapi(orig_file, patch_file):
+    def _patch_for_win_winapi(line, patch_file):
         """ Both _winapi.c and overlapped.c define a C structure with the name
         OverlappedType.  We rename the former.
         """
 
-        for line in orig_file:
-            patch_file.write(line.replace('OverlappedType', 'OverlappedType_'))
+        patch_file.write(line.replace('OverlappedType', 'OverlappedType_'))
 
     @property
     def _py_subdir(self):

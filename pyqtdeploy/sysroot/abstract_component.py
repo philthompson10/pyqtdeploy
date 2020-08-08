@@ -348,6 +348,28 @@ class AbstractComponent(ABC):
 
         return VersionNumber.parse_version_number(version_str)
 
+    def patch_file(self, name, patcher):
+        """ Invoke a patcher for each line of a file to be patched.  The
+        patcher is passed the line and a file object of the updated version of
+        the file.
+        """
+
+        # Ignore if the source file doesn't exist.
+        if not os.path.isfile(name):
+            return
+
+        orig = name + '.orig'
+        os.rename(name, orig)
+
+        orig_file = self.open_file(orig)
+        patch_file = self.create_file(name)
+
+        for line in orig_file:
+            patcher(line, patch_file)
+
+        orig_file.close()
+        patch_file.close()
+
     def progress(self, message):
         """ Issue a progress message. """
 

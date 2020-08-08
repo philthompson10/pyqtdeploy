@@ -79,6 +79,15 @@ class QScintillaComponent(Component):
         # Build the static C++ library.
         os.chdir('Qt4Qt5')
 
+        # Somewhere between Qt v5.13 and v5.15 'printsupport' was removed from
+        # the iOS mkspecs.  We patch the .pro and feature files rather than
+        # require a fixed version of QScintilla.
+        if self.target_platform_name == 'ios':
+            self.patch_file('qscintilla.pro', self._patch_pro_for_ios)
+            self.patch_file(
+                    os.path.join('features_staticlib', 'qscintilla2.prf'),
+                    self._patch_pro_for_ios)
+
         qmake_args = [qt.host_qmake, 'CONFIG+=staticlib',
                 'DEFINES+=SCI_NAMESPACE']
 
@@ -174,6 +183,15 @@ sip_module = PyQt5.sip
         """ Return True if print support is available. """
 
         return 'QtPrintSupport' in self.get_component('PyQt').installed_modules
+
+    @staticmethod
+    def _patch_pro_for_ios(line, patch_file):
+        """ Disable all support for printing in the .pro file. """
+
+        if 'qsciprinter' in line:
+            pass
+        else:
+            patch_file.write(line.replace('printsupport', ''))
 
     @property
     def _version_str(self):
