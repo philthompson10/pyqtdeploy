@@ -229,7 +229,7 @@ Adding Standard Library Packages
 The tab for defining the Python standard library packages used by the
 application is shown below.
 
-.. image:: /images/stdlib_packages_tab.png
+.. image:: /images/packages_tab.png
     :align: center
 
 **Package**
