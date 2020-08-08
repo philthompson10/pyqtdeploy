@@ -32,7 +32,7 @@ from ... import (Component, ComponentOption, ExtensionModule, PythonModule,
 
 # All the parts that can be provided by the component.
 _ALL_PARTS = {
-    'PyQt5': PythonModule(),
+    'PyQt5': PythonModule(deps='Python:pkgutil'),
     'PyQt5.QAxContainer':
         ExtensionModule(target='win', deps='PyQt5.QtWidgets',
                 libs='-lQAxContainer', qmake_qt='axcontainer'),
