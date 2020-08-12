@@ -46,8 +46,6 @@ def run(args):
 
 # Parse the command line.
 parser = argparse.ArgumentParser()
-parser.add_argument('--build-sysroot', help="always build the sysroot",
-        action='store_true')
 parser.add_argument('--qmake',
         help="the qmake executable when using an existing Qt installation",
         metavar="FILE")
@@ -57,7 +55,6 @@ parser.add_argument('--quiet', help="disable progress messages",
 parser.add_argument('--verbose', help="enable verbose progress messages",
         action='store_true')
 cmd_line_args = parser.parse_args()
-build_sysroot = cmd_line_args.build_sysroot
 qmake = os.path.abspath(cmd_line_args.qmake) if cmd_line_args.qmake else None
 target = cmd_line_args.target
 quiet = cmd_line_args.quiet
@@ -99,32 +96,22 @@ if target in ('android-32', 'android-64', 'ios-64') and not qmake:
 # Anchor everything from the directory containing this script.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-sysroot_dir = os.path.abspath('sysroot-' + target)
+# Build the sysroot.  This won't do anything if it is already built.
+args = ['pyqtdeploy-sysroot', '--target', target]
 
-# Build sysroot if required.
-if build_sysroot and os.path.isdir(sysroot_dir):
-    try:
-        shutil.rmtree(sysroot_dir)
-    except:
-        print("There was an error removing", sysroot_dir, file=sys.stderr)
-        sys.exit(1)
+if qmake:
+    args.append('--qmake')
+    args.append(qmake)
 
-if not os.path.isdir(sysroot_dir):
-    args = ['pyqtdeploy-sysroot', '--target', target]
+if quiet:
+    args.append('--quiet')
 
-    if qmake:
-        args.append('--qmake')
-        args.append(qmake)
+if verbose:
+    args.append('--verbose')
 
-    if quiet:
-        args.append('--quiet')
+args.append('sysroot.toml')
 
-    if verbose:
-        args.append('--verbose')
-
-    args.append('sysroot.toml')
-
-    run(args)
+run(args)
 
 # Build the demo.
 build_dir = 'build-' + target
@@ -148,7 +135,9 @@ args.append('pyqt-demo.pdt')
 run(args)
 
 # Run qmake.  Use the qmake left by pyqtdeploy-sysroot if there is one.
+sysroot_dir = os.path.abspath('sysroot-' + target)
 qmake_path = os.path.join(sysroot_dir, 'Qt', 'bin', 'qmake')
+
 if sys.platform == 'win32':
     qmake_path += '.exe'
 

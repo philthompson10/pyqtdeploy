@@ -43,6 +43,8 @@ def main():
             version=PYQTDEPLOY_RELEASE)
     parser.add_argument('--component', help="the component name to build",
             action='append')
+    parser.add_argument('--force', help="force a complete build",
+            action='store_true')
     parser.add_argument('--no-clean',
             help="do not remove the temporary build directory",
             action='store_true')
@@ -99,7 +101,7 @@ def main():
             sysroot.verify()
         else:
             sysroot.install_components(args.component, args.source_dirs,
-                    args.no_clean)
+                    args.no_clean, args.force)
     except UserException as e:
         message_handler.exception(e)
         return 1
