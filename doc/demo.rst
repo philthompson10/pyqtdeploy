@@ -121,9 +121,9 @@ Linux
 .. image:: /images/pyqt-demo-linux-64.png
     :align: center
 
-**Host platform used:** RHEL v7.6
+**Host platform used:** Ubuntu 18.04.5 LTS
 
-**Development tools used:** gcc v4.8.5
+**Development tools used:** gcc v7.5.0
 
 **Python SSL support implemented:** dynamically linked system OpenSSL
 
@@ -151,9 +151,9 @@ Windows
 .. image:: /images/pyqt-demo-win-32.png
     :align: center
 
-**Host platform used:** Windows 10 Pro (v1803)
+**Host platform used:** Windows 10 Pro (v2004)
 
-**Development tools used:** Visual Studio Build Tools 2017 (v15.9.6)
+**Development tools used:** Visual Studio Build Tools 2019 (v16.7.1)
 
 **Python SSL support implemented:** statically linked OpenSSL.
 
