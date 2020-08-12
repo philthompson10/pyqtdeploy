@@ -32,6 +32,7 @@ from ..file_utilities import (create_file as fu_create_file,
         open_file as fu_open_file)
 from ..platforms import Platform
 from ..user_exception import UserException
+from ..version_number import VersionNumber
 
 
 class Sysroot:
@@ -221,14 +222,51 @@ class Sysroot:
 
         return self.host.platform.exe(name)
 
-    def install_components(self, component_names, source_dirs, no_clean):
+    def install_components(self, component_names, source_dirs, no_clean,
+            force):
         """ Install a sequence of components.  If no names are given then
-        create the system image root directory and install everything.  Raise a
+        use the Manifest file to determine what needs to be installed.  Raise a
         UserException if there is an error.
         """
 
         # Verify the configuration.
         self.verify()
+
+        # Get the name of the components to install.
+        if component_names:
+            components = self._components_from_names(component_names)
+            all_components = False
+        else:
+            components = self.components
+            all_components = True
+
+        # Unless a complete re-install is being forced, compare what needs to
+        # be installed with what is currently installed.
+        manifest = {}
+
+        if not force:
+            try:
+                with open(self._manifest_file) as mf:
+                    for line in mf:
+                        name, version_str = line.split()
+                        manifest[name] = VersionNumber.parse_version_number(
+                                version_str)
+            except FileNotFoundError:
+                pass
+            except Exception as e:
+                raise UserException("invalid 'Manifest' file", detail=str(e))
+
+            # Force a complete re-install if the version of any component
+            # currently installed is not the same version as that required.
+            # Note that we don't do the same if the configuration of a
+            # component has changed, even though this may have similar
+            # consequences.
+            for component in components:
+                installed = manifest.get(component.name)
+                if installed is not None and installed != component.version:
+                    force = True
+                    manifest = {}
+                    break
 
         # Normalise the list of source directories to search.
         if source_dirs:
@@ -239,14 +277,8 @@ class Sysroot:
 
         self.target.configure()
 
-        if component_names:
-            components = self._components_from_names(component_names)
-            all_components = False
-        else:
-            components = self.components
-            all_components = True
-
-        self.create_dir(self.sysroot_dir, empty=all_components)
+        self.create_dir(self.sysroot_dir, empty=force)
+        self._write_manifest(manifest)
         os.makedirs(self.host_dir, exist_ok=True)
         os.makedirs(self.target_include_dir, exist_ok=True)
         os.makedirs(self.target_lib_dir, exist_ok=True)
@@ -261,7 +293,8 @@ class Sysroot:
         self.building_for_target = True
 
         for component in components:
-            component.ensure_installed(build_dir, all_components)
+            component.ensure_installed(build_dir, all_components, manifest)
+            self._write_manifest(manifest)
 
         # Remove the build directory if requested.
         os.chdir(cwd)
@@ -397,3 +430,16 @@ class Sysroot:
             message = "{0}: {1}.".format(component.name, message)
 
         return message
+
+    @property
+    def _manifest_file(self):
+        """ The full pathname of the Manifest file. """
+
+        return os.path.join(self.sysroot_dir, 'Manifest')
+
+    def _write_manifest(self, manifest):
+        """ Write the manifest file. """
+
+        with self.create_file(self._manifest_file) as mf:
+            for name in sorted(manifest.keys()):
+                mf.write('{} {}\n'.format(name, manifest[name]))

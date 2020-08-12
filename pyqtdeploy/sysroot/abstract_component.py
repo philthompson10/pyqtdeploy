@@ -542,25 +542,33 @@ class AbstractComponent(ABC):
 
         return original_path
 
-    def ensure_installed(self, build_dir, all_components):
+    def ensure_installed(self, build_dir, all_components, manifest):
         """ Ensure the component is installed. """
+
+        # Handle the trivial case where the manifest show that the component is
+        # already installed.
+        if self.name in manifest:
+            self._install_status = self._IS_INSTALLED
+            return
 
         if self._install_status == self._IS_NOT_INSTALLED:
             self._install_status = self._IS_IN_PROGRESS
 
-            # If all components are being installed the make sure they are done
-            # in the right order.
+            # If all components are being installed then make sure they are
+            # done in the right order.
             if all_components:
                 for preinstall in self.preinstalls:
                     component = self.get_component(preinstall, required=False)
                     if component is not None:
-                        component.ensure_installed(build_dir, all_components)
+                        component.ensure_installed(build_dir, all_components,
+                                manifest)
 
             self.progress("installing component")
             os.chdir(build_dir)
             self.install()
 
             self._install_status = self._IS_INSTALLED
+            manifest[self.name] = self.version
 
         elif self._install_status == self._IS_IN_PROGRESS:
             self.error("the component is part of a circular dependency")
