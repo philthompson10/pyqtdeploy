@@ -156,7 +156,7 @@ class Architecture:
             elif base_platform == 'macosx':
                 name = 'macos'
                 size = '64' if parts[2] == 'x86_64' else '32'
-            elif base_platform == 'win':
+            elif base_platform in ('win32', 'win'):
                 name = 'win'
 
                 # The default architecture is determined by any MSVC target.
@@ -164,7 +164,7 @@ class Architecture:
                 # is verified.
                 size = WindowsArchitecture.msvc_target(optional=True)
                 if size is None:
-                    size = '64' if parts[1] == 'amd64' else '32'
+                    size = 64 if len(parts) == 2 and parts[1] == 'amd64' else 32
             else:
                 raise UserException(
                         "'{0}' is not a supported host platform".format(
