@@ -325,7 +325,7 @@ class QtComponent(AbstractQtComponent):
             # builds).
             args.append('-skip')
             args.append('qtimageformats')
-        elif sys.platform == 'linux' and xcb_enabled:
+        elif sys.platform == 'linux' and self.version < (5, 15) and xcb_enabled:
             args.append('-qt-xcb')
 
         self.run(*args)
