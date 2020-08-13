@@ -148,7 +148,7 @@ macOS
 Windows
 -------
 
-.. image:: /images/pyqt-demo-win-32.png
+.. image:: /images/pyqt-demo-win-64.png
     :align: center
 
 **Host platform used:** Windows 10 Pro (v2004)
