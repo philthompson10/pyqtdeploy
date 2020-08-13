@@ -48,46 +48,26 @@ with the :program:`QtCore` library, you should make sure that your
 application's license is compatible with the license of the version of Qt that
 you are using.
 
-When an application is made up of a number of third-party components (Python
-packages and extension modules) it is necessary to have these installed in
-defined locations so that they can be found during the build of the
-application.  While in some cases it is possible to use an existing Python
-installation for this it has a number of disadvantages:
-
-- Different applications may have requirements for different versions of a
-  third-party package making it difficult to share the same Python
-  installation.
-
-- Your application may require components (including the Python interpreter
-  itself) to be configured differently.
-
-- A standard Python installation will contain dynamically linked extension
-  modules but you may want to use statically linked versions.
-
-- It cannot be used when targeting a non-native platform.
-
-Experience has shown that it is easier to keep all of these components separate
-from any standard Python installation.  A target-specific system root directory
-(*sysroot*) can be used to contain appropriately configured and built versions
-of all the required components.  If you are developing a number of applications
-then it is likely that you will be standardising on the versions of the
-components used by those applications.  Therefore you can create a single
-sysroot to be used to build all applications.  While the use of a sysroot is
-completely optional, it is highly recommended.
-
 The steps required to develop a deployable application are as follows:
 
 - Develop and test the application as normal using a native Python
   installation containing the required third-party components.
 
-- Identify the third-party components that are required and build a
-  target-specific sysroot.  See :ref:`ref-building-a-sysroot` to learn how to
-  use :program:`pyqtdeploy-sysroot` to do this.
+- Create a sysroot specification file, typically called :file:`sysroot.toml`,
+  that identifies the components (and their exact version numbers) that are
+  required.  See :ref:`ref-building-a-sysroot` to learn how to do this.
+  :program:`pyqtdeploy-sysroot` can be used to verify the specification file,
+  i.e. that all component versions are mutually compatible.  At this stage it
+  is not necessary to actually build the sysroot.  It is common practice to use
+  the same sysroot for several applications.
 
 - Create a project file for the application that identifies the application's
-  source code and all the components used by the application and their
-  locations.  See :ref:`ref-creating-a-project` to learn how to use
-  :program:`pyqtdeploy` to do this.
+  source code and all the Python packages and extension modules it uses.  See
+  :ref:`ref-creating-a-project` to learn how to use :program:`pyqtdeploy` to do
+  this.
+
+- Use :program:`pyqtdeploy-sysroot` to build the target-specific sysroot from
+  its specification file if it has not already been done.
 
 - Freeze the Python modules and generate a :program:`qmake` ``.pro`` file in a
   target-specific build directory.  The ``.pro`` file will reference all of the

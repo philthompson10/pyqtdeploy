@@ -10,10 +10,10 @@ The demo consists of:
 
 - ``pyqt-demo.py`` which is the source code of the demo
 
-- ``sysroot.json`` which is the sysroot specification used by
+- ``sysroot.toml`` which is the sysroot specification used by
   :program:`pyqtdeploy-sysroot` to build a target-specific sysroot
 
-- ``pyqt-demo.pdy`` which is the :program:`pyqtdeploy` project file describing
+- ``pyqt-demo.pdt`` which is the :program:`pyqtdeploy` project file describing
   the application and its components
 
 - ``build-demo.py`` which is a simple script to run
@@ -31,10 +31,10 @@ example which we will look at in detail.
 
 .. note::
     It is recommended that, at first, you use the same versions (as specified
-    in ``sysroot.json``) of the different component packages shown above.  Only
+    in ``sysroot.toml``) of the different component packages shown above.  Only
     when you have those working should you then use the versions that you
-    really want to use.  This will require you to modify ``sysroot.json``
-    and/or ``pyqt-demo.pdy``.
+    really want to use.  This will require you to modify ``sysroot.toml``
+    and/or ``pyqt-demo.pdt``.
 
 
 Building the Demo
