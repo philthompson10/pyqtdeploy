@@ -10,15 +10,16 @@ Building the Application
 the :program:`qmake` ``.pro`` files, needed to create the application.  The
 simplest invocation is::
 
-    pyqtdeploy-build pyqt-demo.pdy
+    pyqtdeploy-build pyqt-demo.pdt
 
 The next step in the full build process would be to change to the build
 directory and run :program:`qmake`.  The final step is target-specific.  For
-Linux, macOS and Windows targets it is only necessary to run :program:`make`
-(or :program:`nmake` in the case of Windows).  For an Android target it is
-necessary to run :program:`make` and Qt's :program:`androiddeployqt` utility.
-For an iOS target :program:`qmake` generates an Xcode project file.  Xcode is
-then used to perform the final build.
+Android, Linux, macOS and Windows targets it is only necessary to run
+:program:`make` (or :program:`nmake` in the case of Windows).  (Although for an
+Android target using versions of Qt prior to v5.14 it is also necessary to run
+Qt's :program:`androiddeployqt` utility.)  For an iOS target :program:`qmake`
+generates an Xcode project file.  Xcode is then used to perform the final
+build.
 
 The demo's :program:`build-demo.py` script takes care of (almost) all of this
 process automatically.
@@ -44,18 +45,6 @@ The full set of command line options is:
     will be placed.  The default value is ``build-`` followed by a
     target-specific suffix.
 
-.. option:: --include-dir DIR
-
-    ``DIR`` is the name of the directory containing the target Python
-    installation's ``Python.h`` file.  It overrides any value specified in the
-    project file.
-
-.. option:: --interpreter EXECUTABLE
-
-    ``EXECUTABLE`` is the **host** Python interpreter used to compile all of
-    the Python modules used by the application.  It overrides any value
-    specified in the project file.
-
 .. option:: --no-clean
 
     Normally the build directory is deleted and re-created before starting a
@@ -75,10 +64,17 @@ The full set of command line options is:
 
     The default is ``2``.
 
-.. option:: --python-library LIB
+.. option:: --python EXECUTABLE
 
-    ``LIB`` is the name of the target Python interpreter library.  It overrides
-    any value specified in the project file.
+    ``EXECUTABLE`` is the full path name of the host Python interpreter.  It
+    overrides any value provided by the sysroot but the version must be
+    compatible with that specified in the :file:`sysroot.toml` file.
+
+.. option:: --qmake EXECUTABLE
+
+    ``EXECUTABLE`` is the full path name of the host :program:`qmake`.  It
+    overrides any value provided by the sysroot but the version must be
+    compatible with that specified in the :file:`sysroot.toml` file.
 
 .. option:: --resources NUMBER
 
@@ -86,25 +82,6 @@ The full set of command line options is:
     On Windows, MSVC may not be able to cope with very large resource files and
     complains of a lack of heap space.  If you run into this problem then try
     increasing the the number of resource files generated.
-
-.. option:: --source-dir DIR
-
-    ``DIR`` is the name of the directory containing the Python source code.  It
-    overrides any value specified in the project file.
-
-.. option:: --standard-library-dir DIR
-
-    ``DIR`` is the name of the directory containing the target Python
-    interpreter's standard library.  It overrides any value specified in the
-    project file.
-
-.. option:: --sysroot DIR
-
-    ``DIR`` is the name of the system image root directory.  The
-    :envvar:`SYSROOT` environment variable is set to ``DIR`` during the build
-    replacing any existing value.  The default value is ``sysroot-`` followed
-    by a target-specific suffix, but this is not set if the :envvar:`SYSROOT`
-    environment variable already has a value.
 
 .. option:: --target TARGET
 
@@ -119,10 +96,6 @@ The full set of command line options is:
 .. option:: --verbose
 
     This specifies that additional progress messages should be enabled.
-
-.. option:: --no-warnings-are-errors
-
-    This specifies that any warnings are not treated as errors.
 
 .. option:: project
 
