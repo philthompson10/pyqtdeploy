@@ -6,24 +6,27 @@ Building a System Root Directory
 ================================
 
 :program:`pyqtdeploy-sysroot` is used to create a target-specific system root
-directory (*sysroot*) containing the target Python installation and any
-third-party components required by the application.  Its use is optional but
-highly recommended.
+directory (*sysroot*) containing any *components* required by the application.
 
 :program:`pyqtdeploy-sysroot` is actually a wrapper around a number of
-component plugins.  A plugin, written in Python, is responsible for building
-and/or installing (in the sysroot) an individual component.  It would often be
-a Python package or extension module but could just as easily be a supporting
-library.
+component plugins.  A plugin, written in Python, is responsible for installing
+the individual *parts* that make up a component.  A part may be a Python
+package, an extension module or a supporting library.
 
-A sysroot is defined by a JSON specification file.  This contains an object for
-each component to build and/or install.  The attributes of an object determine
-how the component is configured.  Component and attribute names may be scoped
-in the same way as :program:`qmake` variables so that components can be
-included and configured on a target by target basis.
+A sysroot is defined by a `TOML <https://github.com/toml-lang/toml>`__
+specification file.  This contains a section for each component to install.
+The key/value options of a section determine how the component is configured.
+Component sections may have target-specific sub-sections so that they can be
+configured on a target by target basis.
 
-The components are built and/or installed in the order in which their objects
+The components are installed in the correct order irrespective of where they
 appear in the specification file.
+
+A component will only be installed in a sysroot if it hasn't already been done.
+However if the installed version is different then all components will be
+re-installed.  This is done because some components take a long time to
+install (building Qt from source being the obvious example) making it very
+inconvenient when debugging the installation of a later component.
 
 An API is provided to allow you to develop your own component plugins.  If you
 develop a plugin for a commonly used component then please consider
@@ -38,102 +41,100 @@ The following component plugins are included as standard with
 :program:`pyqtdeploy`.
 
 **OpenSSL**
-    This builds the OpenSSL libraries for v1.0.* and v1.1.* on Android
-    (dynamically), macOS (statically) and Windows (statically).  It requires
-    ``perl`` to be installed on :envvar:`PATH`.
+    This provides the OpenSSL libraries for v1.0.2 and later on Android (as a
+    shared library), Linux (using the OS supplied library), macOS (as a static
+    library) and Windows (as a static library).  When building from source it
+    requires ``perl`` to be installed on :envvar:`PATH`.
 
-**pip**
-    This is a meta-component which will install any number of components using
-    ``pip``.
+**PyQt**
+    This provides a static version of the PyQt5 extension modules for all
+    target architectures.
 
-**pyqt3d**
-    This builds a static version of the PyQt3D extension modules for all target
-    architectures.  It must be built after PyQt5.
+**PyQt3D**
+    This provides a static version of the PyQt3D extension modules for all
+    target architectures.
 
-**pyqt5**
-    This builds a static version of the PyQt5 extension modules for all target
-    architectures.  It must be built after sip and Qt5.
+**PyQtChart**
+    This provides a static version of the PyQtChart extension module for all
+    target architectures.
 
-**pyqtchart**
-    This builds a static version of the PyQtChart extension module for all
-    target architectures.  It must be built after PyQt5.
+**PyQtDataVisualization**
+    This provides a static version of the PyQtDataVisualization extension
+    module for all target architectures.
 
-**pyqtdatavisualization**
-    This builds a static version of the PyQtDataVisualization extension module
-    for all target architectures.  It must be built after PyQt5.
+**PyQtPurchasing**
+    This provides a static version of the PyQtPurchasing extension module for
+    all target architectures.
 
-**pyqtpurchasing**
-    This builds a static version of the PyQtPurchasing extension module for all
-    target architectures.  It must be built after PyQt5.
+**PyQtWebEngine**
+    This provides a static version of the PyQtWebEngine extension module for
+    all target architectures.
 
-**pyqtwebengine**
-    This builds a static version of the PyQtWebEngine extension module for all
-    target architectures.  It must be built after PyQt5.
+**Python**
+    This will provide Python from source, or use an existing installation, for
+    both the host and target architectures.  Building the host version from
+    source is not supported on Windows.  Installing the host version from an
+    existing installation is not supported on Android or iOS.  The target
+    version of the Python library and extension modules built from source will
+    be built statically.  Installing the target version from an existing
+    installation is only supported on Windows.
 
-**python**
-    This will build Python from source, or install it into sysroot from an
-    existing installation, for both the host and target architectures.
-    Building the host version from source is not supported on Windows.
-    Installing the host version from an existing installation is not supported
-    on Android or iOS.  The target version of the Python library and extension
-    modules built from source will be built statically.  Installing the target
-    version from an existing installation is only supported on Windows.  If
-    building the target version from source and SSL support is required then
-    OpenSSL must be built first.  If building Python v3.7.0 or later and zlib
-    support is needed then zlib must be built first.
+**QScintilla**
+    This provides a static version of the QScintilla library and Python
+    extension module for all target architectures.
 
-**qscintilla**
-    This builds a static version of the QScintilla library and Python extension
-    module for all target architectures.  It must be built after PyQt5.
+**Qt**
+    This will provide a static version of Qt5 from source (but not for the
+    Android and iOS targets).  It will use an existing installation created by
+    the standard Qt installer.  When building from source on Windows it
+    requires Python v2.7 to be installed (but it does not need to be on
+    :envvar:`PATH`).
 
-**qt5**
-    This will build a static version of Qt5 from source (but not for the
-    Android and iOS targets).  It will also install Qt5 into the sysroot from
-    an existing installation created by the standard installer.  When building
-    from source on Windows it requires Python v2.7 to be installed (but it does
-    not need to be on :envvar:`PATH`).  If building from source and SSL support
-    using OpenSSL is required then OpenSSL must be built first.
-
-**sip**
-    This builds a static version of the sip extension module for all target
-    architectures.  It also builds the sip code generator for the host
-    platform.  It must be built after Python.
+**SIP**
+    This provides a static version of the sip extension module for all target
+    architectures.  It also provides the sip code generator for the host
+    platform.
 
 **zlib**
-    This builds a static version of the zlib library for all target
-    architectures.
+    This provides a static version of the zlib library for all target
+    architectures.  It can also use an OS supplied library for all targets
+    except Windows.
 
 
 Creating a Sysroot Specification File
 -------------------------------------
 
-The following specification file contains an object for each of the standard
+The following specification file contains a section for each of the standard
 component plugins.  (You can also download a copy of the file from
-:download:`here</examples/skeleton.json>`).  No configuration options have been
-set for any component.
+:download:`here</examples/sysroot.toml>`).  Dummy values have been used for all
+required configuration options.
 
-.. literalinclude:: /examples/skeleton.json
-
-The first object, called ``Description``, is simple a way of including a
-comment in the specification and is otherwise ignored.
+.. literalinclude:: /examples/sysroot.toml
 
 Using this file, run the following command::
 
-    pyqtdeploy-sysroot --options skeleton.json
+    pyqtdeploy-sysroot --options sysroot.toml
 
 You will then see a description of each component's configuration options, the
 type of value expected and whether or not a value is required.  You can then
-add options as attributes to the appropriate objects to meet your requirements.
+add options to the appropriate sections to meet your requirements.
 
 If your application does not require all of the standard components then simply
-remove the corresponding objects from the specification file.  If your
+remove the corresponding sections from the specification file.  If your
 application requires additional components then you need to create appropriate
-component plugins and add corresponding objects to the specification file.
+component plugins and add corresponding sections to the specification file.
+
+At any time you can verify your specification file.  This will check that all
+required options have a value and that all components have supported versions
+that are mutually compatible.  It will also warn you if you have specified
+versions that are untested (but should work).  To do this run::
+
+    pyqtdeploy-sysroot --verify sysroot.toml
 
 To build a native sysroot (i.e. for the host architecture) from a fully
 configured specification file, run::
 
-    pyqtdeploy-sysroot skeleton.json
+    pyqtdeploy-sysroot sysroot.toml
 
 
 The :program:`pyqt-demo` Sysroot
@@ -148,28 +149,210 @@ OpenSSL
 ::
 
     [OpenSSL]
-    enabled_targets = ["android", "macos", "win"]
-    source = "openssl-1.1.0j.tar.gz"
+    disabled_targets = ["ios"]
+    version = "1.1.1g"
 
-    [OpenSSL.android]
-    source = "openssl-1.0.2r.tar.gz"
+    [OpenSSL.linux]
+    install_from_source = false
 
-    [OpenSSL.win]
-    no_asm = true
+On iOS we choose to not support SSL from Python and use Qt's SSL support
+instead (which will use Apple's Secure Transport).
 
-The first thing to notice is that the component is only built for Android,
-macOS and Windows.  On iOS we choose to not support SSL from Python and use
-Qt's SSL support instead (which will use Apple's Secure Transport).  On Linux
-we will use the system versions of the OpenSSL libraries.
+On Linux we will use the OS supplied OpenSSL libraries.
 
-On Android we use OpenSSL v1.0 because that is the version used by the
-pre-built binaries provided by the Qt installer.
 
-On macOS and Windows we choose to use OpenSSL v1.1.
+Python
+......
 
-On Windows we have disabled the used of assember optimisations. They can be
-enabled (with is the default) but the :program:`nasm` assember must be
-installed on :envvar:`PATH`.
+::
+
+    [Python]
+    version = "3.7.8"
+    install_host_from_source = true
+
+    [Python.win]
+    install_host_from_source = false
+
+The Python component plugin handles installation for both host and target
+architectures.  For the host we choose to install from source except on Windows
+where the registry is searched for the location of an existing installation.
+For all target architecures we choose to build Python from source.
+
+:program:`pyqt-demo` is a very simple application that does not need to
+dynamically load extension modules.  If this was needed then the
+``dynamic_loading`` option would be set to ``true``.
+
+
+PyQt
+....
+
+::
+
+    [PyQt]
+    version = "5.15.0"
+
+    [PyQt.android]
+    disabled_features = ["PyQt_Desktop_OpenGL", "PyQt_Printer"]
+    installed_modules = ["QtCore", "QtGui", "QtNetwork", "QtWidgets",
+            "QtAndroidExtras"]
+
+    [PyQt.ios]
+    disabled_features = ["PyQt_Desktop_OpenGL", "PyQt_MacOSXOnly",
+            "PyQt_MacCocoaViewContainer", "PyQt_Printer", "PyQt_Process",
+            "PyQt_NotBootstrapped"]
+    installed_modules = ["QtCore", "QtGui", "QtNetwork", "QtWidgets",
+            "QtMacExtras"]
+
+    [PyQt.linux]
+    installed_modules = ["QtCore", "QtGui", "QtNetwork", "QtWidgets",
+            "QtX11Extras"]
+
+    [PyQt.macos]
+    installed_modules = ["QtCore", "QtGui", "QtNetwork", "QtWidgets",
+            "QtMacExtras"]
+
+    [PyQt.win]
+    disabled_features = ["PyQt_Desktop_OpenGL"]
+    installed_modules = ["QtCore", "QtGui", "QtNetwork", "QtWidgets",
+            "QtWinExtras"]
+
+The two options used to tailor the build of PyQt are ``disabled_features``
+and ``installed_modules``.
+
+Unfortunately the list of features that can be disabled is not properly
+documented and relate to how Qt is configured.  However how
+``disabled_features`` is set in the above will be appropriate for most cases.
+
+The ``installed_modules`` option is used to specify the names of the individual
+PyQt extension modules to be installed.  We choose to build only those
+extension modules needed by :program:`pyqt-demo`.
+
+
+PyQt3D
+......
+
+::
+
+    [PyQt3D]
+    version = "5.15.0"
+
+It is only necessary to specifiy the version to install.
+
+
+PyQtChart
+.........
+
+::
+
+    [PyQtChart]
+    version = "5.15.0"
+
+It is only necessary to specifiy the version to install.
+
+
+PyQtDataVisualization
+.....................
+
+::
+
+    [PyQtDataVisualization]
+    version = "5.15.0"
+
+It is only necessary to specifiy the version to install.
+
+
+PyQtPurchasing
+..............
+
+::
+
+    [PyQtPurchasing]
+    version = "5.15.0"
+
+It is only necessary to specifiy the version to install.
+
+
+QScintilla
+..........
+
+::
+
+    [QScintilla]
+    version = "2.11.5"
+
+It is only necessary to specifiy the version to install.
+
+
+Qt
+..
+
+::
+
+    [Qt]
+    version = "5.15.0"
+    edition = "opensource"
+    configure_options = ["-opengl", "desktop", "-no-dbus", "-qt-pcre"]
+    skip = ["qtactiveqt", "qtconnectivity", "qtdoc", "qtgamepad", "qtlocation",
+            "qtmultimedia", "qtnetworkauth", "qtquickcontrols",
+            "qtquickcontrols2", "qtremoteobjects", "qtscript", "qtscxml",
+            "qtsensors", "qtserialbus", "qtserialport", "qtspeech", "qtsvg",
+            "qttools", "qttranslations", "qtwayland", "qtwebchannel",
+            "qtwebengine", "qtwebsockets", "qtwebview", "qtxmlpatterns"]
+
+    [Qt.android]
+    install_from_source = false
+    ssl = "openssl-linked"
+
+    [Qt.ios]
+    install_from_source = false
+    ssl = "securetransport"
+
+    [Qt.linux]
+    ssl = "openssl-runtime"
+
+    [Qt.macos]
+    ssl = "openssl-linked"
+
+    [Qt.win]
+    ssl = "openssl-linked"
+    static_msvc_runtime = true
+
+We have chosen to install Qt from source except for Android and iOS where we
+will use an existing installation.  In the context of the demo this is defined
+by the ``--qmake`` option of the ``build-demo.py`` script.
+
+We use the ``configure_options`` and ``skip`` options to tailor the Qt build in
+order to reduce the time taken to do the build.
+
+The ``ssl`` option specifies how Qt's SSL support is to be implemented.
+
+On Android we have chosen to link against the shared OpenSSL libraries
+installed by the ``OpenSSL`` component plugin which are bundled automaticallly
+with the application executable.
+
+On iOS Qt is dynamically linked to the Secure Transport libraries.
+
+On Linux we have chosen to dynamically load the OS supplied OpenSSL libraries
+at runtime.
+
+On macOS and Windows we have chosen to link against the static OpenSSL
+libraries installed by the ``OpenSSL`` component plugin.
+
+Finally we have specified that (on Windows) we will link to static versions of
+the MSVC runtime libraries.
+
+
+SIP
+...
+
+::
+
+    [SIP]
+    version = "4.19.24"
+    module_name = "PyQt5.sip"
+
+As well as the version to install it is also necessary to specify the name of
+the :mod:`sip` module.
 
 
 zlib
@@ -178,227 +361,20 @@ zlib
 ::
 
     [zlib]
-    enabled_targets = ["linux", "macos", "win"]
-    source = "zlib-1.2.11.tar.gz"
+    version = "1.2.11"
+    install_from_source = false
+
+    [zlib.android]
+    version = "1.2.7"
+
+    [zlib.win]
+    install_from_source = true
     static_msvc_runtime = true
 
-On Android and iOS we are using the zlib library provided on the devices.  On
-other architectures we choose to use a static version of the library.  On
-Windows we choose to link to static versions of the MSVC runtime libraries.
+On all targets, except for Windows, we choose to use the zlib library provided
+by the OS.  On Android this is an earlier version.
 
-
-qt5
-...
-
-::
-
-    "qt5": {
-        "android-32#qt_dir":        "android_armv7",
-        "android-64#qt_dir":        "android_arm64_v8a",
-        "ios#qt_dir":               "ios",
-
-        "linux|macos|win#source":   "qt-everywhere-src-5.12.2.tar.xz",
-        "edition":                  "opensource",
-
-        "android|linux#ssl":        "openssl-runtime",
-        "ios#ssl":                  "securetransport",
-        "macos|win#ssl":            "openssl-linked",
-
-        "configure_options":        [
-                "-opengl", "desktop", "-no-dbus", "-qt-pcre"
-        ],
-        "skip":                     [
-                "qtactiveqt", "qtconnectivity", "qtdoc", "qtgamepad",
-                "qtlocation", "qtmultimedia", "qtnetworkauth",
-                "qtquickcontrols", "qtquickcontrols2", "qtremoteobjects",
-                "qtscript", "qtscxml", "qtsensors", "qtserialbus",
-                "qtserialport", "qtspeech", "qtsvg", "qttools",
-                "qttranslations", "qtwayland", "qtwebchannel", "qtwebengine",
-                "qtwebsockets", "qtwebview", "qtxmlpatterns"
-        ],
-
-        "static_msvc_runtime":      true
-    },
-
-The Qt5 component plugin will install Qt into the sysroot from an existing
-installation.  We have chosen to do this for Android and iOS by specifying the
-``qt_dir`` attribute.  In the context of the demo this is defined by the
-``--installed-qt-dir`` option of the ``build-demo.py`` script.
-
-The plugin will build Qt from source if the ``source`` attribute is specified.
-We have chosen to do this for Linux, macOS and Windows.
-
-The ``ssl`` attribute specifies how Qt's SSL support is to be implemented.
-
-For Android and Linux we have chosen to dynamically load external OpenSSL
-libraries at runtime.  On Android the external libraries are those built by the
-``openssl`` component plugin and are bundled automaticallly with the
-application executable.  On Linux the external libraries are the system
-versions.
-
-For iOS Qt is dynamically linked to the Secure Transport libraries.
-
-For macOS and Windows we have chosen to link against the static OpenSSL
-libraries built by the ``openssl`` component plugin.
-
-Next we use the ``configure_options`` and ``skip`` attributes to tailor the Qt
-build in order to reduce the time taken to do the build.
-
-Finally we have specified that (on Windows) we will link to static versions of
-the MSVC runtime libraries.
-
-
-python
-......
-
-::
-
-    "python": {
-        "build_host_from_source":   false,
-        "build_target_from_source": true,
-        "source":                   "Python-3.7.2.tar.xz"
-    },
-
-The Python component plugin handles installation for both host and target
-architectures.  For the host we choose to use an existing Python installation
-rather than build from source.  On Windows the registry is searched for the
-location of the existing installation.  On Linux and macOS the Python
-interpreter must be on :envvar:`PATH`.  For all target architecures we choose
-to build Python from source.
-
-Note that the version number of Python must match the version specified in the
-``pyqt-deploy.pdy`` project file.
-
-:program:`pyqt-demo` is a very simple application that does not need to
-dynamically load extension modules.  If this was needed then the
-``dynamic_loading`` attribute would be set to ``true``.
-
-
-sip
-...
-
-::
-
-    "sip": {
-        "module_name":  "PyQt5.sip",
-        "source":       "sip-4.19.15.tar.gz"
-    },
-
-As well as the name of the source archive, it is also necessary to specify the
-name of the :mod:`sip` module.
-
-
-pyqt5
-.....
-
-::
-
-    "pyqt5": {
-        "android#disabled_features":    [
-                "PyQt_Desktop_OpenGL", "PyQt_Printer", "PyQt_PrintDialog",
-                "PyQt_PrintPreviewDialog", "PyQt_PrintPreviewWidget"
-        ],
-        "android#modules":              [
-                "QtCore", "QtGui", "QtNetwork", "QtPrintSupport", "QtWidgets",
-                "QtAndroidExtras"
-        ],
-
-        "ios#disabled_features":        [
-                "PyQt_Desktop_OpenGL", "PyQt_MacOSXOnly",
-                "PyQt_MacCocoaViewContainer", "PyQt_Printer",
-                "PyQt_PrintDialog", "PyQt_PrintPreviewDialog",
-                "PyQt_PrintPreviewWidget", "PyQt_Process",
-                "PyQt_NotBootstrapped"
-        ],
-        "ios|macos#modules":            [
-                "QtCore", "QtGui", "QtNetwork", "QtPrintSupport", "QtWidgets",
-                "QtMacExtras"
-        ],
-
-        "linux#modules":                [
-                "QtCore", "QtGui", "QtNetwork", "QtPrintSupport", "QtWidgets",
-                "QtX11Extras"
-        ],
-
-        "win#disabled_features":        ["PyQt_Desktop_OpenGL"],
-        "win#modules":                  [
-                "QtCore", "QtGui", "QtNetwork", "QtPrintSupport", "QtWidgets",
-                "QtWinExtras"
-        ],
-
-        "source":                   "PyQt5_*-5.12.1.tar.gz"
-    },
-
-The two attributes used to tailor the build of PyQt5 are ``disabled_features``
-and ``modules``.
-
-Unfortunately the list of features that can be disabled is not properly
-documented and relate to how Qt5 was configured.  However how
-``disabled_features`` is set in the above will be appropriate for most cases.
-
-The ``modules`` attribute is used to specify the names of the individual PyQt
-extension modules to be built.  We choose to build only those extension
-modules needed by :program:`pyqt-demo`.
-
-
-pyqt3D
-......
-
-::
-
-    "pyqt3d": {
-        "source":   "PyQt3D_*-5.12.tar.gz"
-    },
-
-It is only necessary to specifiy the name of the source archive.
-
-
-pyqtchart
-.........
-
-::
-
-    "pyqtchart": {
-        "source":   "PyQtChart_*-5.12.tar.gz"
-    },
-
-It is only necessary to specifiy the name of the source archive.
-
-
-pyqtdatavisualization
-.....................
-
-::
-
-    "pyqtdatavisualization": {
-        "source":   "PyQtDataVisualization_*-5.12.tar.gz"
-    },
-
-It is only necessary to specifiy the name of the source archive.
-
-
-pyqtpurchasing
-..............
-
-::
-
-    "pyqtpurchasing": {
-        "source":   "PyQtPurchasing_*-5.12.tar.gz"
-    },
-
-It is only necessary to specifiy the name of the source archive.
-
-
-qscintilla
-..........
-
-::
-
-    "qscintilla": {
-        "source":   "QScintilla_*-2.11.1.tar.gz"
-    }
-
-It is only necessary to specifiy the name of the source archive.
+On Windows we choose to link to static versions of the MSVC runtime libraries.
 
 
 The Command Line
@@ -417,10 +393,15 @@ The full set of command line options is:
 
 .. option:: --component COMPONENT
 
-    ``COMPONENT`` is the name of the component (specified in the JSON file)
-    that will be installed.  It may be used more than once to install multiple
-    components.  If the option is not specified then all components specified
-    in the TOML file will be installed.
+    ``COMPONENT`` is the name of the component that will be installed.  It may
+    be used more than once to install multiple components.  If the option is
+    not specified then all components specified in the :file:`sysroot.toml`
+    file will be installed.
+
+.. option:: --force
+
+    This causes all components to be installed even if components with the
+    required versions have already been installed.
 
 .. option:: --no-clean
 
@@ -433,29 +414,36 @@ The full set of command line options is:
 .. option:: --options
 
     This causes the configurable options of each component specified in the
-    JSON file to be displayed on ``stdout``.  The program will then terminate.
+    :file:`sysroot.toml` file to be displayed on ``stdout``.  The program will
+    then terminate.
 
-.. option:: --plugin-dir DIR
+.. option:: --python EXECUTABLE
 
-    ``DIR`` is added to the list of directories that are searched for component
-    plugins.  It may be used more than once to search multiple directories.
-    All directories specified in this way will be searched before those
-    directories (internal to :program:`pyqtdeploy-sysroot`) that are searched
-    by default.
+    ``EXECUTABLE`` is the full path name of the host Python interpreter.  It
+    overrides any value provided by the sysroot but the version must be
+    compatible with that specified in the :file:`sysroot.toml` file.
+
+.. option:: --qmake EXECUTABLE
+
+    ``EXECUTABLE`` is the full path name of the host :program:`qmake`.  It
+    overrides any value provided by the sysroot but the version must be
+    compatible with that specified in the :file:`sysroot.toml` file.
 
 .. option:: --source-dir DIR
 
-    ``DIR`` is the name of a directory containing the source archives used to
-    install the components specified in the TOML file.  It may be specified any
-    number of times and each directory will be searched in turn.  If it is
-    omitted then the current directory is searched.
+    ``DIR`` is the name of a directory containing any local copies of source
+    archives used to install the components specified in the
+    :file:`sysroot.toml` file.  It may be specified any number of times and
+    each directory will be searched in turn.  If a local copy cannot be found
+    then the component plugin will attempt to download it.
 
-.. option:: --sysroot DIR
+.. option:: --sysroots-dir DIR
 
-    ``DIR`` is the name of the system root directory.  The default value is
-    ``sysroot-`` followed by a target-specific suffix.  Unless the
-    :option:`--component` option is specified any existing sysroot will first
-    be removed and re-created.
+    ``DIR`` is the name of the directory where the target-specific sysroot
+    directory will be created.  A sysroot directory will be called ``sysroot-``
+    followed by a target-specific suffix.  If all components are to be
+    re-installed then any existing sysroot will first be removed and
+    re-created.
 
 .. option:: --target TARGET
 
@@ -471,13 +459,9 @@ The full set of command line options is:
 
     This specifies that additional progress messages should be enabled.
 
-.. option:: --no-warnings-are-errors
-
-    This specifies that any warnings are not treated as errors.
-
 .. option:: specification
 
-    ``specification`` is the name of a JSON specification file that defines
+    ``specification`` is the name of the TOML specification file that defines
     each component to be included in the sysroot and how each is to be
     configured.
 
@@ -494,6 +478,9 @@ should also include a class attribute called
 :py:class:`pyqtdeploy.ComponentOption` instances that describe each of the
 component's configurable options.  It does not matter what the name of the
 class is.
+
+Your own component plugins should be placed in the same
+directory as the :file:`sysroot.toml` file.
 
 .. py:module:: pyqtdeploy
 
@@ -682,7 +669,7 @@ class is.
         is relative then it is assumed to be relative to the directory
         specified by a :option:`--source-dir <pyqtdeploy-sysroot --source-dir>`
         option.  If this option has not been specified then the directory
-        containing the TOML specification file is used.
+        containing the :file:`sysroot.toml` specification file is used.
 
         :param str name: is the name of the file or directory.
         :param bool required: ``True`` if the file or directory must exist.
@@ -880,10 +867,7 @@ class is.
 
     .. py:method:: warning(message)
 
-        A warning progress message is displayed to the user.  It will be
-        treated as an error unless the
-        :option:`--verbose <pyqtdeploy-sysroot --no-warnings-are-errors>`
-        option was specified.
+        A warning progress message is displayed to the user.
 
         :param str message: is the message.
 
