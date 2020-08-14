@@ -19,9 +19,8 @@ library.
 A sysroot is defined by a JSON specification file.  This contains an object for
 each component to build and/or install.  The attributes of an object determine
 how the component is configured.  Component and attribute names may be scoped
-in the same way as :program:`qmake` variables (described in
-:ref:`ref-other-extension-modules`) so that components can be included and
-configured on a target by target basis.
+in the same way as :program:`qmake` variables so that components can be
+included and configured on a target by target basis.
 
 The components are built and/or installed in the order in which their objects
 appear in the specification file.

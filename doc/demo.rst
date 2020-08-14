@@ -31,10 +31,10 @@ example which we will look at in detail.
 
 .. note::
     It is recommended that, at first, you use the same versions (as specified
-    in ``sysroot.toml``) of the different component packages shown above.  Only
-    when you have those working should you then use the versions that you
-    really want to use.  This will require you to modify ``sysroot.toml``
-    and/or ``pyqt-demo.pdt``.
+    in :file:`sysroot.toml`) of the different component packages shown above.
+    Only when you have those working should you then use the versions that you
+    really want to use.  This will require you to modify :file:`sysroot.toml`
+    and/or :file:`pyqt-demo.pdt`.
 
 
 Building the Demo
@@ -44,27 +44,23 @@ To build the demo for the native target, run::
 
     python build-demo.py
 
-This assumes that the current directory contains appropriate source archives
-for the following components:
+The sysroot that will be created will contain the following components:
 
 - Python
 - Qt
 - OpenSSL
 - zlib
-- sip
-- PyQt5
+- SIP
+- PyQt
 - PyQt3D
 - PyQtChart
 - PyQtDataVisualization
 - PyQtPurchasing
 - QScintilla
 
-You may put the source archives elsewhere and use the ``--sources-dir`` option
-to specify their location.  It may be specified any number of times and each
-directory will be searched in turn.
-
-If you don't want to build all of these then edit ``sysroot.json`` and remove
-the ones you don't want.  (The Python, Qt, sip and PyQt5 sources are required.)
+If you don't want to build all of these then edit :file:`sysroot.toml` and
+remove the ones you don't want.  (The Python, Qt, SIP and PyQt components are
+required.)
 
 Note that, on Linux, macOS and Windows, Qt will be built from source which can
 take a significant amount of time.
@@ -72,15 +68,20 @@ take a significant amount of time.
 If you are building the demo for either Android or iOS then you must also
 install an appropriate version of Qt from an installer from The Qt Company as
 :program:`pyqtdeploy-sysroot` does not support building Qt from source for
-those platforms.  The ``--installed-qt-dir`` option must be used to specify
-where Qt is installed.  The directory's name would normally be the version
-number of Qt and contain the architecture-specific directories (e.g. ``gcc64``,
-``android-arm7``).
+those platforms.  The ``--qmake`` option must be used to specify the full path
+name of the :program:`qmake` executable.
 
 ``build-demo.py`` has a number of other command line options.  To see them all,
 run::
 
     python build-demo.py --help
+
+.. note::
+    You must ensure that the target-specific development environment (e.g.
+    Android Studio, MSVC, Xcode) is installed and properly configured on your
+    system.  With a Linux target you must also ensure that the development
+    packages required to build Qt are installed.  The names of these packages
+    vary depending on the Linux distribution - please see the Qt documentation.
 
 
 Android
