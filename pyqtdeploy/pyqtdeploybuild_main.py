@@ -51,10 +51,10 @@ def main():
     parser.add_argument('--python',
             help="the python executable when using an existing Python "
                     "installation",
-            metavar="FILE")
+            metavar="EXECUTABLE")
     parser.add_argument('--qmake',
             help="the qmake executable when using an existing Qt installation",
-            metavar="FILE")
+            metavar="EXECUTABLE")
     parser.add_argument('--resources',
             help="the number of .qrc resource files to generate [default: 1]",
             metavar="NUMBER", type=int, default=1),
