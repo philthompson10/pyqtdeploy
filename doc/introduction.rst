@@ -69,27 +69,30 @@ alternative solution that includes support for ``.exe`` files (for Windows),
 Differences from Version 2
 --------------------------
 
-There have been a number of changes to :program:`pyqtdeploy` since v2.
+There have been a number of changes to :program:`pyqtdeploy` since v2:
 
-Project files created for v2 are automatically updated to the latest version.
-v3 project files have a ``.pdt`` extension.
+- Project files created for v2 are automatically updated to the latest version.
+  v3 project files have a ``.pdt`` extension.
 
-Python versions earlier than v3.5 (including v2) are no longer supported.  Note
-that SIP v5 and Python v3.8 and later are not currently supported.
+- Python versions earlier than v3.5 (including v2) are no longer supported.
+  Note that SIP v5 will be support in :program:`pyqtdeploy` v3.1 and Python
+  v3.8 and later will be supported in :program:`pyqtdeploy` v3.2.
 
-The use of a sysroot directory to contain the target-specific components to be
-linked with the application is no longer optional.
+- PyQt4 is no longer supported.
 
-The file used to specify the contents of a sysroot is now in `TOML
-<https://github.com/toml-lang/toml>`__ format rather than JSON.
+- The use of a sysroot directory to contain the target-specific components to
+  be linked with the application is no longer optional.
 
-The API provided to write component plugins has changed requiring plugins to be
-rewritten.
+- The file used to specify the contents of a sysroot is now in `TOML
+  <https://github.com/toml-lang/toml>`__ format rather than JSON.
 
-All component plugins included with :program:`pyqtdeploy` will download their
-source packages automatically when required.
+- The API provided to write component plugins has changed requiring plugins to
+  be rewritten.
 
-The :program:`pyqtdeploy` GUI has been greatly simplified.
+- All component plugins included with :program:`pyqtdeploy` will download their
+  source packages automatically when required.
+
+- The :program:`pyqtdeploy` GUI has been greatly simplified.
 
 
 Author
