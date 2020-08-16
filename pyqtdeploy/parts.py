@@ -132,20 +132,6 @@ class Part:
         return self.get_unscoped_name(self.name)
 
 
-class DataFile(Part):
-    """ Encapsulate the meta-data for a part that is a data file. """
-
-    def __init__(self, name, min_version=None, version=None, max_version=None,
-            target=''):
-        """ Initialise the part. """
-
-        super().__init__(min_version=min_version, version=version,
-                max_version=max_version, target=target, internal=True)
-
-        # The name of the file.
-        self.name = name
-
-
 class CompiledPart(Part):
     """ Encapsulate the meta-data for a part that is compiled. """
 
@@ -186,6 +172,20 @@ class ComponentLibrary(CompiledPart):
         # True if the libs are shared and need to be bundled with the
         # application.  Currently this is only applicable to Android targets.
         self.bundle_shared_libs = bundle_shared_libs
+
+
+class DataFile(Part):
+    """ Encapsulate the meta-data for a part that is a data file. """
+
+    def __init__(self, name, min_version=None, version=None, max_version=None,
+            target=''):
+        """ Initialise the part. """
+
+        super().__init__(min_version=min_version, version=version,
+                max_version=max_version, target=target, internal=True)
+
+        # The name of the file.
+        self.name = name
 
 
 class ExtensionModule(CompiledPart):
