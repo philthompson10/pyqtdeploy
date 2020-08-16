@@ -483,41 +483,26 @@ expected to be found in the directory containing the TOML specification file.
 
     This is the base class of all component plugins.
 
-    .. py:attribute:: options
+    .. py:attribute:: preinstalls
 
-        This class attribute is a sequence of
-        :py:class:`~pyqtdeploy.ComponentOption` instances describing the
-        component's configurable options.
+        The list of components that this component is dependent on.
 
-    .. py:method:: install()
+    .. py:attribute:: provides
 
-        This abstract method is re-implemented to install the component.
+        The dict of parts, keyed by the name of the part, provided by this
+        component.
 
-    .. py:method:: verify()
+    .. py:attribute:: android_abi
 
-        This method is re-implemented to verify the component.  A component
-        will always be verified even if it does not get installed.  The plugin
-        should check that everything is available (e.g. other components,
-        external tools) for a successful installation.
-
-
-.. py:class:: Sysroot
-
-    This class encapsulates a sysroot as seen by a component plugin.  Instances
-    are only created by :program:`pyqtdeploy-sysroot` and are passed to the
-    plugin when required.
-
-    .. py:method:: add_to_path(name)
-
-        The name of a directory is added to the start of :envvar:`PATH` if it
-        isn't already present.
-
-        :param str name: is the name of the directory.
-        :return: the original value of :envvar:`PATH`.
+        The Android architecture-specific ABI being used.
 
     .. py:attribute:: android_api
 
-        The numerical Android API level to use.
+        The integer Android API level being used.
+
+    .. py:attribute:: android_ndk_root
+
+        The path of the root of the Android NDK.
 
     .. py:attribute:: android_ndk_sysroot
 
@@ -525,13 +510,11 @@ expected to be found in the directory containing the TOML specification file.
 
     .. py:attribute:: android_ndk_version
 
-        The :py:class:`VersionNumber` object representing the version number of
-        the Android NDK.
+        The the version number of the Android NDK.
 
     .. py:attribute:: android_sdk_version
 
-        The :py:class:`VersionNumber` object representing the version number of
-        the Android SDK.
+        The version number of the Android SDK.
 
     .. py:attribute:: android_toolchain_bin
 
@@ -541,34 +524,23 @@ expected to be found in the directory containing the TOML specification file.
 
         The name of the Android toolchain's C compiler.
 
-    .. py:attribute:: android_toolchain_cflags
-
-        The list of the Android toolchain's C compiler's recommended flags.
-
     .. py:attribute:: android_toolchain_prefix
 
         The name of the Android toolchain's prefix.
 
     .. py:attribute:: apple_sdk
 
-        The Apple SDK to use.
+        The Apple SDK being used.
+
+    .. py:attribute:: apple_sdk_version
+
+        The version number of the Apple SDK.
 
     .. py:attribute:: building_for_target
 
         This is set to ``True`` by the component plugin to configure building
         (i.e. compiling and linking) for the target (rather than the host)
         architecture.  The default value is ``True``.
-
-    .. py:attribute:: components
-
-        The sequence of component names in the sysroot specification.
-
-    .. py:method:: copy_file(src, dst)
-
-        A file is copied.  Any errors are handled automatically.
-
-        :param str src: is the name of the source file.
-        :param str dst: is the name of the destination file.
 
     .. py:method:: copy_dir(src, dst, ignore=None)
 
@@ -577,18 +549,19 @@ expected to be found in the directory containing the TOML specification file.
         already exists then it is first removed.  Any errors are handled
         automatically.
 
-        :param str src: is the name of the source directory.
-        :param str dst: is the name of the destination directory.
-        :param list[str] ignore: is an optional sequence of glob patterns that
+        :param str src: the name of the source directory.
+        :param str dst: the name of the destination directory.
+        :param list[str] ignore: an optional sequence of glob patterns that
             specify files and sub-directories that should be ignored.
 
-    .. py:method:: create_file(name)
+    .. py:method:: copy_file(src, dst, macros=None)
 
-        A new text file is created and its file object returned.  Any errors
-        are handled automatically.
+        A file is copied while expanding and optional dict of macros.  Any
+        errors are handled automatically.
 
-        :param str name: is the name of the file.
-        :return: the file object of the created file.
+        :param str src: the name of the source file.
+        :param str dst: the name of the destination file.
+        :param dict macros: the dict of name/value pairs.
 
     .. py:method:: create_dir(name, empty=False)
 
@@ -596,143 +569,139 @@ expected to be found in the directory containing the TOML specification file.
         already exist then it is optionally emptied.  Any errors are handled
         automatically.
 
-        :param str name: is the name of the directory.
+        :param str name: the name of the directory.
         :param bool empty: ``True`` if an existing directory should be emptied.
+
+    .. py:method:: create_file(name)
+
+        A new text file is created and its file object returned.  Any errors
+        are handled automatically.
+
+        :param str name: the name of the file.
+        :return: the file object of the created file.
 
     .. py:method:: delete_dir(name)
 
         A directory and any contents are deleted.  Any errors are handled
         automatically.
 
-        :param str name: is the name of the directory.
+        :param str name: the name of the directory.
 
     .. py:method:: error(message, detail='')
 
         An error message is displayed to the user and the program immediately
         terminates.
 
-        :param str message: is the message.
-        :param str detail: is additional detail displayed if the
+        :param str message: the message.
+        :param str detail: additional detail displayed if the
             :option:`--verbose <pyqtdeploy-sysroot --verbose>` option was
             specified.
 
-    .. py:method:: extract_version(name)
-
-        A :py:class:`VersionNumber` object is returned for the version number
-        extracted from the name of file or directory.
-
-        :param str name: is the name of the file or directory.
-        :return: the :py:class:`VersionNumber` object.
-
-    .. py:method:: find_component(name, required=True)
-
-        The :py:class:`~pyqtdeploy.ComponentBase` instance for a component is
-        returned.
-
-        :param str name: is the name of the component.
-        :param bool required: ``True`` if the component must exist.
-        :return: the component instance.
-
-    .. py:method:: find_exe(name)
+    .. py:method:: find_exe(name, required=True)
 
         The absolute path name of an executable located on :envvar:`PATH` is
-        returned.  Any errors are handled automatically.
+        returned.
 
-        :param str name: is the generic executable name.
+        :param str name: the generic executable name.
+        :param bool required: ``True`` if the executable is required and it is
+            an error if it could not be found.
         :return: the absolute path name of the executable.
 
-    .. py:method:: find_file(name, required=True)
+    .. py:method:: get_component(name, required=True)
 
-        The absolute path name of a file or directory is returned.  If the name
-        is relative then it is assumed to be relative to the directory
-        specified by a :option:`--source-dir <pyqtdeploy-sysroot --source-dir>`
-        option.  If this option has not been specified then the directory
-        containing the TOML specification file is used.
+        The :py:class:`~pyqtdeploy.Component` instance for a component is
+        returned.
 
-        :param str name: is the name of the file or directory.
-        :param bool required: ``True`` if the file or directory must exist.
-        :return: the absolute path name of the file or directory.
+        :param str name: the name of the component.
+        :param bool required: ``True`` if the component is required and it is
+            an error if it was not specified.
+        :return: the component instance.
 
-    .. py:method:: get_python_install_path(major=None, minor=None)
+    .. py:method:: get_file(name)
+
+        The absolute path name of a file or directory in a directory specified
+        by a :option:`--source-dir <pyqtdeploy-sysroot --source-dir>` option is
+        returned.
+
+        :param str name: the name of the file or directory.
+        :return: the absolute path name of the file or directory or ``None`` if
+            it wasn't found.
+
+    .. py:method:: get_options()
+
+        A sequence of :py:class:`~pyqtdeploy.ComponentOption` instances
+        describing the component's configurable options is returned.
+
+        :return: the sequence of option instances.
+
+    .. py:method:: get_python_install_path(major, minor)
 
         The name of the directory containing the root of a Python installation
-        on Windows is returned.  If the major and minor version numbers are not
-        given then :py:attr:`target_py_version` is used.  It must only be
-        called by a Windows host.
+        on Windows is returned.  It must only be called by a Windows host.
 
-        :param int major: is the major version number.
-        :param int minor: is the major version number.
+        :param int major: the major version number.
+        :param int minor: the major version number.
         :return: the absolute path of the installation directory.
 
-    .. py:attribute:: host_arch_name
+    .. py:method:: get_version_from_file(identifier, filename)
 
-        The name of the host architecture.
+        A file is read and a (stripped) line containing an identifier
+        (typically a pre-processor macro defining a version number) is
+        returned.  it is an error if the identifier could not be found.
 
-    .. py:attribute:: host_bin_dir
-
-        The name of the directory where executables built for the host
-        architecture should be installed.
+        :param str identifer: the identifier to find.
+        :param str filename: the name of the file to read.
+        :return: the stripped line containing the identifier.
 
     .. py:attribute:: host_dir
 
-        The name of the root directory where components built for the host
+        The name of the directory where components built for the host
         architecture should be installed.
 
     .. py:method:: host_exe(name)
 
         A generic executable name is converted to a host-specific version.
 
-        :param str name: is the generic name.
+        :param str name: the generic name.
         :return: the host-specific name.
 
     .. py:attribute:: host_make
 
-        The name of the host ``make`` executable.
+        The name of the host :program:`make` executable.
 
     .. py:attribute:: host_platform_name
 
         The name of the host platform.
 
-    .. py:attribute:: host_pip
+    .. py:method:: install()
+        :abstractmethod:
 
-        The full path name of the host ``pip`` executable.
-
-    .. py:attribute:: host_python
-
-        The full path name of the host ``python`` executable.
-
-    .. py:attribute:: host_qmake
-
-        The full path name of the host ``qmake`` executable.
-
-    .. py:attribute:: host_sip
-
-        The full path name of the host ``sip`` executable.
-
-    .. py:method:: make_symlink(src, dst)
-
-        A symbolic link is made between source and destination files.  (Note
-        that, on Windows, a copy of the source file is made.)
-
-        :param str src: is the name of the source file.
-        :param str dst: is the name of the destination link that is created.
+        This must be re-implemented to install the component.
 
     .. py:method:: open_file(name)
 
         An existing text file is opened and its file object returned.  Any
         errors are handled automatically.
 
-        :param str name: is the name of the file.
+        :param str name: the name of the file.
         :return: the file object of the opened file.
 
-    .. py:method:: pip_install(package)
+    .. py:method:: parse_version_number(version_str)
+        :staticmethod:
 
-        Install a package using :py:attr:`host_pip` to
-        :py:attr:`target_sitepackages_dir`.  The package may refer either to a
-        local file or to one to be downloaded from
-        `PyPI <https://pypi.python.org/>`__.
+        A string is converted to a :class:`~pyqtdeploy.VersionNumber` instance.
 
-        :param str package: is the name of the package.
+        :param str name: the string to parse.
+        :return: the version number.
+
+    .. py:method:: patch_file(name, patcher)
+
+        Patch a file.
+
+        :param str name: the name of the file to patch
+        :param callable patcher: invoked for each line of the file and passed
+            the line and a file object to which the (possibly) modified line
+            should be written to.
 
     .. py:method:: progress(message)
 
@@ -740,17 +709,35 @@ expected to be found in the directory containing the TOML specification file.
         the :option:`--quiet <pyqtdeploy-sysroot --quiet>` option was
         specified.
 
-        :param str message: is the message.
+        :param str message: the message.
 
     .. py:method:: run(*args, capture=False)
 
         An external command is run.  The command's stdout can be optionally
         captured.
 
-        :param \*args: are the name of the command and its arguments.
+        :param \*args: the name of the command and its arguments.
         :param bool capture: ``True`` if the command's stdout should be
             captured and returned.
         :return: the stdout of the command if requested, otherwise ``None``.
+
+    .. py:method:: sdk_configure(platform_name)
+
+        This should be implemented to perform any SDK-specific configuration
+        prior to installing the component.
+
+        :param str platform_name: the target platform name.
+
+    .. py:method:: sdk_deconfigure(platform_name)
+
+        This should be implemented to remove any SDK-specific configuration
+        after to installing the component.
+
+        :param str platform_name: the target platform name.
+
+    .. py:attribute:: sysroot_dir
+
+        The full pathname of the system root directory.
 
     .. py:attribute:: target_arch_name
 
@@ -770,55 +757,31 @@ expected to be found in the directory containing the TOML specification file.
 
         The name of the target platform.
 
-    .. py:attribute:: target_py_include_dir
-
-        The name of the directory where ``Python.h`` built for the target
-        architecture can be found.
-
-    .. py:attribute:: target_py_lib
-
-        The name of Python library built for the target architecture.
-
-    .. py:attribute:: target_py_stdlib_dir
-
-        The name of the directory where the Python standard library built for
-        the target architecture can be found.
-
-    .. py:attribute:: target_py_version
-
-        The :py:class:`VersionNumber` object representing the version of Python
-        being targeted.
-
-    .. py:attribute:: target_pyqt_platform
-
-        The name of the target platform as known by PyQt's ``configure.py``.
-
-    .. py:attribute:: target_sip_dir
-
-        The name of the directory where ``.sip`` files built for the target
-        architecture can be found.
-
-    .. py:attribute:: target_sitepackages_dir
-
-        The name of the ``site-packages`` directory for the target
-        architecture.
-
     .. py:attribute:: target_src_dir
 
         The name of the directory where source files can be found.  Note that
         these are sources left by components for the use of other components
         and not the sources used to build a component.
 
-    .. py:method:: unpack_archive(archive, chdir=True)
+    .. py:method:: unsupported(detail=None)
 
-        An archive (e.g. a ``.tar.gz`` or ``.zip`` file) is unpacked in the
-        current directory.
+        Issue an error message that the version of the component is
+        unsupported.
 
-        :param str archive: the name of the archive.
-        :param bool chdir: ``True`` if the top level directory of the extracted
-            archive should become the new current directory.
-        :return: the name of the top level directory of the extracted archive
-            excluding any path.
+        :param str detail: additional detail to append to the message.
+
+    .. py:method:: untested()
+
+        Issue a warning message that the version of the component is untested.
+
+    .. py:method:: verify()
+        :abstractmethod:
+
+        This must be re-implemented to verify the component.  A component
+        will always be verified even if it does not get installed.  The plugin
+        should check that everything is available (e.g. other components,
+        external tools) using the specified versions for a successful
+        installation.
 
     .. py:method:: verbose(message)
 
@@ -827,27 +790,18 @@ expected to be found in the directory containing the TOML specification file.
         :option:`--verbose <pyqtdeploy-sysroot --verbose>` option was
         specified.
 
-        :param str message: is the message.
+        :param str message: the message.
 
     .. py:attribute:: verbose_enabled
 
         This is set if the :option:`--verbose <pyqtdeploy-sysroot --verbose>`
         option was specified.
 
-    .. py:method:: verify_source(name)
-
-        Verify that a source file or directory exists and return the encoded
-        version number embedded in its name.  See :py:meth:`find_file` for how
-        the name is interpreted.
-
-        :param str name: is the name of the source file or directory.
-        :return: the encoded version number.
-
     .. py:method:: warning(message)
 
         A warning progress message is displayed to the user.
 
-        :param str message: is the message.
+        :param str message: the message.
 
 
 .. py:class:: ComponentOption(name, type=str, required=False, default=None, values=None, help='')
