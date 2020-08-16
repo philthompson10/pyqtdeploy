@@ -46,18 +46,18 @@ class AbstractComponent(ABC):
     # this one.
     preinstalls = []
 
-    # The dict of VersionedModule objects provided by the component.
+    # The dict of parts provided by the component.
     provides = {}
 
     @property
     def android_abi(self):
-        """ The Android ABI to use. """
+        """ The Android ABI being used. """
 
         return self._sysroot.target.android_abi
 
     @property
     def android_api(self):
-        """ The Android API to use. """
+        """ The Android API being used. """
 
         return self._sysroot.target.platform.android_api
 
