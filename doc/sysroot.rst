@@ -395,8 +395,8 @@ The full set of command line options is:
 
     ``COMPONENT`` is the name of the component that will be installed.  It may
     be used more than once to install multiple components.  If the option is
-    not specified then all components specified in the :file:`sysroot.toml`
-    file will be installed.
+    not specified then all components specified in the TOML specification file
+    will be installed.
 
 .. option:: --force
 
@@ -414,28 +414,28 @@ The full set of command line options is:
 .. option:: --options
 
     This causes the configurable options of each component specified in the
-    :file:`sysroot.toml` file to be displayed on ``stdout``.  The program will
+    TOML specification file to be displayed on ``stdout``.  The program will
     then terminate.
 
 .. option:: --python EXECUTABLE
 
     ``EXECUTABLE`` is the full path name of the host Python interpreter.  It
     overrides any value provided by the sysroot but the version must be
-    compatible with that specified in the :file:`sysroot.toml` file.
+    compatible with that specified in the TOML specification file.
 
 .. option:: --qmake EXECUTABLE
 
     ``EXECUTABLE`` is the full path name of the host :program:`qmake`.  It
     overrides any value provided by the sysroot but the version must be
-    compatible with that specified in the :file:`sysroot.toml` file.
+    compatible with that specified in the TOML specification file.
 
 .. option:: --source-dir DIR
 
     ``DIR`` is the name of a directory containing any local copies of source
-    archives used to install the components specified in the
-    :file:`sysroot.toml` file.  It may be specified any number of times and
-    each directory will be searched in turn.  If a local copy cannot be found
-    then the component plugin will attempt to download it.
+    archives used to install the components specified in the TOML specification
+    file.  It may be specified any number of times and each directory will be
+    searched in turn.  If a local copy cannot be found then the component
+    plugin will attempt to download it.
 
 .. option:: --sysroots-dir DIR
 
@@ -470,21 +470,16 @@ Writing a Component Plugin
 --------------------------
 
 A component plugin is a Python module that defines a sub-class of
-:py:class:`pyqtdeploy.ComponentBase`.  The sub-class must re-implement the
-:py:meth:`~pyqtdeploy.ComponentBase.install` method and may also
-re-implement the :py:meth:`~pyqtdeploy.ComponentBase.verify` method.  It
-should also include a class attribute called
-:py:attr:`~pyqtdeploy.ComponentBase.options` which is a sequence of
-:py:class:`pyqtdeploy.ComponentOption` instances that describe each of the
-component's configurable options.  It does not matter what the name of the
-class is.
+:py:class:`pyqtdeploy.Component`.  The name of the module is the name used in
+the TOML specification file.  It doesn't matter what the name of the sub-class
+is.
 
-Your own component plugins should be placed in the same
-directory as the :file:`sysroot.toml` file.
+Component plugins (other than those bundled with :program:`pyqtdeploy`) are
+expected to be found in the directory containing the TOML specification file.
 
 .. py:module:: pyqtdeploy
 
-.. py:class:: ComponentBase
+.. py:class:: Component
 
     This is the base class of all component plugins.
 
@@ -505,23 +500,6 @@ directory as the :file:`sysroot.toml` file.
         should check that everything is available (e.g. other components,
         external tools) for a successful installation.
 
-.. py:class:: ComponentOption(name, type=str, required=False, default=None, values=None, help='')
-
-    This class implements an option used to configure the component.  An option
-    can be specified as an attribute of the component's object in the sysroot
-    specification file.  An instance of the component plugin will contain an
-    attribute for each option whose value is that specified in the sysroot
-    specification file (or an appropriate default if it was omitted).
-
-    :param str name: the name of the option.
-    :param type: the type of a value of the option.
-    :type type: ``bool``, ``int``, ``list`` or ``str``
-    :param bool required: ``True`` if a value for the option is required.
-    :param default: the default value of the option.
-    :param values: the possible values of the option.
-    :param str help: the help text displayed by the
-        :option:`--options <pyqtdeploy-sysroot --options>` option of
-        :program:`pyqtdeploy-sysroot`.
 
 .. py:class:: Sysroot
 
@@ -669,7 +647,7 @@ directory as the :file:`sysroot.toml` file.
         is relative then it is assumed to be relative to the directory
         specified by a :option:`--source-dir <pyqtdeploy-sysroot --source-dir>`
         option.  If this option has not been specified then the directory
-        containing the :file:`sysroot.toml` specification file is used.
+        containing the TOML specification file is used.
 
         :param str name: is the name of the file or directory.
         :param bool required: ``True`` if the file or directory must exist.
@@ -872,6 +850,25 @@ directory as the :file:`sysroot.toml` file.
         :param str message: is the message.
 
 
+.. py:class:: ComponentOption(name, type=str, required=False, default=None, values=None, help='')
+
+    This class implements an option used to configure the component.  An option
+    can be specified as an attribute of the component's object in the sysroot
+    specification file.  An instance of the component plugin will contain an
+    attribute for each option whose value is that specified in the sysroot
+    specification file (or an appropriate default if it was omitted).
+
+    :param str name: the name of the option.
+    :param type: the type of a value of the option.
+    :type type: bool, int, list or str
+    :param bool required: ``True`` if a value for the option is required.
+    :param default: the default value of the option.
+    :param values: the possible values of the option.
+    :param str help: the help text displayed by the
+        :option:`--options <pyqtdeploy-sysroot --options>` option of
+        :program:`pyqtdeploy-sysroot`.
+
+
 .. py:class:: VersionNumber
 
     This class encapsulates a version number in the form ``M[.m[.p]][suffix]``
@@ -909,3 +906,148 @@ directory as the :file:`sysroot.toml` file.
 
         The suffix.
 
+
+Defining Component Parts
+........................
+
+The following classes are used to define the different types of part that a
+component can provide.
+
+A part is provided by a range of versions of the component.  The optional
+``min_version`` is the minimum version of the component that provides the part.
+The optional ``max_version`` is the maximum version of the component that
+provides the part.  The optional ``version`` can be used to specify an exact
+version of the component that provides the part and is the equivalent of
+specifying the same value for both ``min_version`` and ``max_version``.  A
+version can be specified as either an integer major version number, a 2-tuple
+of major and minor version numbers or a 3-tuple of major, minor and patch
+version numbers.
+
+Several attributes of different parts are described as sequences of *scoped
+values*.  A scoped value is a *scope* and a *value* separated by ``#``.  A
+scope defines one or more targets.  If the current target is defined by the
+scope then the value is used, otherwise it is ignored.  A scope may be one or
+more architecture or platform names separated by ``|`` meaning that the scope
+defines all the the specified architectures or platforms.  An individual name
+may be preceded by ``!`` which excludes the name from the scope.  For example
+``ios|macos`` defines the value for the iOS and macOS platforms and ``!win-32``
+defines the value for all targets except for 32-bit Windows.
+
+Some parts may be dependent on other parts, possibly parts provided by
+different components.  A dependency may be specified as a component name and a
+part name separated by ``:``.  If the component name is omitted then the
+current component is assumed.
+
+
+.. py:class:: ComponentLibrary(min_version=None, version=None, max_version=None, target='', defines=None, libs=None, includepath=None, bundle_shared_libs=False)
+
+    This class encapsulates a library that is usually a dependency of an
+    extension module.
+
+    :param min_version: the minimum version of the component providing the
+        part.
+    :type min_version: int, 2-tuple or 3-tuple
+    :param version: the exact version of the component providing the part.
+    :type version: int, 2-tuple or 3-tuple
+    :param max_version: the maximum version of the component providing the
+        part.
+    :type max_version: int, 2-tuple or 3-tuple
+    :param str target: the target platform for which the part is provided.
+    :param sequence defines: the scoped pre-processor macros to be added to the
+        ``DEFINES`` :program:`qmake` variable.
+    :param sequence libs: the scoped library names to be added to the ``LIBS``
+        :program:`qmake` variable.
+    :param sequence includepath: the scoped directory names to be added to the
+        ``INCLUDEPATH`` :program:`qmake` variable.
+    :param bool bundle_shared_libs: ``True`` if the libraries are shared and
+        need to be bundled with the application.  Current this only applies to
+        Android targets.
+
+
+.. py:class:: DataFile(name, min_version=None, version=None, max_version=None, target='')
+
+    This class encapsulates a data file.
+
+    :param str name: the name of the file.
+    :param min_version: the minimum version of the component providing the
+        part.
+    :type min_version: int, 2-tuple or 3-tuple
+    :param version: the exact version of the component providing the part.
+    :type version: int, 2-tuple or 3-tuple
+    :param max_version: the maximum version of the component providing the
+        part.
+    :type max_version: int, 2-tuple or 3-tuple
+    :param str target: the target platform for which the part is provided.
+
+
+.. py:class:: ExtensionModule(min_version=None, version=None, max_version=None, target='', min_android_api=None, deps=(), defines=None, libs=None, includepath=None, source=None, qmake_config=None, qmake_cpp11=False, qmake_qt=None)
+
+    This class encapsulates an extension module.
+
+    :param min_version: the minimum version of the component providing the
+        part.
+    :type min_version: int, 2-tuple or 3-tuple
+    :param version: the exact version of the component providing the part.
+    :type version: int, 2-tuple or 3-tuple
+    :param max_version: the maximum version of the component providing the
+        part.
+    :type max_version: int, 2-tuple or 3-tuple
+    :param str target: the target platform for which the part is provided.
+    :param int min_android_api: the minimum Android API level required.
+    :param sequence deps: the scoped names of other parts that this part is
+        dependent on.
+    :param sequence defines: the scoped pre-processor macros to be added to the
+        ``DEFINES`` :program:`qmake` variable.
+    :param sequence libs: the scoped library names to be added to the ``LIBS``
+        :program:`qmake` variable.
+    :param sequence includepath: the scoped directory names to be added to the
+        ``INCLUDEPATH`` :program:`qmake` variable.
+    :param source: the name of the source file(s) of the extension module.
+    :type source: str or sequence
+    :param qmake_config: the value(s) to be added to the ``CONFIG``
+        :program:`qmake` variable.
+    :type qmake_config: str or sequence
+    :param bool qmake_cpp11: ``True`` if the extension module requires support
+        for C++11.
+    :param qmake_qt: the value(s) to be added to the ``QT`` :program:`qmake`
+        variable.
+    :type qmake_qt: str or sequence
+
+
+.. py:class:: PythonModule(min_version=None, version=None, max_version=None, target='', min_android_api=None, deps=())
+
+    This class encapsulates a Python module (i.e. a single ``.py`` file).
+
+    :param min_version: the minimum version of the component providing the
+        part.
+    :type min_version: int, 2-tuple or 3-tuple
+    :param version: the exact version of the component providing the part.
+    :type version: int, 2-tuple or 3-tuple
+    :param max_version: the maximum version of the component providing the
+        part.
+    :type max_version: int, 2-tuple or 3-tuple
+    :param str target: the target platform for which the part is provided.
+    :param int min_android_api: the minimum Android API level required.
+    :param sequence deps: the scoped names of other parts that this part is
+        dependent on.
+
+
+.. py:class:: PythonPackage(min_version=None, version=None, max_version=None, target='', min_android_api=None, deps=(), exclusions=())
+
+    This class encapsulates a Python package (i.e. a directory containing an
+    ``__init__.py`` file and other ``.py`` files).
+
+    :param min_version: the minimum version of the component providing the
+        part.
+    :type min_version: int, 2-tuple or 3-tuple
+    :param version: the exact version of the component providing the part.
+    :type version: int, 2-tuple or 3-tuple
+    :param max_version: the maximum version of the component providing the
+        part.
+    :type max_version: int, 2-tuple or 3-tuple
+    :param str target: the target platform for which the part is provided.
+    :param int min_android_api: the minimum Android API level required.
+    :param sequence deps: the scoped names of other parts that this part is
+        dependent on.
+    :param sequence exclusions: the names of any files or directories, relative
+        to the package, that should be excluded.
