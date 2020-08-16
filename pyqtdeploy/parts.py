@@ -192,7 +192,7 @@ class ExtensionModule(CompiledPart):
     """ Encapsulate the meta-data for an extension module. """
 
     def __init__(self, min_version=None, version=None, max_version=None,
-            min_android_api=None, internal=False, target='', deps=(),
+            target='', min_android_api=None, internal=False, deps=(),
             hidden_deps=(), core=False, defines=None, libs=None,
             includepath=None, source=None, qmake_config=None,
             qmake_cpp11=False, qmake_qt=None, pyd=None, dlls=None):
