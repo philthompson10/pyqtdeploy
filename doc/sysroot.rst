@@ -483,15 +483,6 @@ expected to be found in the directory containing the TOML specification file.
 
     This is the base class of all component plugins.
 
-    .. py:attribute:: preinstalls
-
-        The list of components that this component is dependent on.
-
-    .. py:attribute:: provides
-
-        The dict of parts, keyed by the name of the part, provided by this
-        component.
-
     .. py:attribute:: android_abi
 
         The Android architecture-specific ABI being used.
@@ -607,6 +598,32 @@ expected to be found in the directory containing the TOML specification file.
             an error if it could not be found.
         :return: the absolute path name of the executable.
 
+    .. py:method:: get_archive(name):
+
+        The pathname of a local copy of the component's source archive is
+        returned.  The directories specified by the
+        :option:`--source-dir <pyqtdeploy-sysroot --source-dir>` option are
+        searched first.  If the archive is not found then it is downloaded if
+        the component supports it.
+
+        :return: the pathname of the archive.
+
+    .. py:method:: get_archive_name():
+        :abstractmethod:
+
+        This must be re-implemented to return the version-specific name of the
+        component's source archive.
+
+        :return: the name of the archive.
+
+    .. py:method:: get_archive_urls():
+
+        This is re-implemented to return a sequence of URLs (excluding the
+        source archive name) from which the component's source archive may be
+        downloaded from.
+
+        :return: the sequence of URLs.
+
     .. py:method:: get_component(name, required=True)
 
         The :py:class:`~pyqtdeploy.Component` instance for a component is
@@ -633,6 +650,16 @@ expected to be found in the directory containing the TOML specification file.
         describing the component's configurable options is returned.
 
         :return: the sequence of option instances.
+
+    .. py:method:: get_pypi_urls(pypi_project):
+
+        This can be called from a re-implementation of
+        :py:meth:`~pyqtdeploy.Component.get_archive_urls` to return a sequence
+        of URLs (excluding the source archive name) from which the component's
+        source archive may be downloaded from a PyPI project.
+
+        :param str pypi_project: the name of the PyPI project.
+        :return: the sequence of URLs.
 
     .. py:method:: get_python_install_path(major, minor)
 
@@ -673,10 +700,30 @@ expected to be found in the directory containing the TOML specification file.
 
         The name of the host platform.
 
+    .. py:attribute:: host_python
+
+        The name of the host :program:`python` executable.  This is only
+        implemented by the ``Python`` component plugin.
+
+    .. py:attribute:: host_qmake
+
+        The name of the host :program:`qmake` executable.  This is only
+        implemented by the ``Qt`` component plugin.
+
+    .. py:attribute:: host_sip
+
+        The name of the host :program:`sip` executable.  This is only
+        implemented by the ``SIP`` component plugin.
+
     .. py:method:: install()
         :abstractmethod:
 
         This must be re-implemented to install the component.
+
+    .. py:attribute:: must_install_from_source
+
+        This is set by the component if it must be installed from a source
+        archive.
 
     .. py:method:: open_file(name)
 
@@ -703,6 +750,10 @@ expected to be found in the directory containing the TOML specification file.
             the line and a file object to which the (possibly) modified line
             should be written to.
 
+    .. py:attribute:: preinstalls
+
+        The list of components that this component is dependent on.
+
     .. py:method:: progress(message)
 
         A progress message is displayed to the user.  It will be suppressed if
@@ -710,6 +761,11 @@ expected to be found in the directory containing the TOML specification file.
         specified.
 
         :param str message: the message.
+
+    .. py:attribute:: provides
+
+        The dict of parts, keyed by the name of the part, provided by this
+        component.
 
     .. py:method:: run(*args, capture=False)
 
@@ -757,11 +813,41 @@ expected to be found in the directory containing the TOML specification file.
 
         The name of the target platform.
 
+    .. py:attribute:: target_py_include_dir
+
+        The pathname of the directory containing the target Python header
+        files.  This is only implemented by the ``Python`` component plugin.
+
+    .. py:attribute:: target_py_lib
+
+        The name of the target Python library.  This is only implemented by the
+        ``Python`` component plugin.
+
+    .. py:attribute:: target_sip_dir
+
+        The pathname of the directory containing the target ``.sip`` files.
+        This is only implemented by the ``SIP`` component plugin.
+
+    .. py:attribute:: target_sitepackages_dir
+
+        The pathname of the target Python ``site-packages`` directory.  This is
+        only implemented by the ``Python`` component plugin.
+
     .. py:attribute:: target_src_dir
 
         The name of the directory where source files can be found.  Note that
         these are sources left by components for the use of other components
         and not the sources used to build a component.
+
+    .. py:method:: unpack_archive(archive, chdir=True)
+
+        A source archive is unpacked in the current directory and the name of
+        the archive directory (not its pathname) is returned.
+
+        :param str archive: the pathname of the source archive.
+        :param bool chdir: ``True`` if the current directory is changed to be
+            the archive directory.
+        :return: the name of the archive directory.
 
     .. py:method:: unsupported(detail=None)
 
