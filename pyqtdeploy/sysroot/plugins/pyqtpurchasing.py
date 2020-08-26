@@ -91,8 +91,8 @@ class PyQtPurchasingComponent(Component):
         """ Verify the component. """
 
         pyqt = self.get_component('PyQt')
-        pyqt.verify_pyqt_component(self.version, sipbuild_version=(5, 4),
-                pyqtbuild_version=(1, 5))
+        pyqt.verify_pyqt_component(self.version, min_sipbuild_version=(5, 4),
+                min_pyqtbuild_version=(1, 5))
 
     def _install_using_sip_v4(self):
         """ Install using SIP v4. """

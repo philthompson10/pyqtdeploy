@@ -222,6 +222,267 @@ class PyQtComponent(AbstractPyQtComponent):
         if self._license_file is not None:
             self.copy_file(self._license_file, 'sip')
 
+        if self.using_sip_v4:
+            self._install_using_sip_v4()
+        else:
+            # Install using SIP v5 or later.
+            project_config = {
+                'confirm-license': True,
+                'designer-plugin': False,
+                'qml-plugin': False,
+                'dbus-python': False,
+                'tools': False,
+            }
+
+            bindings_config = {
+                'disabled-features': self.disabled_features,
+            }
+
+            self.install_pyqt_component(self, project=project_config,
+                    bindings=bindings_config, enable=self.installed_modules)
+
+    def install_pyqt_component(self, component, project=None, bindings=None,
+            enable=None):
+        """ Install a PyQt-based component using SIP v5 or later. """
+
+        # Load the component's pyproject.toml file.
+        try:
+            pyproject = toml.load('pyproject.toml')
+        except FileNotFoundError:
+            component.error("Unable to find 'pyproject.toml'")
+        except Exception as e:
+            component.error("There was an error loading 'pyproject.toml'",
+                    detail=str(e))
+
+        # Get the relevent sections.
+        project_section = self._get_section('tool.sip.project', pyproject)
+        bindings_section = self._get_section('tool.sip.bindings', pyproject)
+
+        # Check the name of the sip module and the ABI version.  Component
+        # versions earlier that v5.15.1 didn't set these reliably so provide
+        # appropriate default values.
+        sip = self.get_component('SIP')
+
+        sip_module = project_section.get('sip-module', 'PyQt5.sip')
+
+        if sip.module_name != sip_module:
+            component.error(
+                    "sip module '{0}' is required but '{1}' is provided".format(
+                            sip_module, sip.module_name))
+
+        abi_version = project_section.get('abi-version', '12.8')
+        abi_version = self.parse_version_number(abi_version)
+
+        if abi_version.major != sip.version.major or abi_version > sip.version:
+            component.error(
+                    "sip module ABI v'{0}' is required but v'{1}' is provided".format(
+                            abi_version, sip.version))
+
+        # Re-configure the build.
+        python = self.get_component('Python')
+
+        project_section['py-include-dir'] = python.target_py_include_dir
+        project_section['py-pylib-dir'] = component.target_lib_dir
+        project_section['py-pylib-lib'] = python.target_py_lib
+        project_section['target-dir'] = python.target_sitepackages_dir
+
+        # See if a limited set of modules are being installed.
+        if enable is not None:
+            project_section['enable'] = enable
+
+            # Make sure there is a section so that we can configure it later.
+            for module in enable:
+                if module not in bindings_section:
+                    bindings_section[module] = {}
+
+        # Apply any additional component-specific values.
+        if project is not None:
+            project_section.update(project)
+
+        for module in bindings_section.values():
+            if isinstance(module, dict):
+                module['static'] = True
+
+                # Apply any additional component-specific values.
+                if bindings is not None:
+                    module.update(bindings)
+
+        # Save the modified pyproject.toml file.
+        try:
+            with open('pyproject.toml', 'w') as f:
+                toml.dump(pyproject, f)
+        except Exception as e:
+            component.error("Unable to write modified 'pyproject.toml'",
+                    detail=str(e))
+
+        # Run sip-install.
+        args = [
+            'sip-install',
+            '--qmake', self.get_component('Qt').host_qmake,
+            '--no-distinfo',
+            '--concatenate', '2',
+            '--no-docstrings'
+        ]
+
+        if self.target_platform_name == 'android':
+            args.append('--android-abi')
+            args.append(self.android_abi)
+
+        if self.verbose_enabled:
+            args.append('--verbose')
+
+        self.run(*args)
+
+    @property
+    def provides(self):
+        """ The dict of parts provided by the component. """
+
+        parts = {
+            'PyQt5': _ALL_PARTS['PyQt5'],
+            'PyQt5.uic': _ALL_PARTS['PyQt5.uic'],
+        }
+
+        for name in self.installed_modules:
+            name = 'PyQt5.' + name
+
+            part = _ALL_PARTS[name]
+
+            if name == 'PyQt5.QtCore':
+                lib_dir = os.path.join(
+                        self.get_component('Python').target_sitepackages_dir,
+                        'PyQt5')
+
+                part.libs = ('-L' + lib_dir,) + part.libs
+
+            parts[name] = part
+
+        return parts
+
+    @property
+    def using_sip_v4(self):
+        """ True if SIP v4 is being used. """
+
+        return self.get_component('SIP').version.major == 4
+
+    def verify(self):
+        """ Verify the component. """
+
+        if self.version < (5, 12):
+            self.unsupported()
+
+        if self.version > (5, 15):
+            self.untested()
+
+        # Check the corresponding SIP version.
+        if self.using_sip_v4:
+            sip_version = self.get_component('SIP').version
+
+            if sip_version < (4, 19, 19):
+                if self.version >= (5, 13, 1):
+                    self.error("SIP v4.19.19 or later is required")
+            elif sip_version < (4, 19, 20):
+                if self.version >= (5, 14):
+                    self.error("SIP v4.19.20 or later is required")
+            elif sip_version < (4, 19, 23):
+                if self.version >= (5, 15):
+                    self.error("SIP v4.19.23 or later is required")
+
+            if self.version >= (5, 13, 1) and sip_version < (4, 19, 19):
+                self.error("SIP v4.19.19 or later is required")
+            elif self.version >= (5, 15) and sip_version < (4, 19, 23):
+                self.error("SIP v4.19.23 or later is required")
+        else:
+            self.verify_pyqt_component(self.version,
+                    min_sipbuild_version=(5, 4), min_pyqtbuild_version=(1, 5))
+
+        # This is needed by dependent components.
+        if not self.get_component('Qt').ssl:
+            self.disabled_features.append('PyQt_SSL')
+
+    def verify_pyqt_component(self, min_pyqt_version, min_sipbuild_version,
+            min_pyqtbuild_version):
+        """ Verify a PyQt-based component.  All versions are minimum versions.
+        The sipbuild and pyqtbuild version numbers are ignored if SIP v4 is
+        being used.
+        """
+
+        # Check the minimum PyQt requirement, ignoring the path version and
+        # making sure it is the same major version.
+        min_pyqt_version = self.parse_version_number(min_pyqt_version)
+
+        if min_pyqt_version.major != self.version.major or min_pyqt_version.minor > self.version.minor:
+            self.error(
+                    "PyQt v{} or later is required".format(min_pyqt_version))
+
+        if self.using_sip_v4:
+            return
+
+        # Support for SIP v5 was added to PyQt and sub-packages during v5.13.
+        # For simplicity require v5.14 if using SIP v5.
+        if self.version < (5, 14):
+            self.error("SIP v5 requires v5.14.0 or later")
+
+        # Check the minimum SIP requirement, making sure it is the same major
+        # version.
+        # TODO: this assumes that pyqtdeploy and sip are installed in the same
+        # venv which may not be the case.  Therefore we either need a way of
+        # querying the versions of sip and PyQt-builder from the command line
+        # or we have a way of invoking sip through the API (avoiding the
+        # command line).
+        min_sipbuild_version = self.parse_version_number(min_sipbuild_version)
+
+        try:
+            from sipbuild import SIP_VERSION
+        except ImportError:
+            SIP_VERSION = 0
+
+        sipbuild_version = self.parse_version_number(SIP_VERSION)
+
+        if min_sipbuild_version.major != sipbuild_version.major or min_sipbuild_version > sipbuild_version:
+            self.error(
+                    "SIP v{} or later is required".format(
+                            min_sipbuild_version))
+
+        # Check the minimum PyQt-builder requirement, making sure it is the
+        # same major version.
+        min_pyqtbuild_version = self.parse_version_number(
+                min_pyqtbuild_version)
+
+        try:
+            from pyqtbuild import PYQTBUILD_VERSION
+        except ImportError:
+            PYQTBUILD_VERSION = 0
+
+        pyqtbuild_version = self.parse_version_number(PYQTBUILD_VERSION)
+
+        if min_pyqtbuild_version.major != pyqtbuild_version.major or min_pyqtbuild_version > pyqtbuild_version:
+            self.error(
+                    "PyQt-builder v{} or later is required".format(
+                            min_pyqtbuild_version))
+
+    @staticmethod
+    def _get_section(name, pyproject):
+        """ Return a dict containing the named section from a pyproject.toml
+        file.
+        """
+
+        section = pyproject
+
+        for section_name in name.split('.'):
+            # A section might be missing so make sure it is there (and empty).
+            if section_name not in section:
+                section[section_name] = {}
+
+            section = section[section_name]
+
+            if not isinstance(section, dict):
+                return {}
+
+        return section
+
+    def _install_using_sip_v4(self):
+        """ Install using SIP v4. """
+
         # Map the target name onto the names used by configure.py.
         pyqt_platform = self.target_platform_name
 
@@ -276,202 +537,6 @@ pyqt_modules = {6}
         self.run(*args)
         self.run(self.host_make)
         self.run(self.host_make, 'install')
-
-    def install_pyqt_component(self, component):
-        """ Install a PyQt-based component using SIP v5 or later. """
-
-        # Load the component's pyproject.toml file.
-        try:
-            pyproject = toml.load('pyproject.toml')
-        except FileNotFoundError:
-            component.error("Unable to find 'pyproject.toml'")
-        except Exception as e:
-            component.error("There was an error loading 'pyproject.toml'",
-                    detail=str(e))
-
-        # Get the relevent sections.
-        project = self._get_section('tool.sip.project', pyproject)
-        bindings = self._get_section('tool.sip.bindings', pyproject)
-
-        # Check the name of the sip module and the ABI version.  Component
-        # versions earlier that v5.15.1 didn't set these reliably so provide
-        # appropriate default values.
-        sip = self.get_component('SIP')
-
-        sip_module = project.get('sip-module', 'PyQt5.sip')
-
-        if sip.module_name != sip_module:
-            component.error(
-                    "sip module '{0}' is required but '{1}' is provided".format(
-                            sip_module, sip.module_name))
-
-        abi_version = project.get('abi-version', '12.8')
-        abi_version = self.parse_version_number(abi_version)
-
-        if abi_version.major != sip.version.major or abi_version > sip.version:
-            component.error(
-                    "sip module ABI v'{0}' is required but v'{1}' is provided".format(
-                            abi_version, sip.version))
-
-        # Re-configure the build.
-        python = self.get_component('Python')
-
-        project['py_include_dir'] = python.target_py_include_dir
-        project['py_pylib_dir'] = component.target_lib_dir
-        project['py_pylib_lib'] = python.target_py_lib
-        project['target_dir'] = python.target_sitepackages_dir
-
-        for module in bindings.values():
-            if isinstance(module, dict):
-                module['static'] = True
-
-        if self.target_platform_name == 'android':
-            project['android_abis'] = [self.android_abi]
-
-        # Save the modified pyproject.toml file.
-        try:
-            with open('pyproject.toml', 'w') as f:
-                toml.dump(pyproject, f)
-        except Exception as e:
-            component.error("Unable to write modified 'pyproject.toml'",
-                    detail=str(e))
-
-        # Run sip-install.
-        self.run('sip-install', '--qmake', self.get_component('Qt').host_qmake)
-
-    @property
-    def provides(self):
-        """ The dict of parts provided by the component. """
-
-        parts = {
-            'PyQt5': _ALL_PARTS['PyQt5'],
-            'PyQt5.uic': _ALL_PARTS['PyQt5.uic'],
-        }
-
-        for name in self.installed_modules:
-            name = 'PyQt5.' + name
-
-            part = _ALL_PARTS[name]
-
-            if name == 'PyQt5.QtCore':
-                lib_dir = os.path.join(
-                        self.get_component('Python').target_sitepackages_dir,
-                        'PyQt5')
-
-                part.libs = ('-L' + lib_dir,) + part.libs
-
-            parts[name] = part
-
-        return parts
-
-    @property
-    def using_sip_v4(self):
-        """ True if SIP v4 is being used. """
-
-        return self.get_component('SIP').version.major == 4
-
-    def verify(self):
-        """ Verify the component. """
-
-        if self.version < (5, 12):
-            self.unsupported()
-
-        if self.version > (5, 15):
-            self.untested()
-
-        # Check the corresponding SIP version.
-        sip_version = self.get_component('SIP').version
-
-        if sip_version < (4, 19, 19):
-            if self.version >= (5, 13, 1):
-                self.error("SIP v4.19.19 or later is required")
-        elif sip_version < (4, 19, 20):
-            if self.version >= (5, 14):
-                self.error("SIP v4.19.20 or later is required")
-        elif sip_version < (4, 19, 23):
-            if self.version >= (5, 15):
-                self.error("SIP v4.19.23 or later is required")
-
-        if self.version >= (5, 13, 1) and sip_version < (4, 19, 19):
-            self.error("SIP v4.19.19 or later is required")
-        elif self.version >= (5, 15) and sip_version < (4, 19, 23):
-            self.error("SIP v4.19.23 or later is required")
-
-        # This is needed by dependent components.
-        if not self.get_component('Qt').ssl:
-            self.disabled_features.append('PyQt_SSL')
-
-    def verify_pyqt_component(self, min_pyqt_version, min_sipbuild_version,
-            min_pyqtbuild_version):
-        """ Verify a PyQt-based component.  All versions are minimum versions.
-        The sipbuild and pyqtbuild version numbers are ignored if SIP v4 is
-        being used.
-        """
-
-        # Check the minimum PyQt requirement, ignoring the path version and
-        # making sure it is the same major version.
-        min_pyqt_version = self.parse_version_number(min_pyqt_version)
-
-        if min_pyqt_version.major != self.version.major or min_pyqt_version.minor > self.version.minor:
-            self.error(
-                    "PyQt v{} or later is required".format(min_pyqt_version))
-
-        # Check the minimum SIP requirement, making sure it is the same major
-        # version.
-        # TODO: this assumes that pyqtdeploy and sip are installed in the same
-        # venv which may not be the case.  Therefore we either need a way of
-        # querying the versions of sip and PyQt-builder from the command line
-        # or we have a way of invoking sip through the API (avoiding the
-        # command line).
-        min_sipbuild_version = self.parse_version_number(min_sipbuild_version)
-
-        try:
-            from sipbuild import SIP_VERSION
-        except ImportError:
-            SIP_VERSION = 0
-
-        sipbuild_version = self.parse_version_number(SIP_VERSION)
-
-        if min_sipbuild_version.major != sipbuild_version.major or min_sipbuild_version > sipbuild_version:
-            self.error(
-                    "SIP v{} or later is required".format(
-                            min_sipbuild_version))
-
-        # Check the minimum PyQt-builder requirement, making sure it is the
-        # same major version.
-        min_pyqtbuild_version = self.parse_version_number(
-                min_pyqtbuild_version)
-
-        try:
-            from pyqtbuild import PYQTBUILD_VERSION
-        except ImportError:
-            PYQTBUILD_VERSION = 0
-
-        pyqtbuild_version = self.parse_version_number(PYQTBUILD_VERSION)
-
-        if min_pyqtbuild_version.major != pyqtbuild_version.major or min_pyqtbuild_version > pyqtbuild_version:
-            self.error(
-                    "PyQt-builder v{} or later is required".format(
-                            min_pyqtbuild_version))
-
-    @staticmethod
-    def _get_section(name, pyproject):
-        """ Return a dict containing the named section from a pyproject.toml
-        file.
-        """
-
-        section = pyproject
-
-        for section_name in name.split('.'):
-            try:
-                section = pyproject[section_name]
-            except KeyError:
-                return {}
-
-            if not isinstance(section, dict):
-                return {}
-
-        return section
 
     @property
     def _version_str(self):

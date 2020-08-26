@@ -223,6 +223,9 @@ class VersionNumber:
         UserException is raised if it couldn't be parsed.
         """
 
+        if isinstance(version_nr, VersionNumber):
+            return version_nr
+
         if isinstance(version_nr, tuple):
             return VersionNumber(*version_nr)
 
