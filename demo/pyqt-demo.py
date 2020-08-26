@@ -112,7 +112,7 @@ class Model(QStandardItemModel):
         self.add_value("PyQt version", PYQT_VERSION_STR)
         self.add_value("Python version", self.from_hexversion(sys.hexversion))
         self.add_value("Qt version", QT_VERSION_STR)
-        self.add_value("sip version", SIP_VERSION_STR)
+        self.add_value("PyQt5.sip version", SIP_VERSION_STR)
         self.add_value("sys.platform", sys.platform)
         self.add_value("sys.path", str(sys.path))
         self.add_value("sys.path_hooks", str(sys.path_hooks))

@@ -117,7 +117,7 @@ static_msvc_runtime = true
 # SIP #########################################################################
 
 [SIP]
-version = "4.19.24"
+version = "12.8.0"
 module_name = "PyQt5.sip"
 
 
