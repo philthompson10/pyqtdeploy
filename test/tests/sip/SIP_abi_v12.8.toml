@@ -2,6 +2,7 @@
 
 [SIP]
 version = "12.8"
+module_name = "PyQt5.sip"
 
 
 [Python]

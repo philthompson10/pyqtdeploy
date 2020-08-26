@@ -26,6 +26,7 @@
 
 # Publish the sub-package's API.
 from .abstract_component import AbstractComponent
+from .abstract_pyqt_component import AbstractPyQtComponent
 from .abstract_python_component import AbstractPythonComponent
 from .abstract_qt_component import AbstractQtComponent
 from .abstract_sip_component import AbstractSIPComponent

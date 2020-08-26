@@ -39,14 +39,21 @@ class SIPComponent(AbstractSIPComponent):
     def get_archive_name(self):
         """ Return the filename of the source archive. """
 
-        return 'sip-{}.tar.gz'.format(self.version)
+        if self.version == 4:
+            return 'sip-{}.tar.gz'.format(self.version)
+
+        return '{}-{}.tar.gz'.format(self.module_name.replace('.', '_'),
+                self.version)
 
     def get_archive_urls(self):
         """ Return the list of URLs where the source archive might be
         downloaded from.
         """
 
-        return ['https://www.riverbankcomputing.com/static/Downloads/sip/{}/'.format(self.version)]
+        if self.version == 4:
+            return ['https://www.riverbankcomputing.com/static/Downloads/sip/{}/'.format(self.version)]
+
+        return self.get_pypi_urls(self.module_name.replace('.', '-'))
 
     def get_options(self):
         """ Return a list of ComponentOption objects that define the components
@@ -75,7 +82,36 @@ class SIPComponent(AbstractSIPComponent):
         if self.version == 4:
             self._install_v4()
         else:
-            # TODO
+            archive = self.get_archive()
+            self.unpack_archive(archive)
+
+            # Gather the name of the source and header files
+            sources = []
+            headers = []
+
+            for fname in os.listdir():
+                if fname.endswith('.c') or fname.endswith('.cpp'):
+                    sources.append(fname)
+                elif fname.endswith('.h'):
+                    headers.append(fname)
+
+            # Create a .pro file to build the module.
+            python = self.get_component('Python')
+
+            module_dir = os.sep.join(self.module_name.split('.')[:-1])
+
+            pro = _SIP_PRO.format(includepath=python.target_py_include_dir,
+                    sitepackages=os.path.join(python.target_sitepackages_dir,
+                            module_dir),
+                    sources=' '.join(sources), headers=' '.join(headers))
+
+            with self.create_file('sip.pro') as f:
+                f.write(pro)
+
+            # Run qmake and make to install it.
+            self.run(self.get_component('Qt').host_qmake)
+            self.run(self.host_make)
+            self.run(self.host_make, 'install')
 
     @property
     def provides(self):
@@ -113,8 +149,8 @@ class SIPComponent(AbstractSIPComponent):
             self._verify_v4()
         else:
             # The name of the sip module must be provided.
-            if not self.sip_module:
-                self.error("'sip-module' must be set for SIP v5 and later")
+            if not self.module_name:
+                self.error("'module_name' must be set for SIP v5 and later")
 
             self.find_exe('sip-install')
 
@@ -206,3 +242,19 @@ sip_module_dir = {2}
         if self.target_platform_name == 'android':
             if self.version <= (4, 19, 23) and self.get_component('Qt').version > (5, 14):
                 self.unsupported("with Qt v5.14 or later on Android")
+
+
+# The skeleton .pro file for the sip module.
+_SIP_PRO = """TEMPLATE = lib
+TARGET = sip
+CONFIG -= qt
+CONFIG += warn_on exceptions_off staticlib release
+
+INCLUDEPATH += {includepath}
+
+target.path = {sitepackages}
+INSTALLS += target
+
+SOURCES = {sources}
+HEADERS = {headers}
+"""
