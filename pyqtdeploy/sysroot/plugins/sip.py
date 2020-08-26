@@ -63,25 +63,19 @@ class SIPComponent(AbstractSIPComponent):
 
     @property
     def host_sip(self):
-        """ The name of the host sip executable. """
+        """ The name of the host sip executable.  This must only be called when
+        SIP v4 is being used.
+        """
 
         return os.path.join(self.host_dir, 'bin', self.host_exe('sip'))
 
     def install(self):
         """ Install for the target. """
 
-        archive = self.get_archive()
-
-        build_generator = os.path.join(os.getcwd(), 'sip-generator')
-        build_module = os.path.join(os.getcwd(), 'sip-module')
-
-        os.mkdir(build_generator)
-        os.chdir(build_generator)
-        self._install_code_generator(archive)
-
-        os.mkdir(build_module)
-        os.chdir(build_module)
-        self._install_module(archive)
+        if self.version == 4:
+            self._install_v4()
+        else:
+            # TODO
 
     @property
     def provides(self):
@@ -103,25 +97,26 @@ class SIPComponent(AbstractSIPComponent):
 
     @property
     def target_sip_dir(self):
-        """ The name of the directory containing the target .sip files. """
+        """ The name of the directory containing the target .sip files.  This
+        must only be called when SIP v4 is being used.
+        """
 
         return os.path.join(self.sysroot_dir, 'share', 'sip')
 
     def verify(self):
         """ Verify the component. """
 
-        # v4.19.14 is the minimum version required by the earliest supported
-        # version of PyQt.
-        if self.version < (4, 19, 14):
-            self.unsupported()
+        # If the major version number is 4 then we assume it is SIP v4.
+        # Otherwise we assume the version number refers to the ABI of the sip
+        # module.
+        if self.version == 4:
+            self._verify_v4()
+        else:
+            # The name of the sip module must be provided.
+            if not self.sip_module:
+                self.error("'sip-module' must be set for SIP v5 and later")
 
-        # v5 is not yet supported.
-        if self.version >= 5:
-            self.unsupported()
-
-        if self.target_platform_name == 'android':
-            if self.version <= (4, 19, 23) and self.get_component('Qt').version > (5, 14):
-                self.unsupported("with Qt v5.14 or later on Android")
+            self.find_exe('sip-install')
 
     def _install_code_generator(self, archive):
         """ Install the code generator for the host. """
@@ -183,3 +178,31 @@ sip_module_dir = {2}
         self.run(qt.host_qmake)
         self.run(self.host_make)
         self.run(self.host_make, 'install')
+
+    def _install_v4(self):
+        """ Install v4. """
+
+        archive = self.get_archive()
+
+        build_generator = os.path.join(os.getcwd(), 'sip-generator')
+        build_module = os.path.join(os.getcwd(), 'sip-module')
+
+        os.mkdir(build_generator)
+        os.chdir(build_generator)
+        self._install_code_generator(archive)
+
+        os.mkdir(build_module)
+        os.chdir(build_module)
+        self._install_module(archive)
+
+    def _verify_v4(self):
+        """ Verify v4. """
+
+        # v4.19.14 is the minimum version required by the earliest supported
+        # version of PyQt.
+        if self.version < (4, 19, 14):
+            self.unsupported()
+
+        if self.target_platform_name == 'android':
+            if self.version <= (4, 19, 23) and self.get_component('Qt').version > (5, 14):
+                self.unsupported("with Qt v5.14 or later on Android")

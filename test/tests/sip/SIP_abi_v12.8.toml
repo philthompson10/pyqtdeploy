@@ -1,0 +1,13 @@
+# Build a static sip module implementing ABI v12.8 using SIP v5 and later.
+
+[SIP]
+version = "12.8"
+
+
+[Python]
+version = "$PYTHON_VERSION"
+
+
+[Qt]
+version = "$QT_VERSION"
+install_from_source = false
