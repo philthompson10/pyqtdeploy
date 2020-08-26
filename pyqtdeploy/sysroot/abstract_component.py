@@ -335,18 +335,19 @@ class AbstractComponent(ABC):
         return self._sysroot.open_file(name, component=self)
 
     @staticmethod
-    def parse_version_number(version_str):
+    def parse_version_number(version_nr):
         """ Return the VersionNumber object corresponding to a version number
-        as a string.  UserException is raised if it couldn't be parsed.
+        as a string, an encoded integer or a tuple.  UserException is raised if
+        it couldn't be parsed.
 
-        The version number format is M[.m[.p]][suffix] where M is the int major
-        version, m is the int minor version, p is the int patch version and
-        suffix is a str suffix.
+        The version number format, as a string, is M[.m[.p]][suffix] where M is
+        the int major version, m is the int minor version, p is the int patch
+        version and suffix is a str suffix.
         """
 
         from ..version_number import VersionNumber
 
-        return VersionNumber.parse_version_number(version_str)
+        return VersionNumber.parse_version_number(version_nr)
 
     def patch_file(self, name, patcher):
         """ Invoke a patcher for each line of a file to be patched.  The

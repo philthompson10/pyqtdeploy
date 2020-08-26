@@ -24,19 +24,32 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-# Publish the package's API.  These are for the tools.
-from .builder import Builder
-from .message_handler import MessageHandler
-from .platforms import Architecture
-from .project import Project
-from .sysroot import Sysroot, SysrootSpecification
-from .user_exception import UserException
-from .version import PYQTDEPLOY_RELEASE
+from abc import abstractmethod
+
+from .component import Component
 
 
-# These are for component plugins.
-from .parts import (ComponentLibrary, DataFile, ExtensionModule, PythonModule,
-        PythonPackage)
-from .sysroot import (AbstractComponent, AbstractPythonComponent,
-        AbstractPyQtComponent, AbstractQtComponent, AbstractSIPComponent,
-        Component, ComponentOption)
+class AbstractPyQtComponent(Component):
+    """ The abstract base class for an implementation of a PyQt component
+    plugin.
+    """
+
+    ###########################################################################
+    # The following make up the public API to be used by component plugins.
+    ###########################################################################
+
+    @abstractmethod
+    def install_pyqt_component(self, component):
+        """ Install a PyQt-based component using SIP v5 or later. """
+
+    @property
+    @abstractmethod
+    def using_sip_v4(self):
+        """ True if SIP v4 is being used. """
+
+    @abstractmethod
+    def verify_pyqt_component(self, component, sipbuild_version,
+            pyqtbuild_version):
+        """ Verify a PyQt-based component.  The sipbuild and pyqtbuild version
+        numbers are ignored if SIP v4 is being used.
+        """

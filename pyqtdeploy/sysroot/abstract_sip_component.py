@@ -41,9 +41,13 @@ class AbstractSIPComponent(Component):
     @property
     @abstractmethod
     def host_sip(self):
-        """ The name of the host sip executable. """
+        """ The name of the host sip executable.  This must only be called when
+        SIP v4 is being used.
+        """
 
     @property
     @abstractmethod
     def target_sip_dir(self):
-        """ The name of the directory containing the target .sip files. """
+        """ The name of the directory containing the target .sip files.  This
+        must only be called when SIP v4 is being used.
+        """

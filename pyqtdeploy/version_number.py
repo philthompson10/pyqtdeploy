@@ -217,14 +217,26 @@ class VersionNumber:
         return self.suffix < suffix
 
     @classmethod
-    def parse_version_number(cls, version_str):
-        """ Parse a string and return the corresponding VersionNumber object.
-        version_str is the string.  UserException is raised if it couldn't be
-        parsed.
+    def parse_version_number(cls, version_nr):
+        """ Parse a string, encoded integer or tuple and return the
+        corresponding VersionNumber object.  version_nr is the version number.
+        UserException is raised if it couldn't be parsed.
         """
 
+        if isinstance(version_nr, tuple):
+            return VersionNumber(*version_nr)
+
+        if isinstance(version_nr, int):
+            major = (version_nr >> 16) & 0xff
+            minor = (version_nr >> 8) & 0xff
+            patch = version_nr & 0xff
+
+            return VersionNumber(major, minor, patch)
+
+        assert isinstance(version_nr, str)
+
         # Split into 3 parts at the most.
-        version_parts = version_str.split('.', maxsplit=2)
+        version_parts = version_nr.split('.', maxsplit=2)
 
         # Split the last part into any leading integer part and any suffix.
         last_part = version_parts.pop()
@@ -242,7 +254,7 @@ class VersionNumber:
             version_parts.append(int_part)
         elif len(version_parts) == 0:
             raise UserException(
-                    "'{0}' has no major number".format(version_str))
+                    "'{0}' has no major number".format(version_nr))
 
         # Make sure there are 3 integer parts.
         while len(version_parts) < 3:
@@ -253,19 +265,19 @@ class VersionNumber:
             major = int(version_parts[0])
         except ValueError:
             raise UserException(
-                    "the major number of '{0}' is invalid".format(version_str))
+                    "the major number of '{0}' is invalid".format(version_nr))
 
         try:
             minor = int(version_parts[1])
         except ValueError:
             raise UserException(
-                    "the minor number of '{0}' is invalid".format(version_str))
+                    "the minor number of '{0}' is invalid".format(version_nr))
 
         try:
             patch = int(version_parts[2])
         except ValueError:
             raise UserException(
-                    "the patch number of '{0}' is invalid".format(version_str))
+                    "the patch number of '{0}' is invalid".format(version_nr))
 
         # Create the VersionNumber object.
         return cls(major, minor, patch, suffix)

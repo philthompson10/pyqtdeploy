@@ -733,12 +733,14 @@ expected to be found in the directory containing the TOML specification file.
         :param str name: the name of the file.
         :return: the file object of the opened file.
 
-    .. py:method:: parse_version_number(version_str)
+    .. py:method:: parse_version_number(version_nr)
         :staticmethod:
 
-        A string is converted to a :class:`~pyqtdeploy.VersionNumber` instance.
+        A version number is converted to a :class:`~pyqtdeploy.VersionNumber`
+        instance.  It may be a string, an encoded integer or a tuple.
 
-        :param str name: the string to parse.
+        :param name: the version number to parse.
+        :type name: str, int, or tuple
         :return: the version number.
 
     .. py:method:: patch_file(name, patcher)
