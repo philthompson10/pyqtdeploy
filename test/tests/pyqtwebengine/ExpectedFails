@@ -1,1 +1,2 @@
 PyQtWebEngine.toml: android-32 android-64 ios-64
+PyQtWebEngine_sip4.toml: android-32 android-64 ios-64

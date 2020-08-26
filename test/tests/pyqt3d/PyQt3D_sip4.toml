@@ -1,13 +1,13 @@
-# Build a static PyQtPurchasing.
+# Build a static PyQt3D using SIP v4.
 
 
-[PyQtPurchasing]
+[PyQt3D]
 version = "5.15.0"
 
 
 [PyQt]
 version = "5.15.0"
-installed_modules = ["QtCore"]
+installed_modules = ["QtCore", "QtGui"]
 
 [PyQt.android]
 disabled_features = ["PyQt_Desktop_OpenGL", "PyQt_Printer", "PyQt_PrintDialog",
@@ -21,7 +21,7 @@ disabled_features = ["PyQt_Desktop_OpenGL", "PyQt_MacOSXOnly",
 
 
 [SIP]
-version = "12.8.0"
+version = "4.19.24"
 module_name = "PyQt5.sip"
 
 

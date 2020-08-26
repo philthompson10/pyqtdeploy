@@ -74,6 +74,51 @@ class PyQtWebEngineComponent(Component):
         # Unpack the source.
         self.unpack_archive(self.get_archive())
 
+        pyqt = self.get_component('PyQt')
+        if pyqt.using_sip_v4:
+            self._install_using_sip_v4()
+        else:
+            # Install using SIP v5 or later.
+            pyqt.install_pyqt_component(self)
+
+    @property
+    def provides(self):
+        """ The dict of parts provided by the component. """
+
+        widgets_deps = ('PyQt5.QtWebEngineCore', 'PyQt:PyQt5.QtNetwork',
+                'PyQt:PyQt5.QtPrintSupport', 'PyQt:PyQt5.QtWidgets')
+
+        if 'QtWebChannel' in self.get_component('PyQt').installed_modules:
+            widgets_deps += ('PyQt:PyQt5.QtWebChannel', )
+
+        return {
+            'PyQt5.QtWebEngine':
+                ExtensionModule(deps='PyQt5.QtWebEngineCore',
+                        libs='-lQtWebEngine', qmake_qt='webengine'),
+            'PyQt5.QtWebEngineCore':
+                ExtensionModule(
+                        deps=('PyQt:PyQt5.QtNetwork', 'PyQt:PyQt5.QtGui'),
+                        libs='-lQtWebEngineCore', qmake_qt='webenginecore'),
+            'PyQt5.QtWebEngineWidgets':
+                ExtensionModule(deps=widgets_deps, libs='-lQtWebEngineWidgets',
+                        qmake_cpp11=True, qmake_qt='webenginewidgets'),
+        }
+
+    def verify(self):
+        """ Verify the component. """
+
+        if self.target_platform_name in ('android', 'ios'):
+            self.error(
+                    "PyQtWebEngine is not supported on {0}".format(
+                            self.target_platform_name))
+
+        pyqt = self.get_component('PyQt')
+        pyqt.verify_pyqt_component(self.version, min_sipbuild_version=(5, 4),
+                min_pyqtbuild_version=(1, 5))
+
+    def _install_using_sip_v4(self):
+        """ Install using SIP v4. """
+
         # Map the target name onto the names used by configure.py.
         pyqt_platform = self.target_platform_name
 
@@ -127,45 +172,6 @@ sip_module = PyQt5.sip
         self.run(*args)
         self.run(self.host_make)
         self.run(self.host_make, 'install')
-
-    @property
-    def provides(self):
-        """ The dict of parts provided by the component. """
-
-        widgets_deps = ('PyQt5.QtWebEngineCore', 'PyQt:PyQt5.QtNetwork',
-                'PyQt:PyQt5.QtPrintSupport', 'PyQt:PyQt5.QtWidgets')
-
-        if 'QtWebChannel' in self.get_component('PyQt').installed_modules:
-            widgets_deps += ('PyQt:PyQt5.QtWebChannel', )
-
-        return {
-            'PyQt5.QtWebEngine':
-                ExtensionModule(deps='PyQt5.QtWebEngineCore',
-                        libs='-lQtWebEngine', qmake_qt='webengine'),
-            'PyQt5.QtWebEngineCore':
-                ExtensionModule(
-                        deps=('PyQt:PyQt5.QtNetwork', 'PyQt:PyQt5.QtGui'),
-                        libs='-lQtWebEngineCore', qmake_qt='webenginecore'),
-            'PyQt5.QtWebEngineWidgets':
-                ExtensionModule(deps=widgets_deps, libs='-lQtWebEngineWidgets',
-                        qmake_cpp11=True, qmake_qt='webenginewidgets'),
-        }
-
-    def verify(self):
-        """ Verify the component. """
-
-        if self.target_platform_name in ('android', 'ios'):
-            self.error(
-                    "PyQtWebEngine is not supported on {0}".format(
-                            self.target_platform_name))
-
-        # Check that the version of PyQt has the same major.minor version.
-        pyqt = self.get_component('PyQt')
-
-        if (self.version.major, self.version.minor) != (pyqt.version.major, pyqt.version.minor):
-            self.error(
-                    "PyQt v{}.{} is required".format(self.version.major,
-                            self.version.minor))
 
     @property
     def _version_str(self):
