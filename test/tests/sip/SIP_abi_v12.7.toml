@@ -1,7 +1,7 @@
 # Build a static sip module implementing ABI v12.7 using SIP v5 and later.
 
 [SIP]
-version = "12.7"
+version = "12.7.2"
 module_name = "PyQt5.sip"
 
 

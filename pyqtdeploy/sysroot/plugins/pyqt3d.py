@@ -99,6 +99,23 @@ class PyQt3DComponent(Component):
         # Unpack the source.
         self.unpack_archive(self.get_archive())
 
+        pyqt = self.get_component('PyQt')
+        if pyqt.using_sip_v4:
+            self._install_using_sip_v4()
+        else:
+            # Install using SIP v5 or later.
+            pyqt.install_pyqt_component(self)
+
+    def verify(self):
+        """ Verify the component. """
+
+        pyqt = self.get_component('PyQt')
+        pyqt.verify_pyqt_component(self.version, min_sipbuild_version=(5, 4),
+                min_pyqtbuild_version=(1, 5))
+
+    def _install_using_sip_v4(self):
+        """ Install using SIP v4. """
+
         # Map the target name onto the names used by configure.py.
         pyqt_platform = self.target_platform_name
 
@@ -151,17 +168,6 @@ sip_module = PyQt5.sip
         self.run(*args)
         self.run(self.host_make)
         self.run(self.host_make, 'install')
-
-    def verify(self):
-        """ Verify the component. """
-
-        # Check that the version of PyQt has the same major.minor version.
-        pyqt = self.get_component('PyQt')
-
-        if (self.version.major, self.version.minor) != (pyqt.version.major, pyqt.version.minor):
-            self.error(
-                    "PyQt v{}.{} is required".format(self.version.major,
-                            self.version.minor))
 
     @property
     def _version_str(self):
