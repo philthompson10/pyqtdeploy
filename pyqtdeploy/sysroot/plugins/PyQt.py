@@ -281,6 +281,9 @@ class PyQtComponent(AbstractPyQtComponent):
         # Re-configure the build.
         python = self.get_component('Python')
 
+        project_section['py-platform'] = self.pyqt_platform
+        project_section['py-major-version'] = python.version.major
+        project_section['py-minor-version'] = python.version.minor
         project_section['py-include-dir'] = python.target_py_include_dir
         project_section['py-pylib-dir'] = component.target_lib_dir
         project_section['py-pylib-lib'] = python.target_py_lib
@@ -357,6 +360,21 @@ class PyQtComponent(AbstractPyQtComponent):
             parts[name] = part
 
         return parts
+
+    @property
+    def pyqt_platform(self):
+        """ The target platform name as recognised by PyQt. """
+
+        pyqt_platform = self.target_platform_name
+
+        if pyqt_platform == 'android':
+            pyqt_platform = 'linux'
+        elif pyqt_platform in ('ios', 'macos'):
+            pyqt_platform = 'darwin'
+        elif pyqt_platform == 'win':
+            pyqt_platform = 'win32'
+
+        return pyqt_platform
 
     @property
     def using_sip_v4(self):
@@ -483,16 +501,6 @@ class PyQtComponent(AbstractPyQtComponent):
     def _install_using_sip_v4(self):
         """ Install using SIP v4. """
 
-        # Map the target name onto the names used by configure.py.
-        pyqt_platform = self.target_platform_name
-
-        if pyqt_platform == 'android':
-            pyqt_platform = 'linux'
-        elif pyqt_platform in ('ios', 'macos'):
-            pyqt_platform = 'darwin'
-        elif pyqt_platform == 'win':
-            pyqt_platform = 'win32'
-
         # Create a configuration file.
         python = self.get_component('Python')
         qt = self.get_component('Qt')
@@ -506,8 +514,9 @@ pyqt_module_dir = {4}
 pyqt_sip_dir = {5}
 [Qt 5.0]
 pyqt_modules = {6}
-'''.format(pyqt_platform, python.target_py_include_dir, self.target_lib_dir,
-                python.target_py_lib, python.target_sitepackages_dir,
+'''.format(self.pyqt_platform, python.target_py_include_dir,
+                self.target_lib_dir, python.target_py_lib,
+                python.target_sitepackages_dir,
                 os.path.join(sip.target_sip_dir, 'PyQt5'),
                 ' '.join(self.installed_modules))
 
