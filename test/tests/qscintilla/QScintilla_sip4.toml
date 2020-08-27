@@ -18,6 +18,7 @@ disabled_features = ["PyQt_Desktop_OpenGL", "PyQt_MacOSXOnly",
         "PyQt_MacCocoaViewContainer", "PyQt_Printer", "PyQt_PrintDialog",
         "PyQt_PrintPreviewDialog", "PyQt_PrintPreviewWidget", "PyQt_Process",
         "PyQt_NotBootstrapped"]
+installed_modules = ["QtCore", "QtGui", "QtWidgets"]
 
 
 [SIP]
