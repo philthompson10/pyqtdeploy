@@ -48,8 +48,9 @@ class AbstractPyQtComponent(Component):
         """ True if SIP v4 is being used. """
 
     @abstractmethod
-    def verify_pyqt_component(self, component, sipbuild_version,
-            pyqtbuild_version):
-        """ Verify a PyQt-based component.  The sipbuild and pyqtbuild version
-        numbers are ignored if SIP v4 is being used.
+    def verify_pyqt_component(self, min_pyqt_version, min_sipbuild_version,
+            min_pyqtbuild_version):
+        """ Verify a PyQt-based component.  All versions are minimum versions.
+        The sipbuild and pyqtbuild version numbers are ignored if SIP v4 is
+        being used.
         """

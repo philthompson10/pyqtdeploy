@@ -79,8 +79,8 @@ _ALL_PARTS = {
         ExtensionModule(deps='PyQt5.QtCore', libs='-lQtPositioning',
                 qmake_qt='positioning'),
     'PyQt5.QtPrintSupport':
-        ExtensionModule(deps='PyQt5.QtWidgets', libs='-lQtPrintSupport',
-                qmake_qt='printsupport'),
+        ExtensionModule(target='!ios', deps='PyQt5.QtWidgets',
+                libs='-lQtPrintSupport', qmake_qt='printsupport'),
     'PyQt5.QtQml':
         ExtensionModule(deps='PyQt5.QtNetwork', libs='-lQtQml',
                 qmake_qt='qml'),

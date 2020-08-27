@@ -64,17 +64,13 @@ class QScintillaComponent(Component):
     def install(self):
         """ Install for the target. """
 
+        pyqt = self.get_component('PyQt')
+
         # See if it is the commercial version.
         self._commercial = (self.get_file('pyqt-commercial.sip') is not None)
 
         # Unpack the source.
         self.unpack_archive(self.get_archive())
-
-        # Get the required components.
-        python = self.get_component('Python')
-        pyqt = self.get_component('PyQt')
-        qt = self.get_component('Qt')
-        sip = self.get_component('SIP')
 
         # Build the static C++ library.
         os.chdir('Qt4Qt5')
@@ -88,11 +84,16 @@ class QScintillaComponent(Component):
                     os.path.join('features_staticlib', 'qscintilla2.prf'),
                     self._patch_pro_for_ios)
 
-        qmake_args = [qt.host_qmake, 'CONFIG+=staticlib',
+        qmake_args = [self.get_component('Qt').host_qmake, 'CONFIG+=staticlib',
                 'DEFINES+=SCI_NAMESPACE']
 
         if self.target_platform_name == 'android':
             qmake_args.append('ANDROID_ABIS={}'.format(self.android_abi))
+
+        if not pyqt.using_sip_v4:
+            # PyQt-builder explcitly specifies the release/debug mode and we
+            # can't make assumptions about the default.
+            qmake_args.append('CONFIG+=release')
 
         self.run(*qmake_args)
 
@@ -101,9 +102,68 @@ class QScintillaComponent(Component):
         os.chdir('..')
 
         # Build the static Python bindings.
+        if pyqt.using_sip_v4:
+            self._install_using_sip_v4()
+        else:
+            # Install using SIP v5 or later.  If there is no printer support
+            # then make sure we don't try and import it.
+            if self._is_print_support:
+                bindings_config = None
+            else:
+                bindings_config = {
+                    'disabled-features': ['PyQt_Printer']
+                }
+
+            # The QScintilla pyproject.toml file doesn't have a bindings
+            # section so we need to explicitly specify the enabled modules.
+            pyqt.install_pyqt_component(self, bindings=bindings_config,
+                    enable=['Qsci'])
+
+    @property
+    def provides(self):
+        """ The dict of parts provided by the component. """
+
+        deps = 'PyQt:PyQt5.QtWidgets'
+
+        if self._is_print_support:
+            deps = (deps, 'PyQt:PyQt5.QtPrintSupport')
+
+        return {
+            'PyQt5.Qsci':
+                ExtensionModule(deps=deps, libs='-lQsci',
+                        qmake_config='qscintilla2')
+        }
+
+    def verify(self):
+        """ Verify the component. """
+
+        # We don't want to support old versions.
+        if self.version < (2, 11):
+            self.unsupported()
+
+        if self.version > (2, 11, 5):
+            self.untested()
+
+        # The Scintilla code uses C++ library functions that are missing prior
+        # to NDK v14.
+        if self.target_platform_name == 'android' and self.android_ndk_version < 14:
+            self.error("Android NDK r14 or later is required")
+
+        pyqt = self.get_component('PyQt')
+        pyqt.verify_pyqt_component(pyqt.version, min_sipbuild_version=(5, 4),
+                min_pyqtbuild_version=(1, 5))
+
+    def _install_using_sip_v4(self):
+        """ Install using SIP v4. """
+
         os.chdir('Python')
 
         # Create a configuration file.
+        python = self.get_component('Python')
+        pyqt = self.get_component('PyQt')
+        qt = self.get_component('Qt')
+        sip = self.get_component('SIP')
+
         cfg = '''py_inc_dir = {0}
 py_pylib_dir = {1}
 py_pylib_lib = {2}
@@ -147,36 +207,6 @@ sip_module = PyQt5.sip
         self.run(*args)
         self.run(self.host_make)
         self.run(self.host_make, 'install')
-
-    @property
-    def provides(self):
-        """ The dict of parts provided by the component. """
-
-        deps = 'PyQt:PyQt5.QtWidgets'
-
-        if self._is_print_support:
-            deps = (deps, 'PyQt:PyQt5.QtPrintSupport')
-
-        return {
-            'PyQt5.Qsci':
-                ExtensionModule(deps=deps, libs='-lQsci',
-                        qmake_config='qscintilla2')
-        }
-
-    def verify(self):
-        """ Verify the component. """
-
-        # We don't want to support old versions.
-        if self.version < (2, 11):
-            self.unsupported()
-
-        if self.version > (2, 11, 5):
-            self.untested()
-
-        # The Scintilla code uses C++ library functions that are missing prior
-        # to NDK v14.
-        if self.target_platform_name == 'android' and self.android_ndk_version < 14:
-            self.error("Android NDK r14 or later is required")
 
     @property
     def _is_print_support(self):
