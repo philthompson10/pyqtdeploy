@@ -98,9 +98,14 @@ class SIPComponent(AbstractSIPComponent):
             # Create a .pro file to build the module.
             python = self.get_component('Python')
 
+            if self.target_platform_name == 'android':
+                android_abi = self.android_abi
+            else:
+                android_abi = ''
+
             module_dir = os.sep.join(self.module_name.split('.')[:-1])
 
-            pro = _SIP_PRO.format(android_abis=self.android_abi,
+            pro = _SIP_PRO.format(android_abis=android_abi,
                     includepath=python.target_py_include_dir,
                     sitepackages=os.path.join(python.target_sitepackages_dir,
                             module_dir),
