@@ -52,7 +52,7 @@ installed_modules = ["QAxContainer", "QtBluetooth", "QtCore", "QtGui",
 
 
 [SIP]
-version = "4.19.23"
+version = "4.19.24"
 module_name = "PyQt5.sip"
 
 

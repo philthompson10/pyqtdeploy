@@ -44,6 +44,11 @@ class AbstractPyQtComponent(Component):
 
     @property
     @abstractmethod
+    def pyqt_platform(self):
+        """ The target platform name as recognised by PyQt. """
+
+    @property
+    @abstractmethod
     def using_sip_v4(self):
         """ True if SIP v4 is being used. """
 

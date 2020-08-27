@@ -116,16 +116,6 @@ class PyQt3DComponent(Component):
     def _install_using_sip_v4(self):
         """ Install using SIP v4. """
 
-        # Map the target name onto the names used by configure.py.
-        pyqt_platform = self.target_platform_name
-
-        if pyqt_platform == 'android':
-            pyqt_platform = 'linux'
-        elif pyqt_platform in ('ios', 'macos'):
-            pyqt_platform = 'darwin'
-        elif pyqt_platform == 'win':
-            pyqt_platform = 'win32'
-
         # Create a configuration file.
         python = self.get_component('Python')
         pyqt = self.get_component('PyQt')
@@ -140,8 +130,8 @@ py_sip_dir = {4}
 [PyQt 5]
 module_dir = {5}
 sip_module = PyQt5.sip
-'''.format(pyqt_platform, python.target_py_include_dir, self.target_lib_dir,
-                python.target_py_lib, sip.target_sip_dir,
+'''.format(pyqt.pyqt_platform, python.target_py_include_dir,
+                self.target_lib_dir, python.target_py_lib, sip.target_sip_dir,
                 os.path.join(python.target_sitepackages_dir, 'PyQt5'))
 
         if pyqt.disabled_features:
