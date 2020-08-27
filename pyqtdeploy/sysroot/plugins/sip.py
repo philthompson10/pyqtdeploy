@@ -100,7 +100,8 @@ class SIPComponent(AbstractSIPComponent):
 
             module_dir = os.sep.join(self.module_name.split('.')[:-1])
 
-            pro = _SIP_PRO.format(includepath=python.target_py_include_dir,
+            pro = _SIP_PRO.format(android_abis=self.android_abi,
+                    includepath=python.target_py_include_dir,
                     sitepackages=os.path.join(python.target_sitepackages_dir,
                             module_dir),
                     sources=' '.join(sources), headers=' '.join(headers))
@@ -249,6 +250,7 @@ _SIP_PRO = """TEMPLATE = lib
 TARGET = sip
 CONFIG -= qt
 CONFIG += warn_on exceptions_off staticlib release
+ANDROID_ABIS = {android_abis}
 
 INCLUDEPATH += {includepath}
 
