@@ -91,9 +91,8 @@ The following component plugins are included as standard with
     :envvar:`PATH`).
 
 **SIP**
-    This provides a static version of the sip extension module for all target
-    architectures.  It also provides the sip code generator for the host
-    platform.
+    This provides a static version of the :mod:`sip` extension module for all
+    target architectures.
 
 **zlib**
     This provides a static version of the zlib library for all target
@@ -348,11 +347,16 @@ SIP
 ::
 
     [SIP]
-    version = "4.19.24"
+    version = "12.8.0"
     module_name = "PyQt5.sip"
 
-As well as the version to install it is also necessary to specify the name of
-the :mod:`sip` module.
+When using SIP v5 and later the version number refers to the ABI implemented by
+the :mod:`sip` module and not the version of SIP itself.  Suitable versions of
+SIP and PyQt-builder must both be installed for the same Python installation
+being used to run :program:`pyqtdeploy`.
+
+If SIP v4 is being used then the version number refers to SIP itself and
+:program:`pyqtdeploy` will automatically build and install that version.
 
 
 zlib
