@@ -34,6 +34,7 @@ version = "0.0.0"
 
 [SIP]
 version = "0.0.0"
+module_name = ""
 
 [zlib]
 version = "0.0.0"

@@ -90,7 +90,7 @@ Android
 .. image:: /images/pyqt-demo-android-32.png
     :align: center
 
-**Host platform used:** macOS Catalina (v10.15.5)
+**Host platform used:** macOS Catalina (v10.15.6)
 
 **Development tools used:** NDK r21d, SDK build tools v28.0.3
 
@@ -107,7 +107,7 @@ iOS
 .. image:: /images/pyqt-demo-ios-64.png
     :align: center
 
-**Host platform used:** macOS Catalina (v10.15.5)
+**Host platform used:** macOS Catalina (v10.15.6)
 
 **Development tools used:** Xcode v11.6
 
@@ -137,7 +137,7 @@ macOS
 .. image:: /images/pyqt-demo-macos-64.png
     :align: center
 
-**Host platform used:** macOS Catalina (v10.15.5)
+**Host platform used:** macOS Catalina (v10.15.6)
 
 **Development tools used:** Xcode v11.6
 
@@ -154,7 +154,7 @@ Windows
 
 **Host platform used:** Windows 10 Pro (v2004)
 
-**Development tools used:** Visual Studio Build Tools 2019 (v16.7.1)
+**Development tools used:** Visual Studio Build Tools 2019 (v16.7.2)
 
 **Python SSL support implemented:** statically linked OpenSSL.
 
