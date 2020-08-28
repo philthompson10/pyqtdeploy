@@ -88,10 +88,15 @@ if not target:
         print("Unsupported platform:", sys.platform, file=sys.stderr)
         sys.exit(2)
 
-# Make sure qmake was specified if it is needed.
-if target in ('android-32', 'android-64', 'ios-64') and not qmake:
-    print("--qmake must be specified for", target, file=sys.stderr)
-    sys.exit(2)
+# Make sure qmake was specified only if it is needed.
+if target in ('android-32', 'android-64', 'ios-64'):
+    if not qmake:
+        print("--qmake must be specified for", target, file=sys.stderr)
+        sys.exit(2)
+else:
+    if qmake:
+        print("--qmake must not be specified for", target, file=sys.stderr)
+        sys.exit(2)
 
 # Anchor everything from the directory containing this script.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
