@@ -13,7 +13,6 @@ from PyQt5.QtCore import PYQT_VERSION_STR, QT_VERSION_STR, QFile, QIODevice
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QApplication, QLabel, QTabWidget, QTreeView,
         QVBoxLayout, QWidget)
-from PyQt5.sip import SIP_VERSION_STR
 
 try:
     from pdytools import hexversion as pdy_hexversion
@@ -112,7 +111,6 @@ class Model(QStandardItemModel):
         self.add_value("PyQt version", PYQT_VERSION_STR)
         self.add_value("Python version", self.from_hexversion(sys.hexversion))
         self.add_value("Qt version", QT_VERSION_STR)
-        self.add_value("PyQt5.sip version", SIP_VERSION_STR)
         self.add_value("sys.platform", sys.platform)
         self.add_value("sys.path", str(sys.path))
         self.add_value("sys.path_hooks", str(sys.path_hooks))
