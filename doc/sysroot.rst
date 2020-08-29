@@ -347,7 +347,7 @@ SIP
 ::
 
     [SIP]
-    version = "12.8.0"
+    version = "12.8.1"
     module_name = "PyQt5.sip"
 
 When using SIP v5 and later the version number refers to the ABI implemented by
