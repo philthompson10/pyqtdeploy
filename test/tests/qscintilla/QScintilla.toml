@@ -22,7 +22,7 @@ installed_modules = ["QtCore", "QtGui", "QtWidgets"]
 
 
 [SIP]
-version = "12.8.0"
+version = "12.8.1"
 module_name = "PyQt5.sip"
 
 
