@@ -53,13 +53,12 @@ class Project:
     def name(self, value):
         """ The name property setter. """
 
-        self._name = os.path.abspath(value)
+        self._name = '' if value == '' else os.path.abspath(value)
 
-    def __init__(self, name=None):
+    def __init__(self, name=''):
         """ Initialise the project. """
 
-        self._name = None if name is None else os.path.abspath(name)
-
+        self.name = name
         self.sysroot_specification = None
 
         # Initialise the project data.
@@ -132,6 +131,9 @@ class Project:
         return an absolute path.
         """
 
+        if path == '':
+            return ''
+
         path = os.path.abspath(path)
 
         try:
@@ -159,6 +161,9 @@ class Project:
         """ Return a normalised form of the sysroots directory as seen by the
         user and stored in the project file.
         """
+
+        if self.sysroots_dir == '':
+            return ''
 
         sysroots_dir = os.path.relpath(self.sysroots_dir,
                 os.path.dirname(self.sysroot_toml))

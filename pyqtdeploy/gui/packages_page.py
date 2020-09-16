@@ -276,6 +276,9 @@ class PackagesPage(QWidget):
         self._stdlib_edit.clear()
         self._others_edit.clear()
 
+        if project.sysroot_specification is None:
+            return
+
         self._has_openssl = False
 
         for target in Architecture.all_architectures:
