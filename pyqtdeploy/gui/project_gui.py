@@ -45,7 +45,7 @@ class ProjectGUI(QMainWindow):
     """ The GUI for a project. """
 
     # The filter string to use with file dialogs.
-    file_dialog_filter = "Projects (*.pdy)"
+    file_dialog_filter = "Projects (*.pdt)"
 
     def __init__(self, project):
         """ Initialise the GUI for a project. """
