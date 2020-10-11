@@ -67,6 +67,12 @@ class SysrootSpecification:
                 except Exception as e:
                     raise UserException(
                             "{0}: {1}".format(self.specification_file, str(e)))
+        except IsADirectoryError:
+            if required:
+                raise UserException(
+                        "{0} is a directory".format(self.specification_file))
+
+            # The specification will be empty.
         except FileNotFoundError:
             if required:
                 raise UserException(
