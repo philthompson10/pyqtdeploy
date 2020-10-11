@@ -181,7 +181,7 @@ class PackagesPage(QWidget):
 
         project = self.project
 
-        project.sysroots_dir = value
+        project.absolute_sysroots_dir = value
         project.modified = True
 
         self._set_dir_edit_text()
@@ -208,7 +208,7 @@ class PackagesPage(QWidget):
     def _set_dir_edit_text(self):
         """ Set the sysroots directory editor text. """
 
-        self._dir_edit.setText(self.project.normalised_sysroots_dir)
+        self._dir_edit.setText(self.project.sysroots_dir)
 
     def _set_implicit(self, part_item):
         """ Set a part's state (and that of all it's parents) to be partially
@@ -241,14 +241,14 @@ class PackagesPage(QWidget):
     def _set_toml_edit_text(self):
         """ Set the sysroot secification editor text. """
 
-        self._toml_edit.setText(self.project.normalised_sysroot_toml)
+        self._toml_edit.setText(self.project.sysroot_toml)
 
     def _toml_changed(self, value):
         """ Invoked when the user edits the specification file name. """
 
         project = self.project
 
-        project.sysroot_toml = value
+        project.absolute_sysroot_toml = value
         project.modified = True
 
         self._set_toml_edit_text()
@@ -283,7 +283,7 @@ class PackagesPage(QWidget):
 
         for target in Architecture.all_architectures:
             sysroot = Sysroot(project.sysroot_specification, host, target,
-                    project.sysroots_dir)
+                    project.absolute_sysroots_dir)
 
             for component in sysroot.components:
                 if component.name == 'OpenSSL':

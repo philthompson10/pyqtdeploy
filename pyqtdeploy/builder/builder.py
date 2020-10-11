@@ -56,7 +56,7 @@ class Builder:
         self._target = Architecture.architecture(target_arch_name)
 
         self._sysroot = Sysroot(self._project.sysroot_specification,
-                self._host, self._target, self._project.sysroots_dir,
+                self._host, self._target, self._project.absolute_sysroots_dir,
                 message_handler=self._message_handler, python=python,
                 qmake=qmake)
 
