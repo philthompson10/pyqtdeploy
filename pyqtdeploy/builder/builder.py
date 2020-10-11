@@ -100,7 +100,7 @@ class Builder:
         elif project.application_script:
             application_name = os.path.basename(project.application_script).split('.', maxsplit=1)[0]
         elif project.application_package.name:
-            application_name = project.application_package.name
+            application_name = os.path.basename(project.application_package.name)
         else:
             application_name = os.path.basename(project.name).split('.', maxsplit=1)[0]
 
