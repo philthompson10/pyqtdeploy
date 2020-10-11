@@ -24,6 +24,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
+import os
+
 from ..parts import DataFile, PythonModule
 
 
@@ -45,7 +47,7 @@ class QrcPackage():
         parts = {}
 
         for node in self.contents:
-            self._add_part(node, self.name, parts)
+            self._add_part(node, os.path.basename(self.name), parts)
 
         return parts
 
