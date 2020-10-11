@@ -51,7 +51,7 @@ _COMPONENT_TYPES = {
 class SysrootSpecification:
     """ Encapsulate the specification of a system root directory. """
 
-    def __init__(self, specification_file):
+    def __init__(self, specification_file, required=False):
         """ Initialise the object. """
 
         self.specification_file = specification_file
@@ -68,6 +68,10 @@ class SysrootSpecification:
                     raise UserException(
                             "{0}: {1}".format(self.specification_file, str(e)))
         except FileNotFoundError:
+            if required:
+                raise UserException(
+                        "{0} was not found".format(self.specification_file))
+
             # The specification will be empty.
             return
 
