@@ -532,10 +532,14 @@ int main(int argc, char **argv)
 
             src_path = os.path.join(part_root_dir, src_name)
 
-            # Check that the name corresponds to a Python package rather than a
-            # simple directory.
-            if os.path.isfile(src_path):
-                to_freeze.append((src_path, dst_name))
+            # Check that the .py file exists.
+            if not os.path.exists(src_path):
+                raise UserException("'{0}' does not exist".format(src_path))
+
+            if not os.path.isfile(src_path):
+                raise UserException("'{0}' is not a file".format(src_path))
+
+            to_freeze.append((src_path, dst_name))
 
         elif isinstance(part, PythonPackage):
             root = os.path.join(part_root_dir, src_name)
