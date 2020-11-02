@@ -578,7 +578,7 @@ int main(int argc, char **argv)
                         to_copy.append(rel_resource_path)
 
         else:
-            to_copy.append(os.path.join(os.path.dirname(src_name), part.name))
+            to_copy.append(os.path.join(os.path.dirname(name), part.name))
 
         # Freeze required resource files.
         for src_path, rel_resource_path in to_freeze:
