@@ -143,7 +143,8 @@ class Project:
     def load_sysroot(self):
         """ Load the project's sysroot specification file. """
 
-        self.sysroot_specification = SysrootSpecification(self.sysroot_toml)
+        self.sysroot_specification = SysrootSpecification(
+                self.absolute_sysroot_toml)
 
     def minimal_path(self, path):
         """ Return a relative form of the path if it is in the same directory
