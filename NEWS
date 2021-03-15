@@ -1,4 +1,4 @@
-v3.1.1 14th February 2020
+v3.1.1 14th February 2021
   - Added support for Python v3.5.10.
   - Added support for SIP v6.
 
@@ -7,6 +7,8 @@ v3.1.0 29th August 2020
 
 v3.0.0 17th August 2020
   - A major feature release.  See the documentation for details.
+  - Added support for Python v3.7.8.
+  - Added support for Python v3.6.11.
 
 v2.5.1 15th April 2020
   - A bug fix only release.
