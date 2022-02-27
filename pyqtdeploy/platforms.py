@@ -145,7 +145,7 @@ class Architecture:
         """
 
         if name is None:
-            from distutils.util import get_platform
+            from sysconfig import get_platform
 
             parts = get_platform().split('-')
             base_platform = parts[0]
@@ -155,7 +155,7 @@ class Architecture:
                 size = '64' if parts[1] == 'x86_64' else '32'
             elif base_platform == 'macosx':
                 name = 'macos'
-                size = '64' if parts[2] == 'x86_64' else '32'
+                size = '64' if parts[2] in ('x86_64', 'universal2') else '32'
             elif base_platform in ('win32', 'win'):
                 name = 'win'
 
