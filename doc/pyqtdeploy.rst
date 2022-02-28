@@ -205,7 +205,8 @@ application is shown below.
     ``bzip2`` library on which it depends.
 
     If a package is only provided for a subset of targets then it is displayed
-    in yellow.
+    in yellow.  It will also have a tooltip (displayed by hovering over the
+    name) that lists the target subset.
 
     If a package is displayed in red then it is not provided for any target.
     This is not necessarily an error, so long as the application gracefully
