@@ -122,7 +122,7 @@ class ApplicationPage(QWidget):
 
         # Extra space is needed before the application package editor.
         layout.setRowMinimumHeight(1,
-                1.4 * QFontInfo(QGuiApplication.font()).pixelSize())
+                int(1.4 * QFontInfo(QGuiApplication.font()).pixelSize()))
 
         self._package_edit = _ApplicationPackageEditor()
         self._package_edit.package_changed.connect(self._package_changed)
