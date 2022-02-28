@@ -3062,7 +3062,7 @@ standard_library = {
                         'multiprocessing.context',
                         'multiprocessing.resource_sharer', 'os', 'pickle',
                         'socket', 'win#_winapi')),
-        PythonModule(min_version=(3, 6), target='win', internal=True,
+        PythonModule(min_version=(3, 6), internal=True,
                 deps=('multiprocessing', 'abc', 'array', 'copyreg',
                         'functools', 'io', 'multiprocessing.context',
                         'multiprocessing.resource_sharer', 'os', 'pickle',
