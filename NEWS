@@ -1,5 +1,6 @@
 v3.1.2 28th February 2022
-  - Bug fixes.
+  - Packages that are only available on a subset of targets (ie. displayed in
+    yellow) have a tooltip that lists the target subset.
 
 v3.1.1 14th February 2021
   - Added support for Python v3.5.10.

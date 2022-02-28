@@ -297,7 +297,7 @@ class PackagesPage(QWidget):
                     part_item = self._get_part_item(part_name, parts,
                             stdlib)
                     if part_item is not None:
-                        part_item.target_count += 1
+                        part_item.target_availability.append(target)
 
         # Ensure that any parts explicitly used by the project have an item
         # even if they are not provided by the sysroot.
@@ -370,12 +370,16 @@ class PartItem(QTreeWidgetItem):
 
         self.part_name = part_name
         self.part = part
-        self.target_count = 0
+        self.target_availability = []
 
     def set_availability(self):
         """ Set the availability of the part. """
 
-        if self.target_count == 0:
+        if len(self.target_availability) == 0:
             self.setForeground(0, self._NO_TARGETS)
-        elif self.target_count != len(Architecture.all_architectures):
+        elif len(self.target_availability) != len(Architecture.all_architectures):
             self.setForeground(0, self._SOME_TARGETS)
+            self.setToolTip(0,
+                    "Available for: {}".format(
+                            ', '.join(
+                                    [t.name for t in self.target_availability])))
