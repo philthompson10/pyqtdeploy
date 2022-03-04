@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,6 @@ from .standard_library import standard_library
 
 
 # The latest tested patch releases of each minor version.
-LATEST_3_5_RELEASE = (3, 5, 10)
 LATEST_3_6_RELEASE = (3, 6, 11)
 LATEST_3_7_RELEASE = (3, 7, 8)
 
@@ -174,13 +173,10 @@ class PythonComponent(AbstractPythonComponent):
     def verify(self):
         """ Verify the component. """
 
-        if self.version < (3, 5):
+        if self.version < (3, 6):
             self.unsupported()
 
-        if self.version == (3, 5):
-            if self.version > LATEST_3_5_RELEASE:
-                self.untested()
-        elif self.version == (3, 6):
+        if self.version == (3, 6):
             if self.version > LATEST_3_6_RELEASE:
                 self.untested()
         elif self.version == (3, 7):

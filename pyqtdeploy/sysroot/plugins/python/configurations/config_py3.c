@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Riverbank Computing Limited
+ * Copyright (c) 2022, Riverbank Computing Limited
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,22 +41,15 @@ extern "C" {
 /* The public modules. */
 
 extern PyObject *PyInit__thread(void);
-#if PY_MINOR_VERSION >= 4
 extern PyObject *PyInit_atexit(void);
-#endif
 extern PyObject *PyInit_errno(void);
 extern PyObject *PyInit_faulthandler(void);
 extern PyObject *PyInit_gc(void);
 extern PyObject *PyInit_itertools(void);
 extern PyObject *PyMarshal_Init(void);
-#if PY_MINOR_VERSION >= 5
 extern PyObject *PyInit_mmap(void);
-#endif
-#if PY_MINOR_VERSION >= 5 && defined(MS_WINDOWS)
+#if defined(MS_WINDOWS)
 extern PyObject *PyInit_msvcrt(void);
-#endif
-#if PY_MINOR_VERSION == 3
-extern PyObject *PyInit_operator(void);
 #endif
 #if !defined(MS_WINDOWS)
 extern PyObject *PyInit_posix(void);
@@ -64,12 +57,7 @@ extern PyObject *PyInit_posix(void);
 #if !defined(MS_WINDOWS)
 extern PyObject *PyInit_pwd(void);
 #endif
-#if PY_MINOR_VERSION <= 4
-extern PyObject* PyInit_signal(void);
-#endif
-#if PY_MINOR_VERSION >= 5
 extern PyObject *PyInit_time(void);
-#endif
 #if defined(MS_WINDOWS)
 extern PyObject *PyInit_winreg(void);
 #endif
@@ -88,28 +76,18 @@ extern PyObject *PyInit__imp(void);
 #else
 extern PyObject *PyInit_imp(void);
 #endif
-#if PY_MINOR_VERSION >= 3
 extern PyObject *PyInit__io(void);
-#endif
 extern PyObject *PyInit__locale(void);
 #if defined(MS_WINDOWS)
 extern PyObject *PyInit_nt(void);
 #endif
-#if PY_MINOR_VERSION >= 4
 extern PyObject *PyInit__operator(void);
-#endif
-#if PY_MINOR_VERSION >= 5
 extern PyObject *PyInit__signal(void);
-#endif
 extern PyObject *PyInit__sre(void);
-#if PY_MINOR_VERSION >= 4
 extern PyObject *PyInit__stat(void);
-#endif
 extern PyObject *PyInit__string(void);
 extern PyObject *PyInit__symtable(void);
-#if PY_MINOR_VERSION >= 4
 extern PyObject *PyInit__tracemalloc(void);
-#endif
 extern PyObject *_PyWarnings_Init(void);
 extern PyObject *PyInit__weakref(void);
 
@@ -120,22 +98,15 @@ struct _inittab _PyImport_Inittab[] = {
     /* The public modules. */
 
     {"_thread", PyInit__thread},
-#if PY_MINOR_VERSION >= 4
     {"atexit", PyInit_atexit},
-#endif
     {"errno", PyInit_errno},
     {"faulthandler", PyInit_faulthandler},
     {"gc", PyInit_gc},
     {"itertools", PyInit_itertools},
     {"marshal", PyMarshal_Init},
-#if PY_MINOR_VERSION >= 5
     {"mmap", PyInit_mmap},
-#endif
-#if PY_MINOR_VERSION >= 5 && defined(MS_WINDOWS)
+#if defined(MS_WINDOWS)
     {"msvcrt", PyInit_msvcrt},
-#endif
-#if PY_MINOR_VERSION == 3
-    {"operator", PyInit_operator},
 #endif
 #if !defined(MS_WINDOWS)
     {"posix", PyInit_posix},
@@ -143,12 +114,7 @@ struct _inittab _PyImport_Inittab[] = {
 #if !defined(MS_WINDOWS)
     {"pwd", PyInit_pwd},
 #endif
-#if PY_MINOR_VERSION <= 4
-    {"signal", PyInit_signal},
-#endif
-#if PY_MINOR_VERSION >= 5
     {"time", PyInit_time},
-#endif
 #if defined(MS_WINDOWS)
     {"winreg", PyInit_winreg},
 #endif
@@ -167,28 +133,18 @@ struct _inittab _PyImport_Inittab[] = {
 #else
     {"_imp", PyInit_imp},
 #endif
-#if PY_MINOR_VERSION >= 3
     {"_io", PyInit__io},
-#endif
     {"_locale", PyInit__locale},
 #if defined(MS_WINDOWS)
     {"nt", PyInit_nt},
 #endif
-#if PY_MINOR_VERSION >= 4
     {"_operator", PyInit__operator},
-#endif
-#if PY_MINOR_VERSION >= 5
     {"_signal", PyInit__signal},
-#endif
     {"_sre", PyInit__sre},
-#if PY_MINOR_VERSION >= 4
     {"_stat", PyInit__stat},
-#endif
     {"_string", PyInit__string},
     {"_symtable", PyInit__symtable},
-#if PY_MINOR_VERSION >= 4
     {"_tracemalloc", PyInit__tracemalloc},
-#endif
     {"_warnings", _PyWarnings_Init},
     {"_weakref", PyInit__weakref},
 
