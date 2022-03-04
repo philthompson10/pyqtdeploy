@@ -151,11 +151,8 @@ OBJECT_SOURCES = \
     Objects/accu.c \
     Objects/bytesobject.c \
     Objects/namespaceobject.c \
-    Objects/odictobject.c
-
-    greaterThan(PY_MINOR_VERSION, 6) {
-        OBJECT_SOURCES += \
-            Objects/call.c
+    Objects/odictobject.c \
+    Objects/call.c
     }
 
 PYTHON_SOURCES = \
@@ -204,20 +201,13 @@ PYTHON_SOURCES = \
     Python/pyhash.c \
     Python/dynamic_annotations.c \
     Python/pylifecycle.c \
-    Python/pystrhex.c
-
-    greaterThan(PY_MINOR_VERSION, 6) {
-        PYTHON_SOURCES += \
-            Python/ast_opt.c \
-            Python/ast_unparse.c \
-            Python/pathconfig.c \
-            Python/context.c \
-            Python/hamt.c \
-            Python/bootstrap_hash.c
-    } else {
-        PYTHON_SOURCES += \
-            Python/random.c
-    }
+    Python/pystrhex.c \
+    Python/ast_opt.c \
+    Python/ast_unparse.c \
+    Python/pathconfig.c \
+    Python/context.c \
+    Python/hamt.c \
+    Python/bootstrap_hash.c
 
 equals(PY_DYNAMIC_LOADING, "enabled") {
     DEFINES += SOABI=\\\"cpython-$${PY_MAJOR_VERSION}$${PY_MINOR_VERSION}\\\"
@@ -262,14 +252,6 @@ MODULE_SOURCES = \
     Modules/timemodule.c \
     Modules/_io/winconsoleio.c \
     Modules/zipimport.c
-
-    lessThan(PY_MINOR_VERSION, 7) {
-        win32 {
-            # Work around the PyVarObject_HEAD_INIT() problem in Python v3.6 by
-            # always compiling this module.
-            MOD_SOURCES += Modules/_struct.c
-        }
-    }
 
     isEqual(PY_MINOR_VERSION, 7) {
         lessThan(PY_PATCH_VERSION, 3) {

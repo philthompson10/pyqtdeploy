@@ -1,5 +1,6 @@
 v3.2.0 4th March 2022
   - Removed support for Python v3.5.
+  - Removed support for Python v3.6.
 
 v3.1.2 28th February 2022
   - Packages that are only available on a subset of targets (ie. displayed in
