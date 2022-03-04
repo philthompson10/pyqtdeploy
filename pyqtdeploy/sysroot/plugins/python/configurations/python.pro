@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -86,11 +86,7 @@ win32 {
     DEFINES += ABIFLAGS=\\\"m\\\"
 
     QMAKE_CFLAGS_RELEASE = -O3
-    QMAKE_CFLAGS += -fwrapv
-
-    greaterThan(PY_MINOR_VERSION, 5) {
-        QMAKE_CFLAGS += -std=c99
-    }
+    QMAKE_CFLAGS += -fwrapv -std=c99
 }
 
 target.path = $$SYSROOT/lib
@@ -263,18 +259,14 @@ MODULE_SOURCES = \
     Modules/_tracemalloc.c \
     Modules/hashtable.c \
     Modules/mmapmodule.c \
-    Modules/timemodule.c
-
-    greaterThan(PY_MINOR_VERSION, 5) {
-        MOD_SOURCES += \
-            Modules/_io/winconsoleio.c \
-            Modules/zipimport.c
-    }
+    Modules/timemodule.c \
+    Modules/_io/winconsoleio.c \
+    Modules/zipimport.c
 
     lessThan(PY_MINOR_VERSION, 7) {
         win32 {
-            # Work around the PyVarObject_HEAD_INIT() problem in Python v3.5
-            # and v3.6 by always compiling this module.
+            # Work around the PyVarObject_HEAD_INIT() problem in Python v3.6 by
+            # always compiling this module.
             MOD_SOURCES += Modules/_struct.c
         }
     }
