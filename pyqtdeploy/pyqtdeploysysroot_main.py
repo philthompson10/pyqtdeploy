@@ -88,7 +88,7 @@ def main():
         else:
             sysroots_dir = os.path.dirname(specification_file)
 
-        specification = SysrootSpecification(specification_file)
+        specification = SysrootSpecification(specification_file, required=True)
         host = Architecture.architecture()
         target = Architecture.architecture(args.target)
         sysroot = Sysroot(specification, host, target, sysroots_dir,

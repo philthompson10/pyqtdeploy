@@ -26,6 +26,7 @@
 
 from  collections import OrderedDict
 import importlib
+import importlib.util
 import os
 import shutil
 import toml
@@ -50,7 +51,7 @@ _COMPONENT_TYPES = {
 class SysrootSpecification:
     """ Encapsulate the specification of a system root directory. """
 
-    def __init__(self, specification_file):
+    def __init__(self, specification_file, required=False):
         """ Initialise the object. """
 
         self.specification_file = specification_file
@@ -66,7 +67,17 @@ class SysrootSpecification:
                 except Exception as e:
                     raise UserException(
                             "{0}: {1}".format(self.specification_file, str(e)))
+        except IsADirectoryError:
+            if required:
+                raise UserException(
+                        "{0} is a directory".format(self.specification_file))
+
+            # The specification will be empty.
         except FileNotFoundError:
+            if required:
+                raise UserException(
+                        "{0} was not found".format(self.specification_file))
+
             # The specification will be empty.
             return
 

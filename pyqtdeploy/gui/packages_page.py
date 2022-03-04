@@ -181,7 +181,7 @@ class PackagesPage(QWidget):
 
         project = self.project
 
-        project.sysroots_dir = value
+        project.absolute_sysroots_dir = value
         project.modified = True
 
         self._set_dir_edit_text()
@@ -208,7 +208,7 @@ class PackagesPage(QWidget):
     def _set_dir_edit_text(self):
         """ Set the sysroots directory editor text. """
 
-        self._dir_edit.setText(self.project.normalised_sysroots_dir)
+        self._dir_edit.setText(self.project.sysroots_dir)
 
     def _set_implicit(self, part_item):
         """ Set a part's state (and that of all it's parents) to be partially
@@ -241,14 +241,14 @@ class PackagesPage(QWidget):
     def _set_toml_edit_text(self):
         """ Set the sysroot secification editor text. """
 
-        self._toml_edit.setText(self.project.normalised_sysroot_toml)
+        self._toml_edit.setText(self.project.sysroot_toml)
 
     def _toml_changed(self, value):
         """ Invoked when the user edits the specification file name. """
 
         project = self.project
 
-        project.sysroot_toml = value
+        project.absolute_sysroot_toml = value
         project.modified = True
 
         self._set_toml_edit_text()
@@ -276,11 +276,14 @@ class PackagesPage(QWidget):
         self._stdlib_edit.clear()
         self._others_edit.clear()
 
+        if project.sysroot_specification is None:
+            return
+
         self._has_openssl = False
 
         for target in Architecture.all_architectures:
             sysroot = Sysroot(project.sysroot_specification, host, target,
-                    project.sysroots_dir)
+                    project.absolute_sysroots_dir)
 
             for component in sysroot.components:
                 if component.name == 'OpenSSL':
@@ -294,7 +297,7 @@ class PackagesPage(QWidget):
                     part_item = self._get_part_item(part_name, parts,
                             stdlib)
                     if part_item is not None:
-                        part_item.target_count += 1
+                        part_item.target_availability.append(target)
 
         # Ensure that any parts explicitly used by the project have an item
         # even if they are not provided by the sysroot.
@@ -367,12 +370,16 @@ class PartItem(QTreeWidgetItem):
 
         self.part_name = part_name
         self.part = part
-        self.target_count = 0
+        self.target_availability = []
 
     def set_availability(self):
         """ Set the availability of the part. """
 
-        if self.target_count == 0:
+        if len(self.target_availability) == 0:
             self.setForeground(0, self._NO_TARGETS)
-        elif self.target_count != len(Architecture.all_architectures):
+        elif len(self.target_availability) != len(Architecture.all_architectures):
             self.setForeground(0, self._SOME_TARGETS)
+            self.setToolTip(0,
+                    "Available for: {}".format(
+                            ', '.join(
+                                    [t.name for t in self.target_availability])))

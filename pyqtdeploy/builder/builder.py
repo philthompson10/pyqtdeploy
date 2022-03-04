@@ -56,7 +56,7 @@ class Builder:
         self._target = Architecture.architecture(target_arch_name)
 
         self._sysroot = Sysroot(self._project.sysroot_specification,
-                self._host, self._target, self._project.sysroots_dir,
+                self._host, self._target, self._project.absolute_sysroots_dir,
                 message_handler=self._message_handler, python=python,
                 qmake=qmake)
 
@@ -100,7 +100,7 @@ class Builder:
         elif project.application_script:
             application_name = os.path.basename(project.application_script).split('.', maxsplit=1)[0]
         elif project.application_package.name:
-            application_name = project.application_package.name
+            application_name = os.path.basename(project.application_package.name)
         else:
             application_name = os.path.basename(project.name).split('.', maxsplit=1)[0]
 
@@ -532,10 +532,14 @@ int main(int argc, char **argv)
 
             src_path = os.path.join(part_root_dir, src_name)
 
-            # Check that the name corresponds to a Python package rather than a
-            # simple directory.
-            if os.path.isfile(src_path):
-                to_freeze.append((src_path, dst_name))
+            # Check that the .py file exists.
+            if not os.path.exists(src_path):
+                raise UserException("'{0}' does not exist".format(src_path))
+
+            if not os.path.isfile(src_path):
+                raise UserException("'{0}' is not a file".format(src_path))
+
+            to_freeze.append((src_path, dst_name))
 
         elif isinstance(part, PythonPackage):
             root = os.path.join(part_root_dir, src_name)
@@ -574,7 +578,7 @@ int main(int argc, char **argv)
                         to_copy.append(rel_resource_path)
 
         else:
-            to_copy.append(os.path.join(os.path.dirname(src_name), part.name))
+            to_copy.append(os.path.join(os.path.dirname(name), part.name))
 
         # Freeze required resource files.
         for src_path, rel_resource_path in to_freeze:

@@ -2061,9 +2061,9 @@ standard_library = {
                 deps=('hashlib', 'os', 'random', 're', 'shutil', 'socket',
                         'subprocess', 'time')),
         PythonModule(min_version=(3, 7),
-                deps=('ctypes', 'enum', 'hashlib', 'os', 'random', 'shutil',
-                        'socket', 'subprocess', 'time', 'ios|macos#_uuid',
-                        'warnings'))),
+                deps=('linux|macos|win#ctypes', 'enum', 'hashlib', 'os',
+                        'random', 'shutil', 'socket', 'subprocess', 'time',
+                        'ios|macos#_uuid', 'warnings'))),
 
     'warnings': (
         PythonModule(max_version=(3, 6),
@@ -3062,7 +3062,7 @@ standard_library = {
                         'multiprocessing.context',
                         'multiprocessing.resource_sharer', 'os', 'pickle',
                         'socket', 'win#_winapi')),
-        PythonModule(min_version=(3, 6), target='win', internal=True,
+        PythonModule(min_version=(3, 6), internal=True,
                 deps=('multiprocessing', 'abc', 'array', 'copyreg',
                         'functools', 'io', 'multiprocessing.context',
                         'multiprocessing.resource_sharer', 'os', 'pickle',

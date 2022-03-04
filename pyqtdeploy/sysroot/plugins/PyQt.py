@@ -440,8 +440,7 @@ class PyQtComponent(AbstractPyQtComponent):
         if self.version < (5, 14):
             self.error("SIP v5 requires v5.14.0 or later")
 
-        # Check the minimum SIP requirement, making sure it is the same major
-        # version.
+        # Check the minimum SIP requirement.
         # TODO: this assumes that pyqtdeploy and sip are installed in the same
         # venv which may not be the case.  Therefore we either need a way of
         # querying the versions of sip and PyQt-builder from the command line
@@ -456,7 +455,15 @@ class PyQtComponent(AbstractPyQtComponent):
 
         sipbuild_version = self.parse_version_number(SIP_VERSION)
 
-        if min_sipbuild_version.major != sipbuild_version.major or min_sipbuild_version > sipbuild_version:
+        if min_sipbuild_version.major == 5 and sipbuild_version.major in (5, 6):
+            # We assume that all PyQt dependent projects don't use features
+            # deprecated in SIP v6.
+            pass
+        elif min_sipbuild_version.major != sipbuild_version.major:
+            self.error(
+                    "SIP v{} is required".format(min_sipbuild_version.major))
+
+        if min_sipbuild_version > sipbuild_version:
             self.error(
                     "SIP v{} or later is required".format(
                             min_sipbuild_version))

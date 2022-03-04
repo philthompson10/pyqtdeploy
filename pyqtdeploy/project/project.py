@@ -53,13 +53,12 @@ class Project:
     def name(self, value):
         """ The name property setter. """
 
-        self._name = os.path.abspath(value)
+        self._name = '' if value == '' else os.path.abspath(value)
 
-    def __init__(self, name=None):
+    def __init__(self, name=''):
         """ Initialise the project. """
 
-        self._name = None if name is None else os.path.abspath(name)
-
+        self.name = name
         self.sysroot_specification = None
 
         # Initialise the project data.
@@ -74,6 +73,47 @@ class Project:
         self.sysroots_dir = ''
         self.parts = []
         self.qmake_configuration = ''
+
+    @property
+    def absolute_sysroot_toml(self):
+        """ Get the absolute pathname of the sysroot specification file. """
+
+        return self.project_path(
+                'sysroot.toml' if self.sysroot_toml == '' else self.sysroot_toml)
+
+    @absolute_sysroot_toml.setter
+    def absolute_sysroot_toml(self, value):
+        """ Set the absolute pathname of the sysroot specification file. """
+
+        value = self.minimal_path(value)
+
+        if value == os.path.join('.', 'sysroot.toml'):
+            value = ''
+
+        self.sysroot_toml = value
+
+    @property
+    def absolute_sysroots_dir(self):
+        """ Get the absolute pathname of the sysroots directory. """
+
+        if self.sysroots_dir == '':
+            return os.path.dirname(self.absolute_sysroot_toml)
+
+        return self.project_path(self.sysroots_dir)
+
+    @absolute_sysroots_dir.setter
+    def absolute_sysroots_dir(self, value):
+        """ Set the absolute pathname of the sysroots directory. """
+
+        if value != '':
+            value = os.path.abspath(value)
+
+        if value == os.path.dirname(self.absolute_sysroot_toml):
+            value = ''
+        else:
+            value = self.minimal_path(value)
+
+        self.sysroots_dir = value
 
     @classmethod
     def load(cls, name):
@@ -95,27 +135,6 @@ class Project:
         project = cls(save_as)
         loader(project, name)
 
-        # Convert the specification file name to a native absolute path.
-        sysroot_toml = project.sysroot_toml
-
-        if sysroot_toml == '':
-            sysroot_toml = 'sysroot.toml'
-        else:
-            sysroot_toml = sysroot_toml.replace('/', os.sep)
-
-        project.sysroot_toml = project.project_path(sysroot_toml)
-
-        # Convert the sysroots directory name to a native absolute path.
-        sysroots_dir = project.sysroots_dir
-
-        if sysroots_dir == '':
-            sysroots_dir = os.path.dirname(project.sysroot_toml)
-        else:
-            sysroots_dir = project.project_path(
-                    sysroots_dir.replace('/', os.sep))
-
-        project.sysroots_dir = sysroots_dir
-
         # Load the sysroot specification.
         project.load_sysroot()
 
@@ -124,13 +143,17 @@ class Project:
     def load_sysroot(self):
         """ Load the project's sysroot specification file. """
 
-        self.sysroot_specification = SysrootSpecification(self.sysroot_toml)
+        self.sysroot_specification = SysrootSpecification(
+                self.absolute_sysroot_toml)
 
     def minimal_path(self, path):
         """ Return a relative form of the path if it is in the same directory
         (or a sub-directory) as that containing the project file.  Otherwise
         return an absolute path.
         """
+
+        if path == '':
+            return ''
 
         path = os.path.abspath(path)
 
@@ -143,27 +166,6 @@ class Project:
             return path
 
         return os.path.relpath(path, common_path)
-
-    @property
-    def normalised_sysroot_toml(self):
-        """ Return a normalised form of the sysroot specification file as seen
-        by the user and stored in the project file.
-        """
-
-        sysroot_toml = self.minimal_path(self.sysroot_toml)
-
-        return '' if sysroot_toml == 'sysroot.toml' else sysroot_toml
-
-    @property
-    def normalised_sysroots_dir(self):
-        """ Return a normalised form of the sysroots directory as seen by the
-        user and stored in the project file.
-        """
-
-        sysroots_dir = os.path.relpath(self.sysroots_dir,
-                os.path.dirname(self.sysroot_toml))
-
-        return '' if sysroots_dir == '.' else sysroots_dir
 
     def project_path(self, path):
         """ Return an absolute path.  If the original path is relative then
@@ -266,8 +268,8 @@ class Project:
                     "the project's format is version {0} but only version {1} "
                     "is supported".format(version, cls.version))
 
-        project.sysroot_toml = root.get('sysroot', '')
-        project.sysroots_dir = root.get('sysroots_dir', '')
+        project.sysroot_toml = root.get('sysroot', '').replace('/', os.sep)
+        project.sysroots_dir = root.get('sysroots_dir', '').replace('/', os.sep)
         project.parts = cls._get_list(root, 'parts')
 
         # The application specific configuration.
@@ -297,8 +299,8 @@ class Project:
 
         root = {
             'version': self.version,
-            'sysroot': self.normalised_sysroot_toml.replace(os.sep, '/'),
-            'sysroots_dir': self.normalised_sysroots_dir.replace(os.sep, '/'),
+            'sysroot': self.sysroot_toml.replace(os.sep, '/'),
+            'sysroots_dir': self.sysroots_dir.replace(os.sep, '/'),
             'parts': self.parts,
         }
 

@@ -35,7 +35,7 @@ from .standard_library import standard_library
 
 
 # The latest tested patch releases of each minor version.
-LATEST_3_5_RELEASE = (3, 5, 9)
+LATEST_3_5_RELEASE = (3, 5, 10)
 LATEST_3_6_RELEASE = (3, 6, 11)
 LATEST_3_7_RELEASE = (3, 7, 8)
 
@@ -489,6 +489,12 @@ build_time_vars = {
                     self._patch_for_ios_system)
 
         elif self.target_platform_name == 'win':
+            # If we are supporting dynamic loading then we must be being built
+            # as a DLL.
+            if not self.dynamic_loading:
+                self.patch_file(os.path.join('Lib', 'ctypes', '__init__.py'),
+                        self._patch_for_win_ctypes)
+
             self.patch_file(os.path.join('Modules', '_io', '_iomodule.c'),
                     self._patch_for_win_iomodule)
 
@@ -529,6 +535,14 @@ build_time_vars = {
             patch_file.write('#include <Python.h>\n\n')
 
         patch_file.write(line)
+
+    @staticmethod
+    def _patch_for_win_ctypes(line, patch_file):
+        """ ctypes/__init__.py references the non-existent sys.dllhandle so
+        replace it with 0.
+        """
+
+        patch_file.write(line.replace('_sys.dllhandle', '0'))
 
     @staticmethod
     def _patch_for_win_iomodule(line, patch_file):
