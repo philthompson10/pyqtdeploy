@@ -35,7 +35,6 @@ from .standard_library import standard_library
 
 
 # The latest tested patch releases of each minor version.
-LATEST_3_6_RELEASE = (3, 6, 11)
 LATEST_3_7_RELEASE = (3, 7, 8)
 
 
@@ -173,13 +172,10 @@ class PythonComponent(AbstractPythonComponent):
     def verify(self):
         """ Verify the component. """
 
-        if self.version < (3, 6):
+        if self.version < (3, 7):
             self.unsupported()
 
-        if self.version == (3, 6):
-            if self.version > LATEST_3_6_RELEASE:
-                self.untested()
-        elif self.version == (3, 7):
+        if self.version == (3, 7):
             if self.version > LATEST_3_7_RELEASE:
                 self.untested()
         else:
@@ -242,14 +238,8 @@ class PythonComponent(AbstractPythonComponent):
             # A standard Python builds support OpenSSL.
             self._has_openssl = True
 
-        if self.target_platform_name == 'android':
-            if self.version < (3, 6):
-                self.error(
-                        "v{0} is not supported on Android".format(
-                                self.version))
-
-            if self.android_api < 21:
-                self.error("Android API level 21 or greater is required")
+        if self.target_platform_name == 'android' and self.android_api < 21:
+            self.error("Android API level 21 or greater is required")
 
     def _configure_python(self):
         """ Configure a Python source directory for a particular target. """
@@ -491,9 +481,6 @@ build_time_vars = {
                 self.patch_file(os.path.join('Lib', 'ctypes', '__init__.py'),
                         self._patch_for_win_ctypes)
 
-            self.patch_file(os.path.join('Modules', '_io', '_iomodule.c'),
-                    self._patch_for_win_iomodule)
-
             self.patch_file(
                     os.path.join('Modules', 'expat', 'winconfig.h'),
                     self._patch_for_win_expat)
@@ -539,14 +526,6 @@ build_time_vars = {
         """
 
         patch_file.write(line.replace('_sys.dllhandle', '0'))
-
-    @staticmethod
-    def _patch_for_win_iomodule(line, patch_file):
-        """ _iomodule.c in Python v3.6 includes consoleapi.h when it should
-        include windows.h (as it does in Python v3.7).
-        """
-
-        patch_file.write(line.replace('consoleapi.h', 'windows.h'))
 
     @staticmethod
     def _patch_for_win_winapi(line, patch_file):
