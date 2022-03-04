@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -49,7 +49,7 @@ setup(
         name='pyqtdeploy',
         version=version,
         license='BSD',
-        python_requires='>=3.5.0',
+        python_requires='>=3.7.0',
         install_requires=['PyQt5', 'toml'],
         packages=find_packages(),
         package_data={
