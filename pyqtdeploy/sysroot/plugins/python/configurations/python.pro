@@ -105,12 +105,19 @@ PARSER_SOURCES = \
     Parser/listnode.c \
     Parser/node.c \
     Parser/parser.c \
-    Parser/bitset.c \
-    Parser/metagrammar.c \
-    Parser/firstsets.c \
-    Parser/grammar.c \
-    Parser/pgen.c \
     Parser/myreadline.c Parser/parsetok.c Parser/tokenizer.c
+
+greaterThan(PY_MINOR_VERSION, 7) {
+    PARSER_SOURCES += \
+        Parser/token.c
+} else {
+    PARSER_SOURCES += \
+        Parser/bitset.c \
+        Parser/metagrammar.c \
+        Parser/firstsets.c \
+        Parser/grammar.c \
+        Parser/pgen.c
+}
 
 OBJECT_SOURCES = \
     Objects/abstract.c \
@@ -154,6 +161,12 @@ OBJECT_SOURCES = \
     Objects/odictobject.c \
     Objects/call.c
     }
+
+greaterThan(PY_MINOR_VERSION, 7) {
+    OBJECT_SOURCES += \
+        Objects/interpreteridobject.c \
+        Objects/picklebufobject.c
+}
 
 PYTHON_SOURCES = \
     Python/_warnings.c \
@@ -209,6 +222,12 @@ PYTHON_SOURCES = \
     Python/hamt.c \
     Python/bootstrap_hash.c
 
+greaterThan(PY_MINOR_VERSION, 7) {
+    PYTHON_SOURCES += \
+        Python/initconfig.c \
+        Python/preconfig.c
+}
+
 equals(PY_DYNAMIC_LOADING, "enabled") {
     DEFINES += SOABI=\\\"cpython-$${PY_MAJOR_VERSION}$${PY_MINOR_VERSION}\\\"
 
@@ -242,6 +261,7 @@ MODULE_SOURCES = \
     Modules/_io/bufferedio.c \
     Modules/_io/textio.c \
     Modules/_io/stringio.c \
+    Modules/_io/winconsoleio.c \
     Modules/faulthandler.c \
     Modules/symtablemodule.c \
     Modules/_operator.c \
@@ -249,11 +269,11 @@ MODULE_SOURCES = \
     Modules/_tracemalloc.c \
     Modules/hashtable.c \
     Modules/mmapmodule.c \
-    Modules/timemodule.c \
-    Modules/_io/winconsoleio.c \
-    Modules/zipimport.c
+    Modules/timemodule.c
 
     isEqual(PY_MINOR_VERSION, 7) {
+        MODULE_SOURCES += Modules/zipimport.c
+
         lessThan(PY_PATCH_VERSION, 3) {
             win32 {
                 # Work around the PyVarObject_HEAD_INIT() problem in Python
