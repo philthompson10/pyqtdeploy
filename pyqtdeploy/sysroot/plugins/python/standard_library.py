@@ -1506,7 +1506,7 @@ standard_library = {
                         'tempfile', 'textwrap', 'threading', 'time',
                         'tokenize', 'traceback', '?tty', 'urllib.parse',
                         'warnings')),
-        PythonModule(min_version=(3, 7, 7), max_version(3, 7),
+        PythonModule(min_version=(3, 7, 7), max_version=(3, 7),
                 deps=('collections', 'email.message', 'http.server',
                         'importlib._bootstrap',
                         'importlib._bootstrap_external', 'importlib.machinery',
@@ -1536,7 +1536,7 @@ standard_library = {
         PythonModule(version=(3, 7),
                 deps=('bisect', '_collections_abc', 'hashlib', 'itertools',
                         'math', 'os', '_random', 'types', 'warnings')),
-        PythonModule((min_version=(3, 8),
+        PythonModule(min_version=(3, 8),
                 deps=('bisect', '_collections_abc', 'itertools', 'math', 'os',
                         '_random', '_sha512', 'warnings'))),
 
@@ -1949,7 +1949,7 @@ standard_library = {
                 deps=('binascii', 'importlib.util', 'io', 'os', 'shutil',
                         'stat', 'struct', 'threading', 'time', 'warnings',
                         'zlib')),
-        PythonModule(max_version=(3, 8),
+        PythonModule(min_version=(3, 8),
                 deps=('binascii', 'functools', 'importlib.util', 'io',
                         'itertools', 'os', 'posixpath', 'shutil', 'stat',
                         'struct', 'threading', 'time', 'warnings', 'zlib'))),
@@ -1959,7 +1959,6 @@ standard_library = {
         PythonModule(min_version=(3, 8),
                 deps=('_frozen_importlib', '_frozen_importlib_external',
                         '_imp', '_io', 'marshal', 'time'))),
-        ZZZ
 
     'zlib':
         ExtensionModule(source='zlibmodule.c', deps='zlib:zlib'),
@@ -2152,7 +2151,7 @@ standard_library = {
                 deps=('asyncio', 'asyncio.events', 'asyncio.log',
                         'asyncio.protocols', 'asyncio.streams',
                         'asyncio.tasks', 'subprocess')),
-        PythonModule(min_version(3, 8), internal=True,
+        PythonModule(min_version=(3, 8), internal=True,
                 deps=('asyncio', 'asyncio.events', 'asyncio.log',
                         'asyncio.protocols', 'asyncio.streams',
                         'asyncio.tasks', 'subprocess', 'warnings'))),
