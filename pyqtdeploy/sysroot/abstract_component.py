@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -570,6 +570,9 @@ class AbstractComponent(ABC):
 
             self._install_status = self._IS_INSTALLED
             manifest[self.name] = self.version
+
+            # Checkpoint the manifest.
+            self._sysroot.write_manifest(manifest)
 
         elif self._install_status == self._IS_IN_PROGRESS:
             self.error("the component is part of a circular dependency")
