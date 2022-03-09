@@ -1864,10 +1864,14 @@ standard_library = {
                 deps=('linux|macos|win#ctypes', 'enum', 'hashlib', 'os',
                         'random', 'shutil', 'socket', 'subprocess', 'time',
                         'ios|macos#_uuid', 'warnings')),
-        PythonModule(min_version=(3, 8),
+        PythonModule(min_version=(3, 8), max_version=(3, 8, 5),
                 deps=('linux|macos|win#ctypes', 'enum', 'hashlib', 'os',
                         'platform', 'random', 'shutil', 'socket', 'subprocess',
-                        'time', 'ios|macos#_uuid', 'warnings'))),
+                        'time', 'ios|macos#_uuid', 'warnings')),
+        PythonModule(min_version=(3, 8, 6),
+                deps=('linux|macos|win#ctypes', 'enum', 'hashlib', 'os',
+                        'android|linux#platform', 'random', 'shutil', 'socket',
+                        'subprocess', 'time', 'ios|macos#_uuid', 'warnings'))),
 
     'warnings':
         PythonModule(deps=('linecache', 're', 'traceback', '_warnings')),
