@@ -2384,9 +2384,10 @@ standard_library = {
     '_csv':
         ExtensionModule(internal=True, source='_csv.c'),
 
-    '_ctypes':
-        # Note: Python v3.8 on Windows has libffi-7.dll bundled.
-        ExtensionModule(target='linux|macos|win', internal=True,
+    # TODO: Python v3.8 on Windows has libffi-7.dll bundled.
+    '_ctypes': (
+        ExtensionModule(max_version=(3, 8, 9), target='linux|macos|win',
+                internal=True,
                 source=('_ctypes/_ctypes.c', '_ctypes/callbacks.c',
                         '_ctypes/callproc.c', '_ctypes/stgdict.c',
                         '_ctypes/cfield.c',
@@ -2408,6 +2409,29 @@ standard_library = {
                         'macos#_ctypes/libffi_osx/include',
                         'win#_ctypes/libffi_msvc'),
                 libs='linux#-lffi',
+                pyd='_ctypes.pyd'),
+        ExtensionModule(min_version=(3, 8, 10), target='linux|macos|win',
+                internal=True,
+                source=('_ctypes/_ctypes.c', '_ctypes/callbacks.c',
+                        '_ctypes/callproc.c', '_ctypes/stgdict.c',
+                        '_ctypes/cfield.c',
+                        'macos#_ctypes/malloc_closure.c',
+                        'win#_ctypes/malloc_closure.c',
+                        'win#_ctypes/libffi_msvc/prep_cif.c',
+                        'win#_ctypes/libffi_msvc/ffi.c',
+                        'win-32#_ctypes/libffi_msvc/win32.c',
+                        'win-64#_ctypes/libffi_msvc/win64.asm'),
+                defines=(
+                        'linux|macos#HAVE_FFI_PREP_CIF_VAR=1',
+                        'linux|macos#HAVE_FFI_PREP_CLOSURE_LOC=1',
+                        'linux|macos#HAVE_FFI_CLOSURE_ALLOC=1',
+                        'macos#MACOSX',
+                        'macos#USING_APPLE_OS_LIBFFI=1',
+                        'macos#USING_MALLOC_CLOSURE_DOT_C=1'),
+                includepath=('_ctypes',
+                        'macos#_ctypes/darwin',
+                        'win#_ctypes/libffi_msvc'),
+                libs=('linux|macos#-lffi', 'linux|macos#-ldl'),
                 pyd='_ctypes.pyd'),
 
     'ctypes._endian':
@@ -2569,11 +2593,17 @@ standard_library = {
     'importlib._bootstrap':
         CorePythonModule(internal=True, builtin=True, deps='importlib'),
 
+    # TODO: is it still builtin for v3.8?
     'importlib._bootstrap_external': (
         CorePythonModule(version=(3, 7), internal=True, builtin=True,
                 deps='importlib'),
-        CorePythonModule(min_version=(3, 8), internal=True, builtin=True,
-                deps=('importlib', 'importlib.metadata'))),
+        CorePythonModule(min_version=(3, 8), max_version=(3, 8, 9),
+                internal=True, builtin=True,
+                deps=('importlib', 'importlib.metadata')),
+        CorePythonModule(min_version=(3, 8, 10), internal=True, builtin=True,
+                deps=('_imp', 'importlib', 'importlib.metadata', '_io',
+                        'marshal', 'win#nt', '!win#posix', '_warnings',
+                        'win#winreg'))),
 
     '_io':
         CoreExtensionModule(internal=True, deps='_bootlocale'),
