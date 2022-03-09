@@ -1719,14 +1719,21 @@ standard_library = {
     'symtable':
         PythonModule(deps=('_symtable', 'weakref')),
 
-    'sysconfig':
-        PythonModule(
+    'sysconfig': (
+        PythonModule(max_version=(3, 8, 6),
                 deps=('os', 'ios|macos#_osx_support', 'pprint', 're',
                         'android#_sysconfigdata_m_linux_android',
                         'ios#_sysconfigdata_m_darwin_ios',
                         'macos#_sysconfigdata_m_darwin_darwin',
                         'linux#_sysconfigdata_m_linux_x86_64-linux-gnu',
                         'ios|macos#types', 'warnings')),
+        PythonModule(min_version=(3, 8, 7),
+                deps=('win#_imp', 'os', 'ios|macos#_osx_support', 'pprint',
+                        're', 'android#_sysconfigdata_m_linux_android',
+                        'ios#_sysconfigdata_m_darwin_ios',
+                        'macos#_sysconfigdata_m_darwin_darwin',
+                        'linux#_sysconfigdata_m_linux_x86_64-linux-gnu',
+                        'ios|macos#types', 'warnings'))),
 
     'syslog':
         ExtensionModule(target='!win', source='syslogmodule.c'),
@@ -2068,8 +2075,11 @@ standard_library = {
         PythonModule(version=(3, 7), internal=True,
                 deps=('asyncio', 'asyncio.format_helpers',
                         'concurrent.futures', 'reprlib')),
-        PythonModule(min_version=(3, 8), internal=True,
-                deps=('asyncio', 'asyncio.format_helpers', 'reprlib'))),
+        PythonModule(min_version=(3, 8), max_version=(3, 8, 6), internal=True,
+                deps=('asyncio', 'asyncio.format_helpers', 'reprlib')),
+        PythonModule(min_version=(3, 8, 7), internal=True,
+                deps=('asyncio', 'asyncio.format_helpers', 'reprlib',
+                        '_thread'))),
 
     'asyncio.base_subprocess':
         PythonModule(internal=True,
