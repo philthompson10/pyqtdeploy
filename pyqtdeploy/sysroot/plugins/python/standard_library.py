@@ -2432,7 +2432,7 @@ standard_library = {
                         'macos#_ctypes/darwin',
                         'win#_ctypes/libffi_msvc'),
                 libs=('linux|macos#-lffi', 'linux|macos#-ldl'),
-                pyd='_ctypes.pyd'),
+                pyd='_ctypes.pyd')),
 
     'ctypes._endian':
         PythonModule(target='linux|macos|win', internal=True, deps='ctypes'),
