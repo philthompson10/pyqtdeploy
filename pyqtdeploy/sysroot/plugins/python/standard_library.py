@@ -1164,13 +1164,20 @@ standard_library = {
     'http.cookies':
         PythonModule(deps=('http', 're', 'string', 'time')),
 
-    'http.server':
-        PythonModule(
+    'http.server': (
+        PythonModule(max_version=(3, 8, 1),
                 deps=('http', 'base64', 'binascii', 'copy', 'datetime',
                         'email.utils', 'functools', 'html', 'http.client',
                         'io', 'mimetypes', 'os', 'posixpath', '!win#pwd',
                         'select', 'shutil', 'socket', 'socketserver',
                         'subprocess', 'time', 'urllib.parse')),
+        PythonModule(min_version=(3, 8, 2),
+                deps=('http', 'base64', 'binascii', 'contextlib', 'copy',
+                        'datetime', 'email.utils', 'functools', 'html',
+                        'http.client', 'io', 'mimetypes', 'os', 'posixpath',
+                        '!win#pwd', 'select', 'shutil', 'socket',
+                        'socketserver', 'subprocess', 'time',
+                        'urllib.parse'))),
 
     'imaplib':
         PythonModule(
@@ -1205,12 +1212,17 @@ standard_library = {
                 deps=('importlib', '_imp', 'importlib._bootstrap',
                         'importlib._bootstrap_external')),
 
-    'importlib.metadata':
-        PythonModule(min_version=(3, 8),
+    'importlib.metadata': (
+        PythonModule(min_version=(3, 8), max_version=(3, 8, 1),
                 deps=('importlib', 'abc', 'collections', 'configparser',
                         'contextlib', 'csv', 'email', 'functools',
                         'importlib.abc', 'io', 'itertools', 'operator', 'os',
                         'pathlib', 're', 'zipfile')),
+        PythonModule(min_version=(3, 8, 2),
+                deps=('importlib', 'abc', 'collections', 'configparser',
+                        'contextlib', 'csv', 'email', 'functools',
+                        'importlib.abc', 'io', 'itertools', 'operator', 'os',
+                        'pathlib', 'posixpath', 're', 'zipfile'))),
 
     'importlib.resources':
         PythonModule(
@@ -1408,9 +1420,13 @@ standard_library = {
                 deps=('abc', '_collections_abc', 'io', 'win#nt', 'win#ntpath',
                         '!win#posix', '!win#posixpath', 'stat', 'subprocess',
                         'warnings')),
-        PythonModule(min_version=(3, 8),
+        PythonModule(min_version=(3, 8), max_version=(3, 8, 1),
                 deps=('abc', 'io', 'win#nt', 'win#ntpath', '!win#posix',
-                        '!win#posixpath', 'stat', 'subprocess', 'warnings'))),
+                        '!win#posixpath', 'stat', 'subprocess', 'warnings')),
+        PythonModule(min_version=(3, 8, 2),
+                deps=('abc', '_collections_abc', 'io', 'win#nt', 'win#ntpath',
+                        '!win#posix', '!win#posixpath', 'stat', 'subprocess',
+                        'warnings'))),
 
     'ossaudiodev':
         ExtensionModule(source='ossaudiodev.c'),
@@ -1519,7 +1535,7 @@ standard_library = {
                         'sysconfig', 'tempfile', 'textwrap', 'threading',
                         'time', 'tokenize', 'traceback', '?tty',
                         'urllib.parse', 'warnings')),
-        PythonModule(min_version=(3, 8),
+        PythonModule(min_version=(3, 8), max_version=(3, 8, 1),
                 deps=('collections', 'email.message', 'http.server',
                         'importlib._bootstrap',
                         'importlib._bootstrap_external', 'importlib.machinery',
@@ -1527,7 +1543,16 @@ standard_library = {
                         'platform', 're', 'reprlib', 'select', 'subprocess',
                         'tempfile', 'textwrap', 'threading', 'time',
                         'tokenize', 'traceback', '?tty', 'urllib.parse',
-                        'warnings'))),
+                        'warnings')),
+        PythonModule(min_version=(3, 8, 2),
+                deps=('collections', 'email.message', 'http.server',
+                        'importlib._bootstrap',
+                        'importlib._bootstrap_external', 'importlib.machinery',
+                        'importlib.util', 'inspect', 'io', 'os', 'pkgutil',
+                        'platform', 're', 'reprlib', 'select', 'subprocess',
+                        'sysconfig', 'tempfile', 'textwrap', 'threading',
+                        'time', 'tokenize', 'traceback', '?tty',
+                        'urllib.parse', 'warnings'))),
 
     'queue':
         PythonModule(
@@ -1754,9 +1779,13 @@ standard_library = {
                 deps=('dis', 'gc', 'inspect', 'linecache', 'os', 'pickle',
                         're', 'sysconfig', 'threading', 'time', 'token',
                         'tokenize')),
-        PythonModule(min_version=(3, 8),
+        PythonModule(min_version=(3, 8), max_version=(3, 8, 1),
                 deps=('dis', 'gc', 'inspect', 'linecache', 'os', 'pickle',
-                        'threading', 'time', 'token', 'tokenize'))),
+                        'threading', 'time', 'token', 'tokenize')),
+        PythonModule(min_version=(3, 8, 2),
+                deps=('dis', 'gc', 'inspect', 'linecache', 'os', 'pickle',
+                        'sysconfig', 'threading', 'time', 'token',
+                        'tokenize'))),
 
     'traceback':
         PythonModule(deps=('collections', 'itertools', 'linecache')),
@@ -1956,10 +1985,15 @@ standard_library = {
                 deps=('binascii', 'importlib.util', 'io', 'os', 'shutil',
                         'stat', 'struct', 'threading', 'time', 'warnings',
                         'zlib')),
-        PythonModule(min_version=(3, 8),
+        PythonModule(min_version=(3, 8), max_version=(3, 8, 1),
                 deps=('binascii', 'functools', 'importlib.util', 'io',
                         'itertools', 'os', 'posixpath', 'shutil', 'stat',
-                        'struct', 'threading', 'time', 'warnings', 'zlib'))),
+                        'struct', 'threading', 'time', 'warnings', 'zlib')),
+        PythonModule(min_version=(3, 8, 2),
+                deps=('binascii', 'collections', 'contextlib', 'functools',
+                        'importlib.util', 'io', 'itertools', 'os', 'posixpath',
+                        'shutil', 'stat', 'struct', 'threading', 'time',
+                        'warnings', 'zlib'))),
 
     'zipimport': (
         CoreExtensionModule(version=(3, 7), deps='zlib'),
@@ -2136,11 +2170,16 @@ standard_library = {
                         'asyncio.transports', 'collections', '?ssl',
                         'warnings')),
 
-    'asyncio.staggered':
-        PythonModule(min_version=(3, 8), internal=True,
+    'asyncio.staggered': (
+        PythonModule(min_version=(3, 8), max_version=(3, 8, 1),
+                internal=True,
                 deps=('asyncio', 'asyncio.events', 'asyncio.futures',
                         'asyncio.locks', 'asyncio.tasks', 'contextlib',
                         'typing')),
+        PythonModule(min_version=(3, 8, 2), internal=True,
+                deps=('asyncio', 'asyncio.events', 'asyncio.exceptions',
+                        'asyncio.locks', 'asyncio.tasks', 'contextlib',
+                        'typing'))),
 
     'asyncio.streams': (
         PythonModule(version=(3, 7), internal=True,
