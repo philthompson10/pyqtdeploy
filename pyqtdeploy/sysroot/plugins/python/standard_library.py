@@ -196,7 +196,9 @@ standard_library = {
         PythonModule(max_version=(3, 7, 7), deps='__future__'),
         PythonModule(min_version=(3, 7, 8), max_version=(3, 7),
                 deps=('__future__', 'warnings')),
-        PythonModule(min_version=(3, 8), deps='__future__')),
+        PythonModule(min_version=(3, 8), max_version=(3, 8, 3),
+                deps='__future__'),
+        PythonModule(min_version=(3, 8, 4), deps=('__future__', 'warnings'))),
 
     'collections':
         PythonModule(
@@ -1450,10 +1452,14 @@ standard_library = {
                 deps=('bdb', 'cmd', 'code', 'dis', 'glob', 'inspect',
                         'linecache', 'os', 'pprint', 'pydoc', 're', 'runpy',
                         'shlex', 'signal', 'traceback')),
-        PythonModule(min_version=(3, 8, 1),
+        PythonModule(min_version=(3, 8, 1), max_version=(3, 8, 3),
                 deps=('bdb', 'cmd', 'code', 'dis', 'glob', 'inspect', 'io',
                         'linecache', 'os', 'pprint', 'pydoc', 're', 'runpy',
-                        'shlex', 'signal', 'traceback'))),
+                        'shlex', 'signal', 'traceback')),
+        PythonModule(min_version=(3, 8, 4),
+                deps=('bdb', 'cmd', 'code', 'dis', 'glob', 'inspect', 'io',
+                        'linecache', 'os', 'pprint', 'pydoc', 're', 'runpy',
+                        'shlex', 'signal', 'tokenize', 'traceback'))),
 
     'pickle':
         PythonModule(
