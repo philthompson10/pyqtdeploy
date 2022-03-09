@@ -1425,11 +1425,15 @@ standard_library = {
                         'posixpath', '!win#pwd', 're', 'stat',
                         'urllib.parse')),
 
-    'pdb':
-        PythonModule(
+    'pdb': (
+        PythonModule(max_version=(3, 8, 0),
                 deps=('bdb', 'cmd', 'code', 'dis', 'glob', 'inspect',
                         'linecache', 'os', 'pprint', 'pydoc', 're', 'runpy',
                         'shlex', 'signal', 'traceback')),
+        PythonModule(min_version=(3, 8, 1),
+                deps=('bdb', 'cmd', 'code', 'dis', 'glob', 'inspect', 'io',
+                        'linecache', 'os', 'pprint', 'pydoc', 're', 'runpy',
+                        'shlex', 'signal', 'traceback'))),
 
     'pickle':
         PythonModule(
@@ -1559,10 +1563,13 @@ standard_library = {
         PythonModule(
                 deps=('atexit', 'keyword', 're', 'readline')),
 
-    'runpy':
-        PythonModule(
+    'runpy': (
+        PythonModule(max_version=(3, 8, 0),
                 deps=('importlib.machinery', 'importlib.util', 'pkgutil',
                         'types', 'warnings')),
+        PythonModule(min_version=(3, 8, 1),
+                deps=('importlib.machinery', 'importlib.util', 'io', 'pkgutil',
+                        'types', 'warnings'))),
 
     'sched':
         PythonModule(deps=('collections', 'heapq', 'threading', 'time')),
