@@ -1324,11 +1324,15 @@ standard_library = {
     'mmap':
         CoreExtensionModule(),
 
-    'modulefinder':
-        PythonModule(
+    'modulefinder': (
+        PythonModule(max_version=(3, 8, 2),
                 deps=('dis', 'importlib._bootstrap_external',
                         'importlib.machinery', 'marshal', 'os', 'types',
                         'warnings')),
+        PythonModule(min_version=(3, 8, 3),
+                deps=('dis', 'importlib._bootstrap_external',
+                        'importlib.machinery', 'io', 'marshal', 'os', 'types',
+                        'warnings'))),
 
     'msilib':
         PythonModule(target='win',
@@ -1592,9 +1596,12 @@ standard_library = {
         PythonModule(max_version=(3, 8, 0),
                 deps=('importlib.machinery', 'importlib.util', 'pkgutil',
                         'types', 'warnings')),
-        PythonModule(min_version=(3, 8, 1),
+        PythonModule(min_version=(3, 8, 1), max_version=(3, 8, 2),
                 deps=('importlib.machinery', 'importlib.util', 'io', 'pkgutil',
-                        'types', 'warnings'))),
+                        'types', 'warnings')),
+        PythonModule(min_version=(3, 8, 3),
+                deps=('importlib.machinery', 'importlib.util', 'io', 'os',
+                        'pkgutil', 'types', 'warnings'))),
 
     'sched':
         PythonModule(deps=('collections', 'heapq', 'threading', 'time')),
@@ -1989,11 +1996,15 @@ standard_library = {
                 deps=('binascii', 'functools', 'importlib.util', 'io',
                         'itertools', 'os', 'posixpath', 'shutil', 'stat',
                         'struct', 'threading', 'time', 'warnings', 'zlib')),
-        PythonModule(min_version=(3, 8, 2),
+        PythonModule(version=(3, 8, 2),
                 deps=('binascii', 'collections', 'contextlib', 'functools',
                         'importlib.util', 'io', 'itertools', 'os', 'posixpath',
                         'shutil', 'stat', 'struct', 'threading', 'time',
-                        'warnings', 'zlib'))),
+                        'warnings', 'zlib')),
+        PythonModule(min_version=(3, 8, 3),
+                deps=('binascii', 'contextlib', 'functools', 'importlib.util',
+                        'io', 'itertools', 'os', 'posixpath', 'shutil', 'stat',
+                        'struct', 'threading', 'time', 'warnings', 'zlib'))),
 
     'zipimport': (
         CoreExtensionModule(version=(3, 7), deps='zlib'),
@@ -2447,11 +2458,15 @@ standard_library = {
                 deps=('distutils.ccompiler', 'distutils.errors',
                         'distutils.log', 'distutils.util', 'itertools', 'json',
                         'os', 'shutil', 'stat', 'subprocess', 'winreg')),
-        PythonModule(min_version=(3, 8), target='win',
+        PythonModule(min_version=(3, 8), max_version=(3, 8, 2), target='win',
                 deps=('distutils.ccompiler', 'distutils.errors',
                         'distutils.log', 'distutils.util', 'glob', 'itertools',
                         'json', 'os', 'shutil', 'stat', 'subprocess',
-                        'winreg'))),
+                        'winreg')),
+        PythonModule(min_version=(3, 8, 3), target='win',
+                deps=('distutils.ccompiler', 'distutils.errors',
+                        'distutils.log', 'distutils.util', 'itertools', 'json',
+                        'os', 'shutil', 'stat', 'subprocess', 'winreg'))),
 
     'distutils.versionpredicate':
         PythonModule(
