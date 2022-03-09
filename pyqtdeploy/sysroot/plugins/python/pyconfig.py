@@ -1273,6 +1273,10 @@ pyconfig = (
     # (which you can't on SCO ODT 3.0).
     Config('SYS_SELECT_WITH_SYS_TIME', default=1),
 
+    # Define if you want build the _decimal module using a coroutine-local
+    # rather than a thread-local context.
+    Config('WITH_DECIMAL_CONTEXTVAR', default=1),
+
     # Define if tanh(-0.) is -0., or if platform doesn't have signed zeros
     Config('TANH_PRESERVES_ZERO_SIGN', default=1, android=None),
 
