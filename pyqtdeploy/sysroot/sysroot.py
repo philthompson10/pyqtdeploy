@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -278,7 +278,7 @@ class Sysroot:
         self.target.configure()
 
         self.create_dir(self.sysroot_dir, empty=force)
-        self._write_manifest(manifest)
+        self.write_manifest(manifest)
         os.makedirs(self.host_dir, exist_ok=True)
         os.makedirs(self.target_include_dir, exist_ok=True)
         os.makedirs(self.target_lib_dir, exist_ok=True)
@@ -294,7 +294,6 @@ class Sysroot:
 
         for component in components:
             component.ensure_installed(build_dir, all_components, manifest)
-            self._write_manifest(manifest)
 
         # Remove the build directory if requested.
         os.chdir(cwd)
@@ -405,6 +404,13 @@ class Sysroot:
         assert self._message_handler is not None
         self._message_handler.warning(self._format_message(message, component))
 
+    def write_manifest(self, manifest):
+        """ Write the manifest file. """
+
+        with self.create_file(self._manifest_file) as mf:
+            for name in sorted(manifest.keys()):
+                mf.write('{} {}\n'.format(name, manifest[name]))
+
     def _components_from_names(self, component_names):
         """ Return a sequence of components from a sequence of names. """
 
@@ -436,10 +442,3 @@ class Sysroot:
         """ The full pathname of the Manifest file. """
 
         return os.path.join(self.sysroot_dir, 'Manifest')
-
-    def _write_manifest(self, manifest):
-        """ Write the manifest file. """
-
-        with self.create_file(self._manifest_file) as mf:
-            for name in sorted(manifest.keys()):
-                mf.write('{} {}\n'.format(name, manifest[name]))
