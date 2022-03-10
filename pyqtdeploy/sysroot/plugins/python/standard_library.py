@@ -2026,8 +2026,7 @@ standard_library = {
     'zipimport': (
         CoreExtensionModule(version=(3, 7), deps='zlib'),
         PythonModule(min_version=(3, 8),
-                deps=('_frozen_importlib', '_frozen_importlib_external',
-                        '_imp', '_io', 'marshal', 'time'))),
+                deps=('_imp', '_io', 'marshal', 'time'))),
 
     'zlib':
         ExtensionModule(source='zlibmodule.c', deps='zlib:zlib'),
@@ -2560,16 +2559,6 @@ standard_library = {
     'encodings.aliases':
         CorePythonModule(internal=True, deps='encodings'),
 
-    # TODO
-    '_frozen_importlib':
-        CorePythonModule(min_version=(3, 8), internal=True, builtin=True,
-                deps='importlib'),
-
-    # TODO
-    '_frozen_importlib_external':
-        CorePythonModule(min_version=(3, 8), internal=True, builtin=True,
-                deps=('importlib', 'importlib.metadata')),
-
     '_functools':
         CoreExtensionModule(internal=True),
 
@@ -2593,7 +2582,6 @@ standard_library = {
     'importlib._bootstrap':
         CorePythonModule(internal=True, builtin=True, deps='importlib'),
 
-    # TODO: is it still builtin for v3.8?
     'importlib._bootstrap_external': (
         CorePythonModule(version=(3, 7), internal=True, builtin=True,
                 deps='importlib'),
