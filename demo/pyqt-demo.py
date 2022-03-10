@@ -2,7 +2,7 @@
 
 
 ###############################################################################
-# Copyright (c) 2020 Riverbank Computing Limited.
+# Copyright (c) 2022 Riverbank Computing Limited.
 ###############################################################################
 
 
@@ -66,6 +66,12 @@ except ImportError:
 try:
     import PyQt5.QtDataVisualization
     optional_products.append("PyQtDataVisualization")
+except ImportError:
+    pass
+
+try:
+    import PyQt5.QtNetworkAuth
+    optional_products.append("PyQtNetworkAuth")
 except ImportError:
     pass
 
