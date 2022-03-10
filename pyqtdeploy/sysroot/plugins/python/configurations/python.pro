@@ -61,6 +61,10 @@ DEFINES += PYTHONPATH=\\\"/lib/python$${PY_MAJOR_VERSION}.$${PY_MINOR_VERSION}\\
 
 INCLUDEPATH += . Include
 
+greaterThan(PY_MINOR_VERSION, 7) {
+    INCLUDEPATH += Include/internal
+}
+
 win32 {
     DEFINES += PLATFORM=\\\"win32\\\"
     INCLUDEPATH += PC
@@ -93,6 +97,10 @@ target.path = $$SYSROOT/lib
 
 headers.path = $$SYSROOT/include/python$${PY_MAJOR_VERSION}.$${PY_MINOR_VERSION}
 headers.files = pyconfig.h Include/*.h
+
+greaterThan(PY_MINOR_VERSION, 7) {
+    headers.files += Include/cpython Include/internal
+}
 
 stdlib.path = $$SYSROOT/lib/python$${PY_MAJOR_VERSION}.$${PY_MINOR_VERSION}
 stdlib.files = Lib/*
@@ -160,7 +168,6 @@ OBJECT_SOURCES = \
     Objects/namespaceobject.c \
     Objects/odictobject.c \
     Objects/call.c
-    }
 
 greaterThan(PY_MINOR_VERSION, 7) {
     OBJECT_SOURCES += \
