@@ -24,7 +24,7 @@ install_host_from_source = false
 # PyQt ########################################################################
 
 [PyQt]
-version = "5.15.0"
+version = "5.15.6"
 
 [PyQt.android]
 disabled_features = ["PyQt_Desktop_OpenGL", "PyQt_Printer"]
@@ -55,31 +55,37 @@ installed_modules = ["QtCore", "QtGui", "QtNetwork", "QtWidgets",
 # PyQt3D ######################################################################
 
 [PyQt3D]
-version = "5.15.0"
+version = "5.15.5"
 
 
 # PyQtChart ###################################################################
 
 [PyQtChart]
-version = "5.15.0"
+version = "5.15.5"
 
 
 # PyQtDataVisualization #######################################################
 
 [PyQtDataVisualization]
-version = "5.15.0"
+version = "5.15.5"
+
+
+# PyQtNetworkAuth #############################################################
+
+[PyQtNetworkAuth]
+version = "5.15.5"
 
 
 # PyQtPurchasing ##############################################################
 
 [PyQtPurchasing]
-version = "5.15.0"
+version = "5.15.5"
 
 
 # QScintilla ##################################################################
 
 [QScintilla]
-version = "2.11.5"
+version = "2.13.1"
 
 
 # Qt ##########################################################################
@@ -117,7 +123,7 @@ static_msvc_runtime = true
 # SIP #########################################################################
 
 [SIP]
-version = "12.8.1"
+version = "12.9.1"
 module_name = "PyQt5.sip"
 
 
