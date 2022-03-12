@@ -37,6 +37,7 @@ from .standard_library import standard_library
 # The latest tested patch releases of each minor version.
 LATEST_3_7_RELEASE = (3, 7, 12)
 LATEST_3_8_RELEASE = (3, 8, 12)
+LATEST_3_9_RELEASE = (3, 9, 0)
 
 
 class PythonComponent(AbstractPythonComponent):
@@ -181,6 +182,9 @@ class PythonComponent(AbstractPythonComponent):
                 self.untested()
         elif self.version == (3, 8):
             if self.version > LATEST_3_8_RELEASE:
+                self.untested()
+        elif self.version == (3, 9):
+            if self.version > LATEST_3_9_RELEASE:
                 self.untested()
         else:
             self.unsupported()

@@ -59,6 +59,10 @@ DEFINES += PREFIX=\\\"/\\\"
 DEFINES += EXEC_PREFIX=\\\"/\\\"
 DEFINES += PYTHONPATH=\\\"/lib/python$${PY_MAJOR_VERSION}.$${PY_MINOR_VERSION}\\\"
 
+greaterThan(PY_MINOR_VERSION, 8) {
+    DEFINES += PLATLIBDIR=\\\"lib\\\"
+}
+
 INCLUDEPATH += . Include
 
 greaterThan(PY_MINOR_VERSION, 7) {
@@ -114,6 +118,14 @@ PARSER_SOURCES = \
     Parser/node.c \
     Parser/parser.c \
     Parser/myreadline.c Parser/parsetok.c Parser/tokenizer.c
+
+greaterThan(PY_MINOR_VERSION, 8) {
+    PARSER_SOURCES += \
+        Parser/pegen/pegen.c \
+        Parser/pegen/parse.c \
+        Parser/pegen/parse_string.c \
+        Parser/pegen/peg_api.c
+}
 
 greaterThan(PY_MINOR_VERSION, 7) {
     PARSER_SOURCES += \
@@ -173,6 +185,11 @@ greaterThan(PY_MINOR_VERSION, 7) {
     OBJECT_SOURCES += \
         Objects/interpreteridobject.c \
         Objects/picklebufobject.c
+}
+
+greaterThan(PY_MINOR_VERSION, 8) {
+    OBJECT_SOURCES += \
+        Objects/genericaliasobject.c
 }
 
 PYTHON_SOURCES = \
@@ -235,6 +252,11 @@ greaterThan(PY_MINOR_VERSION, 7) {
         Python/preconfig.c
 }
 
+greaterThan(PY_MINOR_VERSION, 8) {
+    PYTHON_SOURCES += \
+        Python/hashtable.c
+}
+
 equals(PY_DYNAMIC_LOADING, "enabled") {
     DEFINES += SOABI=\\\"cpython-$${PY_MAJOR_VERSION}$${PY_MINOR_VERSION}\\\"
 
@@ -274,21 +296,30 @@ MODULE_SOURCES = \
     Modules/_operator.c \
     Modules/_stat.c \
     Modules/_tracemalloc.c \
-    Modules/hashtable.c \
     Modules/mmapmodule.c \
     Modules/timemodule.c
 
-    isEqual(PY_MINOR_VERSION, 7) {
-        MODULE_SOURCES += Modules/zipimport.c
+lessThan(PY_MINOR_VERSION, 9) {
+    MODULE_SOURCES += \
+        Modules/hashtable.c
+}
 
-        lessThan(PY_PATCH_VERSION, 3) {
-            win32 {
-                # Work around the PyVarObject_HEAD_INIT() problem in Python
-                # v3.7.0 to v3.7.2 by always compiling this module.
-                MOD_SOURCES += Modules/_abc.c
-            }
+isEqual(PY_MINOR_VERSION, 7) {
+    MODULE_SOURCES += Modules/zipimport.c
+
+    lessThan(PY_PATCH_VERSION, 3) {
+        win32 {
+            # Work around the PyVarObject_HEAD_INIT() problem in Python v3.7.0
+            # to v3.7.2 by always compiling this module.
+            MOD_SOURCES += Modules/_abc.c
         }
     }
+}
+
+greaterThan(PY_MINOR_VERSION, 8) {
+    MOD_SOURCES += \
+        Modules/_peg_parser.c
+}
 
 win32 {
     MOD_SOURCES += \

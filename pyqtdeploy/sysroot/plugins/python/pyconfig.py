@@ -541,11 +541,17 @@ pyconfig = (
     # Define to 1 if you have the <linux/can.h> header file.
     Config('HAVE_LINUX_CAN_H', android=1, linux=1),
 
+    # Define to 1 if you have the <linux/can/j1939.h> header file.
+    Config('HAVE_LINUX_CAN_J1939_H', android=1, linux=1),
+
     # Define if compiling using Linux 3.6 or later.
     Config('HAVE_LINUX_CAN_RAW_FD_FRAMES', android=1, linux=1),
 
     # Define to 1 if you have the <linux/can/raw.h> header file.
     Config('HAVE_LINUX_CAN_RAW_H', android=1, linux=1),
+
+    # Define to 1 if compiling using Linux 4.1 or later.
+    Config('HAVE_LINUX_CAN_RAW_JOIN_FILTERS', android=1, linux=1),
 
     # Define to 1 if you have the <linux/netlink.h> header file.
     Config('HAVE_LINUX_NETLINK_H', android=1, linux=1),
@@ -561,6 +567,9 @@ pyconfig = (
 
     # Define to 1 if you have the <linux/vm_sockets.h> header file.
     Config('HAVE_LINUX_VM_SOCKETS_H', linux=1),
+
+    # Define to 1 if you have the <linux/wait.h> header file.
+    Config('HAVE_LINUX_WAIT_H', linux=1),
 
     # Define to 1 if you have the 'lockf' function.
     Config('HAVE_LOCKF', ios=1, linux=1, macos=1),
