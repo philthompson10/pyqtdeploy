@@ -2258,8 +2258,11 @@ standard_library = {
         PythonModule(min_version=(3, 8, 7), max_version=(3, 8), internal=True,
                 deps=('asyncio', 'asyncio.format_helpers', 'reprlib',
                         '_thread')),
-        PythonModule(min_version=(3, 9), internal=True,
-                deps=('asyncio', 'asyncio.format_helpers', 'reprlib'))),
+        PythonModule(version=(3, 9, 0), internal=True,
+                deps=('asyncio', 'asyncio.format_helpers', 'reprlib')),
+        PythonModule(min_version=(3, 9, 1), internal=True,
+                deps=('asyncio', 'asyncio.format_helpers', 'reprlib',
+                        '_thread'))),
 
     'asyncio.base_subprocess':
         PythonModule(internal=True,
