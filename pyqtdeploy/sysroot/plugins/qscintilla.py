@@ -59,7 +59,10 @@ class QScintillaComponent(Component):
         if self._commercial:
             return super().get_archive_urls()
 
-        return ['https://www.riverbankcomputing.com/static/Downloads/QScintilla/{}/'.format(self._version_str)]
+        if self.version <= (2, 11):
+            return ['https://www.riverbankcomputing.com/static/Downloads/QScintilla/{}/'.format(self._version_str)]
+
+        return self.get_pypi_urls('QScintilla')
 
     def install(self):
         """ Install for the target. """
@@ -72,34 +75,35 @@ class QScintillaComponent(Component):
         # Unpack the source.
         self.unpack_archive(self.get_archive())
 
-        # Build the static C++ library.
-        os.chdir('Qt4Qt5')
+        if self.version <= (2, 11):
+            # Build the static C++ library.
+            os.chdir('Qt4Qt5')
 
-        # Somewhere between Qt v5.13 and v5.15 'printsupport' was removed from
-        # the iOS mkspecs.  We patch the .pro and feature files rather than
-        # require a fixed version of QScintilla.
-        if self.target_platform_name == 'ios':
-            self.patch_file('qscintilla.pro', self._patch_pro_for_ios)
-            self.patch_file(
-                    os.path.join('features_staticlib', 'qscintilla2.prf'),
-                    self._patch_pro_for_ios)
+            # Somewhere between Qt v5.13 and v5.15 'printsupport' was removed
+            # from the iOS mkspecs.  We patch the .pro and feature files rather
+            # than require a fixed version of QScintilla.
+            if self.target_platform_name == 'ios':
+                self.patch_file('qscintilla.pro', self._patch_pro_for_ios)
+                self.patch_file(
+                        os.path.join('features_staticlib', 'qscintilla2.prf'),
+                        self._patch_pro_for_ios)
 
-        qmake_args = [self.get_component('Qt').host_qmake, 'CONFIG+=staticlib',
-                'DEFINES+=SCI_NAMESPACE']
+            qmake_args = [self.get_component('Qt').host_qmake,
+                    'CONFIG+=staticlib', 'DEFINES+=SCI_NAMESPACE']
 
-        if self.target_platform_name == 'android':
-            qmake_args.append('ANDROID_ABIS={}'.format(self.android_abi))
+            if self.target_platform_name == 'android':
+                qmake_args.append('ANDROID_ABIS={}'.format(self.android_abi))
 
-        if not pyqt.using_sip_v4:
-            # PyQt-builder explcitly specifies the release/debug mode and we
-            # can't make assumptions about the default.
-            qmake_args.append('CONFIG+=release')
+            if not pyqt.using_sip_v4:
+                # PyQt-builder explcitly specifies the release/debug mode and
+                # we can't make assumptions about the default.
+                qmake_args.append('CONFIG+=release')
 
-        self.run(*qmake_args)
+            self.run(*qmake_args)
 
-        self.run(self.host_make)
-        self.run(self.host_make, 'install')
-        os.chdir('..')
+            self.run(self.host_make)
+            self.run(self.host_make, 'install')
+            os.chdir('..')
 
         # Build the static Python bindings.
         if pyqt.using_sip_v4:
