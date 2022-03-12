@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2021, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -93,7 +93,7 @@ class PyQtDataVisualizationComponent(Component):
 
         pyqt = self.get_component('PyQt')
         pyqt.verify_pyqt_component(self.version, min_sipbuild_version=(5, 4),
-                min_pyqtbuild_version=(1, 5))
+                min_pyqtbuild_version=(1, 9))
 
     def _install_using_sip_v4(self):
         """ Install using SIP v4. """
