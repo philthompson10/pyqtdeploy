@@ -29,8 +29,8 @@ import os
 from ... import Component, ComponentOption, ExtensionModule
 
 
-class PyQtWebEngineComponent(Component):
-    """ The PyQtWebEngine component. """
+class PyQtNetworkAuthComponent(Component):
+    """ The PyQtNetworkAuth component. """
 
     # The component must be installed from source.
     must_install_from_source = True
@@ -39,18 +39,20 @@ class PyQtWebEngineComponent(Component):
     # this one.
     preinstalls = ['Python', 'PyQt', 'Qt', 'SIP']
 
+    # The dict of parts provided by the component.
+    provides = {
+        'PyQt5.QtNetworkAuth':
+            ExtensionModule(deps='PyQt:PyQt5.QtCore', libs='-lQtNetworkAuth',
+                    qmake_qt='networkauth')
+    }
+
     def get_archive_name(self):
         """ Return the filename of the source archive. """
 
         if self._commercial:
-            return 'PyQtWebEngine_commercial-{}.tar.gz'.format(
-                    self._version_str)
+            return 'PyQtNetworkAuth_commercial-{}.tar.gz'.format(self.version)
 
-        if self.version <= (5, 13, 1):
-            return 'PyQtWebEngine_gpl-{}.tar.gz'.format(
-                    self._version_str)
-
-        return 'PyQtWebEngine-{}.tar.gz'.format(self._version_str)
+        return 'PyQtNetworkAuth-{}.tar.gz'.format(self.version)
 
     def get_archive_urls(self):
         """ Return the list of URLs where the source archive might be
@@ -60,10 +62,7 @@ class PyQtWebEngineComponent(Component):
         if self._commercial:
             return super().get_archive_urls()
 
-        if self.version <= (5, 14):
-            return ['https://www.riverbankcomputing.com/static/Downloads/PyQtWebEngine/{}/'.format(self._version_str)]
-
-        return self.get_pypi_urls('PyQtWebEngine')
+        return self.get_pypi_urls('PyQtNetworkAuth')
 
     def install(self):
         """ Install for the target. """
@@ -81,36 +80,8 @@ class PyQtWebEngineComponent(Component):
             # Install using SIP v5 or later.
             pyqt.install_pyqt_component(self)
 
-    @property
-    def provides(self):
-        """ The dict of parts provided by the component. """
-
-        widgets_deps = ('PyQt5.QtWebEngineCore', 'PyQt:PyQt5.QtNetwork',
-                'PyQt:PyQt5.QtPrintSupport', 'PyQt:PyQt5.QtWidgets')
-
-        if 'QtWebChannel' in self.get_component('PyQt').installed_modules:
-            widgets_deps += ('PyQt:PyQt5.QtWebChannel', )
-
-        return {
-            'PyQt5.QtWebEngine':
-                ExtensionModule(deps='PyQt5.QtWebEngineCore',
-                        libs='-lQtWebEngine', qmake_qt='webengine'),
-            'PyQt5.QtWebEngineCore':
-                ExtensionModule(
-                        deps=('PyQt:PyQt5.QtNetwork', 'PyQt:PyQt5.QtGui'),
-                        libs='-lQtWebEngineCore', qmake_qt='webenginecore'),
-            'PyQt5.QtWebEngineWidgets':
-                ExtensionModule(deps=widgets_deps, libs='-lQtWebEngineWidgets',
-                        qmake_cpp11=True, qmake_qt='webenginewidgets'),
-        }
-
     def verify(self):
         """ Verify the component. """
-
-        if self.target_platform_name in ('android', 'ios'):
-            self.error(
-                    "PyQtWebEngine is not supported on {0}".format(
-                            self.target_platform_name))
 
         pyqt = self.get_component('PyQt')
         pyqt.verify_pyqt_component(self.version, min_sipbuild_version=(5, 4),
@@ -141,7 +112,7 @@ sip_module = PyQt5.sip
             cfg += 'pyqt_disabled_features = {0}\n'.format(
                     ' '.join(pyqt.disabled_features))
 
-        cfg_name = 'pyqtwebengine.cfg'
+        cfg_name = 'pyqtpurchasing.cfg'
 
         with self.create_file(cfg_name) as cfg_file:
             cfg_file.write(cfg)
@@ -149,23 +120,15 @@ sip_module = PyQt5.sip
         # Configure, build and install.
         args = [python.host_python, 'configure.py', '--static', '--qmake',
             qt.host_qmake, '--sysroot', self.sysroot_dir, '--no-qsci-api',
-            '--no-sip-files', '--configuration', cfg_name,
+            '--no-sip-files', '--no-stubs', '--configuration', cfg_name,
             '--sip', sip.host_sip, '-c', '--no-dist-info']
-
-        # A bug in v5.12.0 meant the stub files options were missing.
-        if self.version > (5, 12, 0):
-            args.append('--no-stubs')
 
         if self.verbose_enabled:
             args.append('--verbose')
 
+        if self.target_platform_name == 'android':
+            args.append('ANDROID_ABIS={}'.format(self.android_abi))
+
         self.run(*args)
         self.run(self.host_make)
         self.run(self.host_make, 'install')
-
-    @property
-    def _version_str(self):
-        """ Return the version number as a string. """
-
-        # The current convention for .0 releases began with v5.13.0.
-        return '5.12' if self.version == (5, 12, 0) else str(self.version)

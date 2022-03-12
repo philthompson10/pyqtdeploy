@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -411,7 +411,7 @@ class PyQtComponent(AbstractPyQtComponent):
                 self.error("SIP v4.19.23 or later is required")
         else:
             self.verify_pyqt_component(self.version,
-                    min_sipbuild_version=(5, 4), min_pyqtbuild_version=(1, 5))
+                    min_sipbuild_version=(5, 4), min_pyqtbuild_version=(1, 9))
 
         # This is needed by dependent components.
         if not self.get_component('Qt').ssl:
