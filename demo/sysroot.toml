@@ -14,7 +14,7 @@ install_from_source = false
 # Python ######################################################################
 
 [Python]
-version = "3.8.12"
+version = "3.9.0"
 install_host_from_source = true
 
 [Python.win]
@@ -95,7 +95,7 @@ version = "5.15.2"
 edition = "opensource"
 configure_options = ["-opengl", "desktop", "-no-dbus", "-qt-pcre"]
 skip = ["qtactiveqt", "qtconnectivity", "qtdoc", "qtgamepad", "qtlocation",
-        "qtmultimedia", "qtnetworkauth", "qtquickcontrols", "qtquickcontrols2",
+        "qtmultimedia", "qtquickcontrols", "qtquickcontrols2",
         "qtremoteobjects", "qtscript", "qtscxml", "qtsensors", "qtserialbus",
         "qtserialport", "qtspeech", "qtsvg", "qttools", "qttranslations",
         "qtwayland", "qtwebchannel", "qtwebengine", "qtwebsockets",

@@ -49,7 +49,7 @@ class CodecModule(PythonModule):
 class CoreExtensionModule(ExtensionModule):
     """ Encapsulate the meta-data for an extension module that is always
     compiled in to the interpreter library.  These are modules that the core
-    relies on and modules that can only be build with Py_BUILD_CORE defined.
+    relies on and modules that can only be built with Py_BUILD_CORE defined.
     """
 
     def __init__(self, min_version=None, version=None, max_version=None,
@@ -103,8 +103,12 @@ standard_library = {
     'array':
         ExtensionModule(source='arraymodule.c'),
 
-    'ast':
-        PythonModule(deps=('_ast', 'collections', 'inspect')),
+    'ast': (
+        PythonModule(max_version=(3, 8),
+                deps=('_ast', 'collections', 'inspect')),
+        PythonModule(min_version=(3, 9),
+                deps=('_ast', 'collections', 'contextlib', 'enum',
+                        'inspect'))),
 
     'asynchat':
         PythonModule(deps=('asyncore', 'collections')),
@@ -122,7 +126,7 @@ standard_library = {
                         'asyncio.subprocess', 'asyncio.tasks',
                         'asyncio.transports', '!win#asyncio.unix_events',
                         'win#asyncio.windows_events')),
-        PythonModule(min_version=(3, 8),
+        PythonModule(version=(3, 8),
                 deps=('asyncio.base_events', 'asyncio.coroutines',
                         'asyncio.events', 'asyncio.exceptions',
                         'asyncio.futures', 'asyncio.locks',
@@ -130,6 +134,16 @@ standard_library = {
                         'asyncio.queues', 'asyncio.streams',
                         'asyncio.subprocess', 'asyncio.tasks',
                         'asyncio.transports', '!win#asyncio.unix_events',
+                        'win#asyncio.windows_events')),
+        PythonModule(min_version=(3, 9),
+                deps=('asyncio.base_events', 'asyncio.coroutines',
+                        'asyncio.events', 'asyncio.exceptions',
+                        'asyncio.futures', 'asyncio.locks',
+                        'asyncio.protocols', 'asyncio.runners',
+                        'asyncio.queues', 'asyncio.streams',
+                        'asyncio.subprocess', 'asyncio.tasks',
+                        'asyncio.threads', 'asyncio.transports',
+                        '!win#asyncio.unix_events',
                         'win#asyncio.windows_events'))),
 
     'atexit':
@@ -138,8 +152,10 @@ standard_library = {
     'audioop':
         ExtensionModule(source='audioop.c', libs='linux#-lm'),
 
-    'base64':
-        PythonModule(deps=('binascii', 're', 'struct', 'warnings')),
+    'base64': (
+        PythonModule(max_version=(3, 8),
+                deps=('binascii', 're', 'struct', 'warnings')),
+        PythonModule(min_version=(3, 9), deps=('binascii', 're', 'struct'))),
 
     'bdb':
         PythonModule(
@@ -148,16 +164,22 @@ standard_library = {
     'binascii':
         ExtensionModule(source='binascii.c'),
 
-    'binhex':
-        PythonModule(deps=('binascii', 'io', 'os', 'struct')),
+    'binhex': (
+        PythonModule(max_version=(3, 8),
+                deps=('binascii', 'io', 'os', 'struct')),
+        PythonModule(min_version=(3, 9),
+                deps=('binascii', 'contextlib', 'io', 'os', 'struct',
+                        'warnings'))),
 
     'bisect':
         PythonModule(deps='_bisect'),
 
-    'bz2':
-        PythonModule(
+    'bz2': (
+        PythonModule(max_version=(3, 8),
                 deps=('_compression', '_bz2', 'io', 'os', 'threading',
                         'warnings')),
+        PythonModule(min_version=(3, 9),
+                deps=('_compression', '_bz2', 'io', 'os', 'threading'))),
 
     'calendar':
         PythonModule(deps=('datetime', 'itertools', 'locale')),
@@ -180,8 +202,12 @@ standard_library = {
     'chunk':
         PythonModule(deps='struct'),
 
-    'cmath':
-        ExtensionModule(source=('cmathmodule.c', '_math.c'), libs='linux#-lm'),
+    'cmath': (
+        ExtensionModule(max_version=(3, 8),
+                source=('cmathmodule.c', '_math.c'), libs='linux#-lm'),
+        ExtensionModule(min_version=(3, 9),
+                source=('cmathmodule.c', '_math.c'),
+                defines='Py_BUILD_CORE_MODULE', libs='linux#-lm')),
 
     'cmd':
         PythonModule(deps='string'),
@@ -212,10 +238,14 @@ standard_library = {
     'colorsys':
         PythonModule(),
 
-    'compileall':
-        PythonModule(
+    'compileall': (
+        PythonModule(max_version=(3, 8),
                 deps=('concurrent.futures', 'functools', 'importlib.util',
                         'os', 'py_compile', 'struct')),
+        PythonModule(min_version=(3, 9),
+                deps=('concurrent.futures', 'filecmp', 'functools',
+                        'importlib.util', 'os', 'pathlib', 'py_compile',
+                        'struct'))),
 
     'concurrent':
         PythonModule(),
@@ -250,9 +280,11 @@ standard_library = {
     'cProfile':
         PythonModule(deps=('_lsprof', 'marshal', 'profile', 'pstats')),
 
-    'crypt':
-        PythonModule(target='!win',
+    'crypt': (
+        PythonModule(max_version=(3, 8), target='!win',
                 deps=('collections', '_crypt', 'random', 'string')),
+        PythonModule(min_version=(3, 9), target='!win',
+                deps=('collections', '_crypt', 'errno', 'random', 'string'))),
 
     'csv': (
         PythonModule(version=(3, 7), deps=('collections', '_csv', 'io', 're')),
@@ -261,8 +293,11 @@ standard_library = {
     'ctypes': (
         PythonModule(version=(3, 7), target='linux|macos|win',
                 deps=('_ctypes', 'ctypes._endian', 'os', 'struct')),
-        PythonModule(min_version=(3, 8), target='linux|macos|win',
-                deps=('_ctypes', 'ctypes._endian', 'win#nt', 'os', 'struct'))),
+        PythonModule(version=(3, 8), target='linux|macos|win',
+                deps=('_ctypes', 'ctypes._endian', 'win#nt', 'os', 'struct')),
+        PythonModule(min_version=(3, 9), target='linux|macos|win',
+                deps=('_ctypes', 'ctypes._endian', 'win#nt', 'os', 'struct',
+                        'types'))),
 
     'ctypes.util':
         PythonModule(target='linux|macos|win',
@@ -314,8 +349,10 @@ standard_library = {
     'decimal':
         PythonModule(deps='_pydecimal'),
 
-    'difflib':
-        PythonModule(deps=('collections', 'heapq', 're')),
+    'difflib': (
+        PythonModule(max_version=(3, 8), deps=('collections', 'heapq', 're')),
+        PythonModule(min_version=(3, 9),
+                deps=('collections', 'heapq', 're', 'types'))),
 
     'dis':
         PythonModule(deps=('collections', 'io', 'opcode', 'types')),
@@ -368,19 +405,28 @@ standard_library = {
                         'distutils.errors', 'distutils.log',
                         'distutils.sysconfig', 'distutils.util', 'os')),
 
-    'distutils.command.bdist_msi':
-        PythonModule(target='win',
+    'distutils.command.bdist_msi': (
+        PythonModule(max_version=(3, 8), target='win',
                 deps=('distutils.core', 'distutils.dir_util',
                         'distutils.errors', 'distutils.log',
                         'distutils.sysconfig', 'distutils.util',
                         'distutils.version', 'msilib', 'os')),
+        PythonModule(min_version=(3, 9), target='win',
+                deps=('distutils.core', 'distutils.dir_util',
+                        'distutils.errors', 'distutils.log',
+                        'distutils.sysconfig', 'distutils.util',
+                        'distutils.version', 'msilib', 'os', 'warnings'))),
 
-    'distutils.command.bdist_rpm':
-        PythonModule(
+    'distutils.command.bdist_rpm': (
+        PythonModule(max_version=(3, 8),
                 deps=('distutils.core', 'distutils.debug', 'distutils.errors',
                         'distutils.file_util', 'distutils.log',
                         'distutils.sysconfig', 'distutils.util', 'os',
                         'subprocess')),
+        PythonModule(min_version=(3, 9),
+                deps=('distutils.core', 'distutils.debug', 'distutils.errors',
+                        'distutils.file_util', 'distutils.log',
+                        'distutils.sysconfig', 'os', 'subprocess'))),
 
     'distutils.command.bdist_wininst': (
         PythonModule(version=(3, 7), target='win',
@@ -480,11 +526,15 @@ standard_library = {
                         'distutils.log', 'distutils.text_file',
                         'distutils.util', 'glob', 'os', 'warnings')),
 
-    'distutils.command.upload':
-        PythonModule(
+    'distutils.command.upload': (
+        PythonModule(max_version=(3, 8),
                 deps=('base64', 'distutils.core', 'distutils.errors',
                         'distutils.log', 'distutils.spawn', 'hashlib', 'io',
                         'os', 'platform', 'urllib.parse', 'urllib.request')),
+        PythonModule(min_version=(3, 9),
+                deps=('base64', 'distutils.core', 'distutils.errors',
+                        'distutils.log', 'distutils.spawn', 'hashlib', 'io',
+                        'os', 'urllib.parse', 'urllib.request'))),
 
     'distutils.core':
         PythonModule(
@@ -492,13 +542,18 @@ standard_library = {
                         'distutils.dist', 'distutils.errors',
                         'distutils.extension', 'os')),
 
-    'distutils.cygwinccompiler':
-        PythonModule(
+    'distutils.cygwinccompiler': (
+        PythonModule(max_version=(3, 8),
                 deps=('copy', 'distutils.ccompiler', 'distutils.errors',
                         'distutils.file_util', 'distutils.log',
                         'distutils.spawn', 'distutils.sysconfig',
                         'distutils.unixccompiler', 'distutils.version', 'os',
                         're', 'subprocess')),
+        PythonModule(min_version=(3, 9),
+                deps=('copy', 'distutils.errors', 'distutils.file_util',
+                        'distutils.spawn', 'distutils.sysconfig',
+                        'distutils.unixccompiler', 'distutils.version', 'os',
+                        're', 'subprocess'))),
 
     'distutils.debug':
         PythonModule(deps='os'),
@@ -551,18 +606,24 @@ standard_library = {
                         'distutils.log', 'distutils.msvc9compiler', 'os',
                         'winreg')),
 
-    'distutils.spawn':
-        PythonModule(
+    'distutils.spawn': (
+        PythonModule(max_version=(3, 8),
                 deps=('distutils.debug', 'distutils.errors', 'distutils.log',
                         'distutils.sysconfig', 'os')),
+        PythonModule(min_version=(3, 9),
+                deps=('distutils.debug', 'distutils.errors', 'distutils.log',
+                        'distutils.sysconfig', 'os', 'spawn'))),
 
     'distutils.sysconfig': (
         PythonModule(version=(3, 7),
                 deps=('distutils.errors', 'distutils.text_file', '_imp', 'os',
                         'ios|macos#_osx_support', 're', 'warnings')),
-        PythonModule(min_version=(3, 8),
+        PythonModule(version=(3, 8),
                 deps=('distutils.errors', 'distutils.util',
                         'distutils.text_file', '_imp', 'os',
+                        'ios|macos#_osx_support', 're', 'warnings')),
+        PythonModule(min_version=(3, 9),
+                deps=('distutils.errors', 'distutils.text_file', '_imp', 'os',
                         'ios|macos#_osx_support', 're', 'warnings'))),
 
     'distutils.text_file':
@@ -951,7 +1012,7 @@ standard_library = {
         CodecModule(),
 
     'encodings.mac_centeuro':
-        CodecModule(),
+        CodecModule(max_version=(3, 8)),
 
     'encodings.mac_croatian':
         CodecModule(),
@@ -1071,22 +1132,30 @@ standard_library = {
     'fcntl':
         ExtensionModule(target='!win', source='fcntlmodule.c'),
 
-    'filecmp':
-        PythonModule(deps=('itertools', 'os', 'stat')),
+    'filecmp': (
+        PythonModule(max_version=(3, 8), deps=('itertools', 'os', 'stat')),
+        PythonModule(min_version=(3, 9),
+                deps=('itertools', 'os', 'stat', 'types'))),
 
-    'fileinput':
-        PythonModule(deps=('os', 'warnings')),
+    'fileinput': (
+        PythonModule(max_version=(3, 8), deps=('os', 'warnings')),
+        PythonModule(min_version=(3, 9), deps=('os', 'types', 'warnings'))),
 
-    'fnmatch':
-        PythonModule(deps=('functools', 'os', 'posixpath', 're')),
+    'fnmatch': (
+        PythonModule(max_version=(3, 8),
+                deps=('functools', 'os', 'posixpath', 're')),
+        PythonModule(min_version=(3, 9),
+                deps=('functools', 'itertools', 'os', 'posixpath', 're'))),
 
     'formatter':
         PythonModule(deps='warnings'),
 
-    'fractions':
-        PythonModule(
+    'fractions': (
+        PythonModule(max_version=(3, 8),
                 deps=('decimal', 'math', 'numbers', 'operator', 're',
                         'warnings')),
+        PythonModule(min_version=(3, 9),
+                deps=('decimal', 'math', 'numbers', 'operator', 're'))),
 
     'ftplib':
         PythonModule(deps=('re', 'socket', '?ssl', 'warnings')),
@@ -1163,8 +1232,11 @@ standard_library = {
                         'os', 're', 'threading', 'time', 'urllib.parse',
                         'urllib.request'))),
 
-    'http.cookies':
-        PythonModule(deps=('http', 're', 'string', 'time')),
+    'http.cookies': (
+        PythonModule(max_version=(3, 8),
+                deps=('http', 're', 'string', 'time')),
+        PythonModule(min_version=(3, 9),
+                deps=('http', 're', 'string', 'time', 'types'))),
 
     'http.server': (
         PythonModule(max_version=(3, 8, 1),
@@ -1203,11 +1275,15 @@ standard_library = {
                         '_imp', 'types'),
                 hidden_deps='warnings'),
 
-    'importlib.abc':
-        PythonModule(
+    'importlib.abc': (
+        PythonModule(max_version=(3, 8),
                 deps=('importlib', 'abc', 'importlib._bootstrap',
                         'importlib._bootstrap_external', 'importlib.machinery',
                         'warnings')),
+        PythonModule(min_version=(3, 9),
+                deps=('importlib', 'abc', 'importlib._bootstrap',
+                        'importlib._bootstrap_external', 'importlib.machinery',
+                        'typing', 'warnings'))),
 
     'importlib.machinery':
         PythonModule(
@@ -1226,11 +1302,15 @@ standard_library = {
                         'importlib.abc', 'io', 'itertools', 'operator', 'os',
                         'pathlib', 'posixpath', 're', 'zipfile'))),
 
-    'importlib.resources':
-        PythonModule(
+    'importlib.resources': (
+        PythonModule(max_version=(3, 8),
                 deps=('importlib', 'contextlib', 'importlib.abc', 'io',
                         'pathlib', 'os', 'tempfile', 'types', 'typing',
                         'zipimport')),
+        PythonModule(min_version=(3, 9),
+                deps=('importlib', 'contextlib', 'importlib.abc',
+                        'importlib._common', 'io', 'pathlib', 'os', 'tempfile',
+                        'types', 'typing'))),
 
     'importlib.util':
         PythonModule(
@@ -1304,12 +1384,17 @@ standard_library = {
         PythonModule(version=(3, 7),
                 deps=('genericpath', 'os', 'stat', 'warnings')),
 
-    'mailbox':
-        PythonModule(
+    'mailbox': (
+        PythonModule(max_version=(3, 8),
                 deps=('calendar', 'contextlib', 'copy', 'email',
                         'email.generator', 'email.message', 'errno',
                         '!win#fcntl', 'io', 'os', 'socket', 'time',
                         'warnings')),
+        PythonModule(min_version=(3, 9),
+                deps=('calendar', 'contextlib', 'copy', 'email',
+                        'email.generator', 'email.message', 'errno',
+                        '!win#fcntl', 'io', 'os', 'socket', 'time', 'types',
+                        'warnings'))),
 
     'mailcap':
         PythonModule(deps=('os', 'warnings')),
@@ -1317,8 +1402,11 @@ standard_library = {
     'marshal':
         CoreExtensionModule(),
 
-    'math':
-        ExtensionModule(source=('mathmodule.c', '_math.c'), libs='linux#-lm'),
+    'math': (
+        ExtensionModule(max_version=(3, 8), source=('mathmodule.c', '_math.c'),
+                libs='linux#-lm'),
+        ExtensionModule(min_version=(3, 9), source=('mathmodule.c', '_math.c'),
+                defines='Py_BUILD_CORE_MODULE', libs='linux#-lm')),
 
     'mimetypes':
         PythonModule(deps=('os', 'posixpath', 'urllib.parse', 'win#winreg')),
@@ -1331,10 +1419,13 @@ standard_library = {
                 deps=('dis', 'importlib._bootstrap_external',
                         'importlib.machinery', 'marshal', 'os', 'types',
                         'warnings')),
-        PythonModule(min_version=(3, 8, 3),
+        PythonModule(min_version=(3, 8, 3), max_version=(3, 8),
                 deps=('dis', 'importlib._bootstrap_external',
                         'importlib.machinery', 'io', 'marshal', 'os', 'types',
-                        'warnings'))),
+                        'warnings')),
+        PythonModule(min_version=(3, 9),
+                deps=('dis', 'importlib._bootstrap_external',
+                        'importlib.machinery', 'io', 'marshal', 'os'))),
 
     'msilib':
         PythonModule(target='win',
@@ -1368,32 +1459,50 @@ standard_library = {
                         'multiprocessing.context', 'multiprocessing.pool',
                         'multiprocessing.process', 'multiprocessing.util',
                         'queue', 'threading', 'time', 'traceback')),
-        PythonModule(min_version=(3, 8),
+        PythonModule(version=(3, 8),
                 deps=('multiprocessing', 'array', 'multiprocessing.connection',
                         'multiprocessing.context', 'multiprocessing.pool',
                         'multiprocessing.process',
                         'multiprocessing.resource_tracker',
                         'multiprocessing.shared_memory',
                         'multiprocessing.util', 'os', 'queue', 'signal',
-                        'threading', 'time', 'traceback'))),
+                        'threading', 'time', 'traceback')),
+        PythonModule(min_version=(3, 9),
+                deps=('multiprocessing', 'array', 'multiprocessing.connection',
+                        'multiprocessing.context', 'multiprocessing.pool',
+                        'multiprocessing.process',
+                        'multiprocessing.resource_tracker',
+                        'multiprocessing.shared_memory',
+                        'multiprocessing.util', 'os', 'queue', 'signal',
+                        'threading', 'time', 'traceback', 'types'))),
 
     'multiprocessing.pool': (
         PythonModule(version=(3, 7),
                 deps=('multiprocessing', 'collections', 'itertools',
                         'multiprocessing.dummy', 'multiprocessing.util',
                         'queue', 'threading', 'time', 'traceback')),
-        PythonModule(min_version=(3, 8),
+        PythonModule(version=(3, 8),
                 deps=('multiprocessing', 'collections', 'itertools',
                         'multiprocessing.connection', 'multiprocessing.dummy',
                         'multiprocessing.util', 'queue', 'threading', 'time',
-                        'traceback', 'warnings'))),
+                        'traceback', 'warnings')),
+        PythonModule(min_version=(3, 9),
+                deps=('multiprocessing', 'collections', 'itertools',
+                        'multiprocessing.connection', 'multiprocessing.dummy',
+                        'multiprocessing.util', 'queue', 'threading', 'time',
+                        'traceback', 'types', 'warnings'))),
 
-    'multiprocessing.shared_memory':
-        PythonModule(min_version=(3, 8),
+    'multiprocessing.shared_memory': (
+        PythonModule(version=(3, 8),
                 deps=('multiprocessing', '!win#_posixshmem', 'win#_winapi',
                         'errno', 'mmap',
                         '!win#multiprocessing.resource_tracker', 'os',
                         'secrets', 'struct')),
+        PythonModule(min_version=(3, 9),
+                deps=('multiprocessing', '!win#_posixshmem', 'win#_winapi',
+                        'errno', 'mmap',
+                        '!win#multiprocessing.resource_tracker', 'os',
+                        'secrets', 'struct', 'types'))),
 
     'multiprocessing.sharedctypes':
         PythonModule(
@@ -1407,10 +1516,13 @@ standard_library = {
         ExtensionModule(target='!win', source='nismodule.c',
                 libs='linux#-lnsl'),
 
-    'nntplib':
-        PythonModule(
+    'nntplib': (
+        PythonModule(max_version=(3, 8),
                 deps=('collections', 'datetime', 'email.header', 'netrc', 're',
                         'socket', '?ssl', 'warnings')),
+        PythonModule(min_version=(3, 9),
+                deps=('collections', 'datetime', 'email.header', 'netrc', 're',
+                        'socket', '?ssl'))),
 
     'numbers':
         PythonModule(deps='abc'),
@@ -1473,25 +1585,37 @@ standard_library = {
     'pipes':
         PythonModule(target='!win', deps=('os', 're', 'shlex', 'tempfile')),
 
-    'pkgutil':
-        PythonModule(
+    'pkgutil': (
+        PythonModule(max_version=(3, 8),
                 deps=('collections', 'functools', 'importlib',
                         'importlib.machinery', 'importlib.util', 'inspect',
                         'marshal', 'os', 'types', 'warnings')),
+        PythonModule(min_version=(3, 9),
+                deps=('collections', 'functools', 'importlib',
+                        'importlib.machinery', 'importlib.util', 'inspect',
+                        'marshal', 'os', 're', 'types', 'warnings'))),
 
     'platform': (
         PythonModule(version=(3, 7),
                 deps=('collections', 'os', 'plistlib', 're', 'socket',
                         'struct', 'subprocess', 'warnings', 'win#winreg')),
-        PythonModule(min_version=(3, 8),
+        PythonModule(version=(3, 8),
                 deps=('collections', 'os', 'plistlib', 're', 'socket',
-                        'struct', 'subprocess', 'win#winreg'))),
+                        'struct', 'subprocess', 'win#winreg')),
+        PythonModule(min_version=(3, 9),
+                deps=('collections', 'functools', 'itertools', 'os',
+                        'plistlib', 're', 'socket', 'struct', 'subprocess',
+                        'win#winreg'))),
 
-    'plistlib':
-        PythonModule(
+    'plistlib': (
+        PythonModule(max_version=(3, 8),
                 deps=('binascii', 'codecs', 'contextlib', 'datetime', 'enum',
                         'io', 'itertools', 'os', 're', 'struct', 'warnings',
                         'xml.parsers.expat')),
+        PythonModule(min_version=(3, 9),
+                deps=('binascii', 'codecs', 'datetime', 'enum', 'io',
+                        'itertools', 'os', 're', 'struct',
+                        'xml.parsers.expat'))),
 
     'poplib':
         PythonModule(
@@ -1506,9 +1630,12 @@ standard_library = {
     'profile':
         PythonModule(deps=('marshal', 'pstats', 'time')),
 
-    'pstats':
-        PythonModule(
+    'pstats': (
+        PythonModule(max_version=(3, 8),
                 deps=('enum', 'functools', 'marshal', 'os', 're', 'time')),
+        PythonModule(min_version=(3, 9),
+                deps=('dataclasses', 'enum', 'functools', 'marshal', 'os',
+                        're', 'time', 'typing'))),
 
     'pty':
         PythonModule(target='!win', deps=('fcntl', 'os', 'select', 'tty')),
@@ -1564,9 +1691,12 @@ standard_library = {
                         'time', 'tokenize', 'traceback', '?tty',
                         'urllib.parse', 'warnings'))),
 
-    'queue':
-        PythonModule(
+    'queue': (
+        PythonModule(max_version=(3, 8),
                 deps=('collections', 'heapq', '_queue', 'threading', 'time')),
+        PythonModule(min_version=(3, 9),
+                deps=('collections', 'heapq', '_queue', 'threading', 'time',
+                        'types'))),
 
     'quopri':
         PythonModule(deps=('binascii', 'io')),
@@ -1612,8 +1742,11 @@ standard_library = {
     'sched':
         PythonModule(deps=('collections', 'heapq', 'threading', 'time')),
 
-    'secrets':
-        PythonModule(deps=('base64', 'binascii', 'hmac', 'os', 'random')),
+    'secrets': (
+        PythonModule(max_version=(3, 8),
+                deps=('base64', 'binascii', 'hmac', 'os', 'random')),
+        PythonModule(min_version=(3, 9),
+                deps=('base64', 'binascii', 'hmac', 'random'))),
 
     'select':
         ExtensionModule(source='selectmodule.c', pyd='select.pyd'),
@@ -1660,9 +1793,12 @@ standard_library = {
     'spwd':
         ExtensionModule(target='!win', source='spwdmodule.c'),
 
-    'socket':
-        PythonModule(
+    'socket': (
+        PythonModule(max_version=(3, 8),
                 deps=('errno', 'enum', 'io', 'os', 'selectors', '_socket')),
+        PythonModule(min_version=(3, 9),
+                deps=('array', 'errno', 'enum', 'io', 'os', 'selectors',
+                        '_socket'))),
 
     'socketserver':
         PythonModule(
@@ -1704,17 +1840,26 @@ standard_library = {
                         '!win#_posixsubprocess', '!win#select',
                         '!win#selectors', 'signal', 'threading', 'time',
                         'traceback', 'warnings', 'win#_winapi')),
-        PythonModule(min_version=(3, 8),
+        PythonModule(version=(3, 8),
                 deps=('contextlib', 'errno', 'gc', 'io', 'win#msvcrt', 'os',
                         '!win#_posixsubprocess', '!win#select',
                         '!win#selectors', 'signal', 'threading', 'time',
-                        'traceback', 'warnings', 'win#_winapi'))),
+                        'traceback', 'warnings', 'win#_winapi')),
+        PythonModule(min_version=(3, 9),
+                deps=('contextlib', 'errno', 'gc', '!win#grp', 'io',
+                        'win#msvcrt', 'os', '!win#_posixsubprocess',
+                        '!win#pwd', '!win#select', '!win#selectors', 'signal',
+                        'threading', 'time', 'traceback', 'types', 'warnings',
+                        'win#_winapi'))),
 
-    'sunau':
-        PythonModule(deps=('audioop', 'collections', 'warnings')),
+    'sunau': (
+        PythonModule(max_version=(3, 8),
+                deps=('audioop', 'collections', 'warnings')),
+        PythonModule(min_version=(3, 9), deps=('audioop', 'collections'))),
 
-    'symbol':
-        PythonModule(),
+    'symbol': (
+        PythonModule(max_version=(3, 8)),
+        PythonModule(min_version=(3, 9), deps='warnings')),
 
     'symtable':
         PythonModule(deps=('_symtable', 'weakref')),
@@ -1727,9 +1872,16 @@ standard_library = {
                         'macos#_sysconfigdata_m_darwin_darwin',
                         'linux#_sysconfigdata_m_linux_x86_64-linux-gnu',
                         'ios|macos#types', 'warnings')),
-        PythonModule(min_version=(3, 8, 7),
+        PythonModule(min_version=(3, 8, 7), max_version=(3, 8),
                 deps=('win#_imp', 'os', 'ios|macos#_osx_support', 'pprint',
                         're', 'android#_sysconfigdata_m_linux_android',
+                        'ios#_sysconfigdata_m_darwin_ios',
+                        'macos#_sysconfigdata_m_darwin_darwin',
+                        'linux#_sysconfigdata_m_linux_x86_64-linux-gnu',
+                        'ios|macos#types', 'warnings')),
+        PythonModule(min_version=(3, 9),
+                deps=('os', 'ios|macos#_osx_support', 'pprint', 're',
+                        'android#_sysconfigdata_m_linux_android',
                         'ios#_sysconfigdata_m_darwin_ios',
                         'macos#_sysconfigdata_m_darwin_darwin',
                         'linux#_sysconfigdata_m_linux_x86_64-linux-gnu',
@@ -1754,10 +1906,13 @@ standard_library = {
                 deps=('errno', 're', 'selectors', 'socket', '_thread',
                         'time')),
 
-    'tempfile':
-        PythonModule(
+    'tempfile': (
+        PythonModule(max_version=(3, 8),
                 deps=('errno', 'functools', 'io', 'os', 'random', 'shutil',
                         '_thread', 'warnings', 'weakref')),
+        PythonModule(min_version=(3, 9),
+                deps=('errno', 'functools', 'io', 'os', 'random', 'shutil',
+                        '_thread', 'types', 'warnings', 'weakref'))),
 
     'termios':
         ExtensionModule(target='!win', source='termios.c'),
@@ -1772,9 +1927,12 @@ standard_library = {
         PythonModule(min_version=(3, 7, 3), max_version=(3, 7),
                 deps=('_collections', 'itertools', 'os', '_thread', 'time',
                         'traceback', 'warnings', '_weakrefset')),
-        PythonModule(min_version=(3, 8),
+        PythonModule(version=(3, 8),
                 deps=('_collections', 'itertools', 'os', '_thread', 'time',
-                        'warnings', '_weakrefset'))),
+                        'warnings', '_weakrefset')),
+        PythonModule(min_version=(3, 9),
+                deps=('_collections', 'functools', 'itertools', 'os',
+                        '_thread', 'time', '_weakrefset'))),
 
     'time':
         CoreExtensionModule(),
@@ -1840,8 +1998,11 @@ standard_library = {
                 deps=('urllib', 'collections', 're')),
         PythonModule(min_version=(3, 7, 3), max_version=(3, 7),
                 deps=('urllib', 'collections', 're', 'unicodedata')),
-        PythonModule(min_version=(3, 8),
+        PythonModule(version=(3, 8),
                 deps=('urllib', 'collections', 're', 'unicodedata',
+                        'warnings')),
+        PythonModule(min_version=(3, 9),
+                deps=('urllib', 'collections', 're', 'types', 'unicodedata',
                         'warnings'))),
 
     'urllib.request':
@@ -1875,18 +2036,24 @@ standard_library = {
                 deps=('linux|macos|win#ctypes', 'enum', 'hashlib', 'os',
                         'platform', 'random', 'shutil', 'socket', 'subprocess',
                         'time', 'ios|macos#_uuid', 'warnings')),
-        PythonModule(min_version=(3, 8, 6),
+        PythonModule(min_version=(3, 8, 6), max_version=(3, 8),
                 deps=('linux|macos|win#ctypes', 'enum', 'hashlib', 'os',
                         'android|linux#platform', 'random', 'shutil', 'socket',
-                        'subprocess', 'time', 'ios|macos#_uuid', 'warnings'))),
+                        'subprocess', 'time', 'ios|macos#_uuid', 'warnings')),
+        PythonModule(min_version=(3, 9),
+                deps=('enum', 'hashlib', 'io', 'os', 'android|linux#platform',
+                        'random', 'shutil', 'socket', 'subprocess', 'time',
+                        'ios|macos#_uuid'))),
 
     'warnings':
         PythonModule(deps=('linecache', 're', 'traceback', '_warnings')),
 
-    'wave':
-        PythonModule(
+    'wave': (
+        PythonModule(max_version=(3, 8),
                 deps=('audioop', 'chunk', 'collections', 'struct',
                         'warnings')),
+        PythonModule(min_version=(3, 9),
+                deps=('audioop', 'chunk', 'collections', 'struct'))),
 
     'weakref':
         PythonModule(
@@ -2018,9 +2185,13 @@ standard_library = {
                         'importlib.util', 'io', 'itertools', 'os', 'posixpath',
                         'shutil', 'stat', 'struct', 'threading', 'time',
                         'warnings', 'zlib')),
-        PythonModule(min_version=(3, 8, 3),
+        PythonModule(min_version=(3, 8, 3), max_version=(3, 8),
                 deps=('binascii', 'contextlib', 'functools', 'importlib.util',
                         'io', 'itertools', 'os', 'posixpath', 'shutil', 'stat',
+                        'struct', 'threading', 'time', 'warnings', 'zlib')),
+        PythonModule(min_version=(3, 9),
+                deps=('binascii', 'contextlib', 'importlib.util', 'io',
+                        'itertools', 'os', 'posixpath', 'shutil', 'stat',
                         'struct', 'threading', 'time', 'warnings', 'zlib'))),
 
     'zipimport': (
@@ -2030,6 +2201,11 @@ standard_library = {
 
     'zlib':
         ExtensionModule(source='zlibmodule.c', deps='zlib:zlib'),
+
+    'zoneinfo':
+        PythonModule(min_version=(3, 9),
+                deps=('zoneinfo._common', 'zoneinfo._tzpath',
+                        'zoneinfo._zoneinfo')),
 
     # These are internal modules.
 
@@ -2045,8 +2221,11 @@ standard_library = {
     '_ast':
         CoreExtensionModule(internal=True),
 
-    '_asyncio':
-        ExtensionModule(internal=True, source='_asynciomodule.c'),
+    '_asyncio': (
+        ExtensionModule(max_version=(3, 8), internal=True,
+                source='_asynciomodule.c'),
+        ExtensionModule(min_version=(3, 9), internal=True,
+                source='_asynciomodule.c', defines='Py_BUILD_CORE_MODULE')),
 
     'asyncio.base_events': (
         PythonModule(version=(3, 7), internal=True,
@@ -2076,9 +2255,11 @@ standard_library = {
                         'concurrent.futures', 'reprlib')),
         PythonModule(min_version=(3, 8), max_version=(3, 8, 6), internal=True,
                 deps=('asyncio', 'asyncio.format_helpers', 'reprlib')),
-        PythonModule(min_version=(3, 8, 7), internal=True,
+        PythonModule(min_version=(3, 8, 7), max_version=(3, 8), internal=True,
                 deps=('asyncio', 'asyncio.format_helpers', 'reprlib',
-                        '_thread'))),
+                        '_thread')),
+        PythonModule(min_version=(3, 9), internal=True,
+                deps=('asyncio', 'asyncio.format_helpers', 'reprlib'))),
 
     'asyncio.base_subprocess':
         PythonModule(internal=True,
@@ -2110,9 +2291,12 @@ standard_library = {
         PythonModule(version=(3, 7), internal=True,
                 deps=('asyncio', 'asyncio.format_helpers', 'contextvars', 'os',
                         'socket', 'subprocess', 'threading')),
-        PythonModule(min_version=(3, 8), internal=True,
+        PythonModule(version=(3, 8), internal=True,
                 deps=('asyncio', 'asyncio.exceptions',
                         'asyncio.format_helpers', 'contextvars', 'os',
+                        'socket', 'subprocess', 'threading')),
+        PythonModule(min_version=(3, 9), internal=True,
+                deps=('asyncio', 'asyncio.format_helpers', 'contextvars', 'os',
                         'socket', 'subprocess', 'threading'))),
 
     'asyncio.exceptions':
@@ -2138,10 +2322,13 @@ standard_library = {
         PythonModule(version=(3, 7), internal=True,
                 deps=('asyncio', 'asyncio.coroutines', 'asyncio.events',
                         'asyncio.futures', 'collections', 'warnings')),
-        PythonModule(min_version=(3, 8), internal=True,
+        PythonModule(version=(3, 8), internal=True,
                 deps=('asyncio', 'asyncio.coroutines', 'asyncio.events',
                         'asyncio.exceptions', 'asyncio.futures', 'collections',
-                        'types', 'warnings'))),
+                        'types', 'warnings')),
+        PythonModule(min_version=(3, 9), internal=True,
+                deps=('asyncio', 'asyncio.events', 'asyncio.exceptions',
+                        'collections', 'warnings'))),
 
     'asyncio.log':
         PythonModule(internal=True, deps=('asyncio', 'logging')),
@@ -2193,12 +2380,16 @@ standard_library = {
                         'errno', 'functools', 'selectors', 'socket', '?ssl',
                         'warnings', 'weakref'))),
 
-    'asyncio.sslproto':
-        PythonModule(internal=True,
+    'asyncio.sslproto': (
+        PythonModule(max_version=(3, 8), internal=True,
                 deps=('asyncio', 'asyncio.base_events', 'asyncio.constants',
                         'asyncio.log', 'asyncio.protocols',
                         'asyncio.transports', 'collections', '?ssl',
                         'warnings')),
+        PythonModule(min_version=(3, 9), internal=True,
+                deps=('asyncio', 'asyncio.constants', 'asyncio.log',
+                        'asyncio.protocols', 'asyncio.transports',
+                        'collections', '?ssl', 'warnings'))),
 
     'asyncio.staggered': (
         PythonModule(min_version=(3, 8), max_version=(3, 8, 1),
@@ -2246,6 +2437,11 @@ standard_library = {
                         '_asyncio', 'concurrent.futures', 'contextvars',
                         'functools', 'inspect', 'itertools', 'types',
                         'warnings', 'weakref'))),
+
+    'asyncio.threads':
+        PythonModule(min_version=(3, 9), internal=True,
+                deps=('asyncio', 'asyncio.events', 'contextvars',
+                        'functools')),
 
     'asyncio.transports':
         PythonModule(internal=True, deps='asyncio'),
@@ -2355,24 +2551,36 @@ standard_library = {
     '_compression':
         PythonModule(internal=True, deps='io'),
 
-    'concurrent.futures._base':
-        PythonModule(internal=True,
+    'concurrent.futures._base': (
+        PythonModule(max_version=(3, 8), internal=True,
                 deps=('concurrent.futures', 'collections', 'logging',
                         'threading', 'time')),
+        PythonModule(min_version=(3, 9), internal=True,
+                deps=('concurrent.futures', 'collections', 'logging',
+                        'threading', 'time', 'types'))),
 
-    'concurrent.futures.process':
-        PythonModule(internal=True,
+    'concurrent.futures.process': (
+        PythonModule(max_version=(3, 8), internal=True,
                 deps=('concurrent.futures', 'atexit',
                         'concurrent.futures._base', 'functools', 'itertools',
                         'multiprocessing', 'multiprocessing.connection',
                         'multiprocessing.queues', 'os', 'queue', 'threading',
                         'traceback', 'weakref')),
+        PythonModule(min_version=(3, 9), internal=True,
+                deps=('concurrent.futures', 'concurrent.futures._base',
+                        'functools', 'itertools', 'multiprocessing',
+                        'multiprocessing.connection', 'multiprocessing.queues',
+                        'os', 'threading', 'traceback', 'weakref'))),
 
-    'concurrent.futures.thread':
-        PythonModule(internal=True,
+    'concurrent.futures.thread': (
+        PythonModule(max_version=(3, 8), internal=True,
                 deps=('concurrent.futures', 'atexit',
                         'concurrent.futures._base', 'itertools', 'os', 'queue',
                         'threading', 'weakref')),
+        PythonModule(min_version=(3, 9), internal=True,
+                deps=('concurrent.futures', 'concurrent.futures._base',
+                        'itertools', 'os', 'queue', 'threading', 'types',
+                        'weakref'))),
 
     '_contextvars':
         ExtensionModule(internal=True, source='_contextvarsmodule.c'),
@@ -2409,8 +2617,8 @@ standard_library = {
                         'win#_ctypes/libffi_msvc'),
                 libs='linux#-lffi',
                 pyd='_ctypes.pyd'),
-        ExtensionModule(min_version=(3, 8, 10), target='linux|macos|win',
-                internal=True,
+        ExtensionModule(min_version=(3, 8, 10), max_version=(3, 8),
+                target='linux|macos|win', internal=True,
                 source=('_ctypes/_ctypes.c', '_ctypes/callbacks.c',
                         '_ctypes/callproc.c', '_ctypes/stgdict.c',
                         '_ctypes/cfield.c',
@@ -2421,6 +2629,29 @@ standard_library = {
                         'win-32#_ctypes/libffi_msvc/win32.c',
                         'win-64#_ctypes/libffi_msvc/win64.asm'),
                 defines=(
+                        'linux|macos#HAVE_FFI_PREP_CIF_VAR=1',
+                        'linux|macos#HAVE_FFI_PREP_CLOSURE_LOC=1',
+                        'linux|macos#HAVE_FFI_CLOSURE_ALLOC=1',
+                        'macos#MACOSX',
+                        'macos#USING_APPLE_OS_LIBFFI=1',
+                        'macos#USING_MALLOC_CLOSURE_DOT_C=1'),
+                includepath=('_ctypes',
+                        'macos#_ctypes/darwin',
+                        'win#_ctypes/libffi_msvc'),
+                libs=('linux|macos#-lffi', 'linux|macos#-ldl'),
+                pyd='_ctypes.pyd'),
+        ExtensionModule(min_version=(3, 9), target='linux|macos|win',
+                internal=True,
+                source=('_ctypes/_ctypes.c', '_ctypes/callbacks.c',
+                        '_ctypes/callproc.c', '_ctypes/stgdict.c',
+                        '_ctypes/cfield.c',
+                        'macos#_ctypes/malloc_closure.c',
+                        'win#_ctypes/malloc_closure.c',
+                        'win#_ctypes/libffi_msvc/prep_cif.c',
+                        'win#_ctypes/libffi_msvc/ffi.c',
+                        'win-32#_ctypes/libffi_msvc/win32.c',
+                        'win-64#_ctypes/libffi_msvc/win64.asm'),
+                defines=('Py_BUILD_CORE_MODULE',
                         'linux|macos#HAVE_FFI_PREP_CIF_VAR=1',
                         'linux|macos#HAVE_FFI_PREP_CLOSURE_LOC=1',
                         'linux|macos#HAVE_FFI_CLOSURE_ALLOC=1',
@@ -2506,10 +2737,14 @@ standard_library = {
                         'distutils.log', 'distutils.util', 'glob', 'itertools',
                         'json', 'os', 'shutil', 'stat', 'subprocess',
                         'winreg')),
-        PythonModule(min_version=(3, 8, 3), target='win',
+        PythonModule(min_version=(3, 8, 3), max_version=(3, 8), target='win',
                 deps=('distutils.ccompiler', 'distutils.errors',
                         'distutils.log', 'distutils.util', 'itertools', 'json',
-                        'os', 'shutil', 'stat', 'subprocess', 'winreg'))),
+                        'os', 'shutil', 'stat', 'subprocess', 'winreg')),
+        PythonModule(min_version=(3, 9), target='win',
+                deps=('distutils.ccompiler', 'distutils.errors',
+                        'distutils.log', 'distutils.util', 'itertools', 'os',
+                        'subprocess', 'winreg'))),
 
     'distutils.versionpredicate':
         PythonModule(
@@ -2593,11 +2828,18 @@ standard_library = {
                         'marshal', 'win#nt', '!win#posix', '_warnings',
                         'win#winreg'))),
 
+    'importlib._common':
+        PythonModule(min_version=(3, 9), internal=True,
+                deps=('importlib', 'contextlib', 'functools', 'os', 'pathlib',
+                        'tempfile', 'zipfile')),
+
     '_io':
         CoreExtensionModule(internal=True, deps='_bootlocale'),
 
-    '_json':
-        ExtensionModule(internal=True, source='_json.c'),
+    '_json': (
+        ExtensionModule(max_version=(3, 8), internal=True, source='_json.c'),
+        ExtensionModule(min_version=(3, 9), internal=True, source='_json.c',
+                defines='Py_BUILD_CORE_MODULE')),
 
     'json.decoder':
         PythonModule(internal=True,
@@ -2730,14 +2972,21 @@ standard_library = {
                         'os', 'signal', 'threading', 'traceback',
                         '_weakrefset'))),
 
-    'multiprocessing.queues':
-        PythonModule(internal=True,
+    'multiprocessing.queues': (
+        PythonModule(max_version=(3, 8), internal=True,
                 deps=('multiprocessing', 'collections', 'errno',
                         '_multiprocessing', 'multiprocessing.connection',
                         'multiprocessing.context',
                         'multiprocessing.synchronize', 'multiprocessing.util',
                         'os', 'queue', 'threading', 'time', 'traceback',
                         'weakref')),
+        PythonModule(min_version=(3, 9), internal=True,
+                deps=('multiprocessing', 'collections', 'errno',
+                        '_multiprocessing', 'multiprocessing.connection',
+                        'multiprocessing.context',
+                        'multiprocessing.synchronize', 'multiprocessing.util',
+                        'os', 'queue', 'threading', 'time', 'traceback',
+                        'types', 'weakref'))),
 
     'multiprocessing.reduction':
         PythonModule(internal=True,
@@ -2826,8 +3075,10 @@ standard_library = {
         PythonModule(target='ios|macos', internal=True,
                 deps=('contextlib', 'os', 're')),
 
-    '_pickle':
-        ExtensionModule(internal=True, source='_pickle.c'),
+    '_pickle': (
+        ExtensionModule(max_version=(3, 8), internal=True, source='_pickle.c'),
+        ExtensionModule(min_version=(3, 9), internal=True, source='_pickle.c',
+                defines='Py_BUILD_CORE_MODULE')),
 
     'posixpath':
         PythonModule(internal=True,
@@ -2862,8 +3113,11 @@ standard_library = {
     '_queue':
         ExtensionModule(internal=True, source='_queuemodule.c'),
 
-    '_random':
-        ExtensionModule(internal=True, source='_randommodule.c'),
+    '_random': (
+        ExtensionModule(max_version=(3, 8), internal=True,
+                source='_randommodule.c'),
+        ExtensionModule(min_version=(3, 9), internal=True,
+                source='_randommodule.c', defines='Py_BUILD_CORE_MODULE')),
 
     '_scproxy':
         ExtensionModule(target='macos', internal=True, source='_scproxy.c'),
@@ -2875,11 +3129,17 @@ standard_library = {
         ExtensionModule(internal=True,
                 includepath='_sha3', source='_sha3/sha3module.c'),
 
-    '_sha256':
-        ExtensionModule(internal=True, source='sha256module.c'),
+    '_sha256': (
+        ExtensionModule(max_version=(3, 8), internal=True,
+                source='sha256module.c'),
+        ExtensionModule(min_version=(3, 9), internal=True,
+                source='sha256module.c', defines='Py_BUILD_CORE_MODULE')),
 
-    '_sha512':
-        ExtensionModule(internal=True, source='sha512module.c'),
+    '_sha512': (
+        ExtensionModule(max_version=(3, 8), internal=True,
+                source='sha512module.c'),
+        ExtensionModule(min_version=(3, 9), internal=True,
+                source='sha512module.c', defines='Py_BUILD_CORE_MODULE')),
 
     '_signal':
         CoreExtensionModule(internal=True),
@@ -2970,8 +3230,10 @@ standard_library = {
     '_weakref':
         CoreExtensionModule(internal=True),
 
-    '_weakrefset':
-        PythonModule(internal=True, deps='_weakref'),
+    '_weakrefset': (
+        PythonModule(max_version=(3, 8), internal=True, deps='_weakref'),
+        PythonModule(min_version=(3, 9), internal=True,
+                deps=('types', '_weakref'))),
 
     '_winapi':
         ExtensionModule(target='win', internal=True, source='_winapi.c'),
@@ -2990,15 +3252,34 @@ standard_library = {
     'xml.dom.NodeFilter':
         PythonModule(internal=True),
 
-    'xml.dom.xmlbuilder':
-        PythonModule(internal=True,
+    'xml.dom.xmlbuilder': (
+        PythonModule(max_version=(3, 8), internal=True,
                 deps=('xml.dom', 'copy', 'posixpath', 'urllib.parse',
                         'urllib.request', 'warnings', 'xml.dom.expatbuilder',
                         'xml.dom.NodeFilter')),
+        PythonModule(min_version=(3, 9), internal=True,
+                deps=('xml.dom', 'copy', 'posixpath', 'urllib.parse',
+                        'urllib.request', 'xml.dom.expatbuilder',
+                        'xml.dom.NodeFilter'))),
 
     'xml.etree.ElementPath':
         PythonModule(internal=True, deps=('xml.etree', 're')),
 
     'xml.sax._exceptions':
         PythonModule(internal=True, deps='xml.sax'),
+
+    'zoneinfo._common':
+        PythonModule(min_version=(3, 9), internal=True,
+                deps=('zoneinfo', 'importlib.resources', 'struct')),
+
+    'zoneinfo._tzpath':
+        PythonModule(min_version=(3, 9), internal=True,
+                deps=('zoneinfo', 'importlib.resources', 'os', 'sysconfig',
+                        'warnings')),
+
+    'zoneinfo._zoneinfo':
+        ExtensionModule(min_version=(3, 9), internal=True,
+                deps=('zoneinfo', 'io', 'zoneinfo._common',
+                        'zoneinfo._tzpath'),
+                source='_asynciomodule.c'),
 }

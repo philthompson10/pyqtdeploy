@@ -637,6 +637,9 @@ int main(int argc, char **argv)
         used_includepath.add(self._sysroot.target_include_dir)
         used_includepath.add(python.target_py_include_dir)
 
+        if python.version >= (3, 9):
+            used_includepath.add(python.target_py_include_dir + '/internal')
+
         used_libs.add('-L' + self._sysroot.target_lib_dir)
         used_libs.add('-l' + python.target_py_lib)
 
@@ -696,9 +699,9 @@ int main(int argc, char **argv)
         if qmake_config:
             f.write('CONFIG += %s\n' % ' '.join(qmake_config))
 
-        # Python v3.6.0 requires C99 at least.  Note that specifying 'c++11' in
+        # Python requires C99 at least.  Note that specifying 'c++11' in
         # 'CONFIG' doesn't affect 'CFLAGS'.
-        if python.version >= (3, 6) and target_platform != 'win':
+        if target_platform != 'win':
             f.write('\n')
             f.write('QMAKE_CFLAGS += -std=c99\n')
 
