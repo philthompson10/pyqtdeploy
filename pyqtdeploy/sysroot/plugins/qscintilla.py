@@ -141,7 +141,7 @@ class QScintillaComponent(Component):
         if self.version < (2, 11):
             self.unsupported()
 
-        if self.version > (2, 11, 5):
+        if self.version > (2, 13, 1):
             self.untested()
 
         # The Scintilla code uses C++ library functions that are missing prior
