@@ -1778,8 +1778,10 @@ standard_library = {
                         '?lzma', 'win#nt', 'os', '!win#posix', '!win#pwd',
                         'stat', 'tarfile', 'zipfile', '?zlib'))),
 
-    'signal':
-        PythonModule(deps=('enum', 'functools', '_signal')),
+    'signal': (
+        PythonModule(max_version=(3, 9, 9),
+                deps=('enum', 'functools', '_signal')),
+        PythonModule(min_version=(3, 9, 10), deps=('enum', '_signal'))),
 
     'smtpd':
         PythonModule(
@@ -2059,7 +2061,7 @@ standard_library = {
         PythonModule(min_version=(3, 9), max_version=(3, 9, 7),
                 deps=('enum', 'hashlib', 'io', 'os', 'android|linux#platform',
                         'random', 'shutil', 'socket', 'subprocess', 'time',
-                        'ios|macos#_uuid'))),
+                        'ios|macos#_uuid')),
         PythonModule(min_version=(3, 9, 8),
                 deps=('enum', 'hashlib', 'io', 'os', 'android|linux#platform',
                         'random', 'shutil', 'socket', 'subprocess', 'time',
