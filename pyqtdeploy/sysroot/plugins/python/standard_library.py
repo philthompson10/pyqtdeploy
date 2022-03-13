@@ -3320,7 +3320,7 @@ standard_library = {
 
     '_posixshmem':
         ExtensionModule(min_version=(3, 8), target='!win', internal=True,
-                source='_multiprocessing/posixshmem.c', libs='linux#-lrt')),
+                source='_multiprocessing/posixshmem.c', libs='linux#-lrt'),
 
     '_posixsubprocess': (
         ExtensionModule(max_version=(3, 9), target='!win', internal=True,
@@ -3551,7 +3551,7 @@ standard_library = {
                 deps=('zoneinfo', 'io', 'zoneinfo._common',
                         'zoneinfo._tzpath')),
         ExtensionModule(min_version=(3, 10), internal=True,
-                source='_zoneinfo.c', defines='Py_BUILD_CORE_MODULE'),
+                source='_zoneinfo.c', defines='Py_BUILD_CORE_MODULE',
                 deps=('zoneinfo', 'io', 'zoneinfo._common',
-                        'zoneinfo._tzpath')),
+                        'zoneinfo._tzpath'))),
 }
