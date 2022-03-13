@@ -47,7 +47,6 @@ extern PyObject *PyInit_faulthandler(void);
 extern PyObject *PyInit_gc(void);
 extern PyObject *PyInit_itertools(void);
 extern PyObject *PyMarshal_Init(void);
-extern PyObject *PyInit_mmap(void);
 #if defined(MS_WINDOWS)
 extern PyObject *PyInit_msvcrt(void);
 #endif
@@ -100,7 +99,6 @@ struct _inittab _PyImport_Inittab[] = {
     {"gc", PyInit_gc},
     {"itertools", PyInit_itertools},
     {"marshal", PyMarshal_Init},
-    {"mmap", PyInit_mmap},
 #if defined(MS_WINDOWS)
     {"msvcrt", PyInit_msvcrt},
 #endif
