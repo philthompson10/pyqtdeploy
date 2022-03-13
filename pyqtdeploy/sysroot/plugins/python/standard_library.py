@@ -1181,8 +1181,10 @@ standard_library = {
                 deps=('copy', 'errno', 'locale', 'os', 're', 'struct',
                         'warnings')),
 
-    'glob':
-        PythonModule(deps=('fnmatch', 'os', 're')),
+    'glob': (
+        PythonModule(max_version=(3, 9, 5), deps=('fnmatch', 'os', 're')),
+        PythonModule(min_version=(3, 9, 6),
+                deps=('contextlib', 'fnmatch', 'os', 're'))),
 
     'grp':
         ExtensionModule(target='!win', min_android_api=26,
