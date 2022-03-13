@@ -1218,11 +1218,15 @@ standard_library = {
     'http':
         PythonModule(deps='enum'),
 
-    'http.client':
-        PythonModule(
+    'http.client': (
+        PythonModule(max_version=(3, 9, 7),
                 deps=('http', 'collections.abc', 'email.message',
                         'email.parser', 'io', 're', 'socket', '?ssl',
                         'urllib.parse', 'warnings')),
+        PythonModule(min_version=(3, 9, 8),
+                deps=('http', 'collections.abc', 'email.message',
+                        'email.parser', 'errno', 'io', 're', 'socket', '?ssl',
+                        'urllib.parse', 'warnings'))),
 
     'http.cookiejar': (
         PythonModule(version=(3, 7),
@@ -1906,9 +1910,12 @@ standard_library = {
         PythonModule(version=(3, 7),
                 deps=('calendar', 'copy', 'errno', 'io', 'os', 're', 'shutil',
                         'stat', 'struct', 'time', 'warnings')),
-        PythonModule(min_version=(3, 8),
+        PythonModule(min_version=(3, 8), max_version=(3, 9, 7),
                 deps=('calendar', 'copy', 'errno', 'io', 'os', 're', 'shutil',
-                        'stat', 'struct', 'time'))),
+                        'stat', 'struct', 'time')),
+        PythonModule(min_version=(3, 9, 8),
+                deps=('calendar', 'copy', 'errno', 'io', 'os', 're', 'shutil',
+                        'stat', 'struct', 'time', 'zlib'))),
 
     'telnetlib':
         PythonModule(
@@ -2049,10 +2056,14 @@ standard_library = {
                 deps=('linux|macos|win#ctypes', 'enum', 'hashlib', 'os',
                         'android|linux#platform', 'random', 'shutil', 'socket',
                         'subprocess', 'time', 'ios|macos#_uuid', 'warnings')),
-        PythonModule(min_version=(3, 9),
+        PythonModule(min_version=(3, 9), max_version=(3, 9, 7),
                 deps=('enum', 'hashlib', 'io', 'os', 'android|linux#platform',
                         'random', 'shutil', 'socket', 'subprocess', 'time',
                         'ios|macos#_uuid'))),
+        PythonModule(min_version=(3, 9, 8),
+                deps=('enum', 'hashlib', 'io', 'os', 'android|linux#platform',
+                        'random', 'shutil', 'socket', 'subprocess', 'time',
+                        'ios|linux|macos#_uuid'))),
 
     'warnings':
         PythonModule(deps=('linecache', 're', 'traceback', '_warnings')),
@@ -3114,12 +3125,21 @@ standard_library = {
                         '!win#HAVE_EXPAT_CONFIG_H', '!win#XML_DEV_URANDOM'),
                 includepath='expat',
                 pyd='pyexpat.pyd'),
-        ExtensionModule(min_version=(3, 7, 5), internal=True,
+        ExtensionModule(min_version=(3, 7, 5), max_version=(3, 9, 7),
+                internal=True,
                 source=('expat/xmlparse.c', 'expat/xmlrole.c',
                         'expat/xmltok.c', 'pyexpat.c'),
                 defines=('XML_STATIC', '!win#HAVE_EXPAT_CONFIG_H',
                         '!win#XML_DEV_URANDOM'),
                 includepath='expat',
+                pyd='pyexpat.pyd'),
+        ExtensionModule(min_version=(3, 9, 8), internal=True,
+                source=('expat/xmlparse.c', 'expat/xmlrole.c',
+                        'expat/xmltok.c', 'pyexpat.c'),
+                defines=('XML_STATIC', '!win#HAVE_EXPAT_CONFIG_H',
+                        '!win#XML_DEV_URANDOM'),
+                includepath='expat',
+                libs='linux#-lm',
                 pyd='pyexpat.pyd')),
 
     '_queue':
@@ -3230,11 +3250,15 @@ standard_library = {
     '_tracemalloc':
         CoreExtensionModule(internal=True),
 
-    '_uuid':
-        # Android doesn't implement uuid_t in uuid.h.  Linux (RHEL v7.2) and
-        # Windows don't have uuid.h.
-        ExtensionModule(target='ios|macos', internal=True,
+    '_uuid': (
+        # Android doesn't implement uuid_t in uuid.h.  Windows doesn't have
+        # uuid.h.
+        ExtensionModule(max_version=(3, 9, 7), target='ios|macos',
+                internal=True,
                 source='_uuidmodule.c'),
+        ExtensionModule(min_version=(3, 9, 8), target='ios|linux|macos',
+                internal=True,
+                source='_uuidmodule.c', libs='linux#-luuid')),
 
     '_warnings':
         CoreExtensionModule(internal=True),

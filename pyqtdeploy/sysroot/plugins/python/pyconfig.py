@@ -529,6 +529,9 @@ pyconfig = (
     # Define if you have the 'readline' library (-lreadline).
     Config('HAVE_LIBREADLINE', default=1, android=None),
 
+    # Define if you have libuuid.
+    Config('HAVE_LIBUUID', linux=1),
+
     # Define if you have the 'link' function.
     Config('HAVE_LINK', default=1),
 
@@ -777,6 +780,9 @@ pyconfig = (
 
     # Define to 1 if you have the 'sched_setscheduler' function.
     Config('HAVE_SCHED_SETSCHEDULER', android=1, linux=1),
+
+    # Define to 1 if you have the 'sem_clockwait' function.
+    Config('HAVE_SEM_CLOCKWAIT', linux=1),
 
     # Define to 1 if you have the 'sem_getvalue' function.
     Config('HAVE_SEM_GETVALUE', default=1),
