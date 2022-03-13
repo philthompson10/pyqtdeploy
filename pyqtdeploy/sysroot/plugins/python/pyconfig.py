@@ -68,10 +68,10 @@ class Config:
 # that are set for at least one supported platform are specified.
 pyconfig = (
     # The normal alignment of `long', in bytes.
-    Config('ALIGNOF_LONG', default=8)
+    Config('ALIGNOF_LONG', default=8),
 
     # The normal alignment of `size_t', in bytes.
-    Config('ALIGNOF_SIZE_T', default=8)
+    Config('ALIGNOF_SIZE_T', default=8),
 
     # Define if C doubles are 64-bit IEEE 754 binary format, stored with the
     # least significant byte first
