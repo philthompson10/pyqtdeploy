@@ -111,32 +111,43 @@ stdlib.files = Lib/*
 
 INSTALLS += target headers stdlib
 
-PARSER_SOURCES = \
-    Parser/acceler.c \
-    Parser/grammar1.c \
-    Parser/listnode.c \
-    Parser/node.c \
-    Parser/parser.c \
-    Parser/myreadline.c Parser/parsetok.c Parser/tokenizer.c
+PARSER_SOURCES = Parser/myreadline.c Parser/tokenizer.c
 
-greaterThan(PY_MINOR_VERSION, 8) {
+greaterThan(PY_MINOR_VERSION, 9) {
     PARSER_SOURCES += \
-        Parser/pegen/pegen.c \
-        Parser/pegen/parse.c \
-        Parser/pegen/parse_string.c \
-        Parser/pegen/peg_api.c
-}
-
-greaterThan(PY_MINOR_VERSION, 7) {
-    PARSER_SOURCES += \
+        Parser/pegen.c \
+        Parser/parser.c \
+        Parser/string_parser.c \
+        Parser/peg_api.c \
         Parser/token.c
 } else {
     PARSER_SOURCES += \
-        Parser/bitset.c \
-        Parser/metagrammar.c \
-        Parser/firstsets.c \
-        Parser/grammar.c \
-        Parser/pgen.c
+        Parser/acceler.c \
+        Parser/grammar1.c \
+        Parser/listnode.c \
+        Parser/node.c \
+        Parser/parser.c \
+        Parser/parsetok.c
+
+    greaterThan(PY_MINOR_VERSION, 8) {
+        PARSER_SOURCES += \
+            Parser/pegen/pegen.c \
+            Parser/pegen/parse.c \
+            Parser/pegen/parse_string.c \
+            Parser/pegen/peg_api.c
+    }
+
+    greaterThan(PY_MINOR_VERSION, 7) {
+        PARSER_SOURCES += \
+            Parser/token.c
+    } else {
+        PARSER_SOURCES += \
+            Parser/bitset.c \
+            Parser/metagrammar.c \
+            Parser/firstsets.c \
+            Parser/grammar.c \
+            Parser/pgen.c
+    }
 }
 
 OBJECT_SOURCES = \
@@ -181,6 +192,11 @@ OBJECT_SOURCES = \
     Objects/odictobject.c \
     Objects/call.c
 
+greterThan(PY_MINOR_VERSION, 9) {
+    OBJECT_SOURCES += \
+        Object/unionobject.c
+}
+
 greaterThan(PY_MINOR_VERSION, 7) {
     OBJECT_SOURCES += \
         Objects/interpreteridobject.c \
@@ -209,14 +225,12 @@ PYTHON_SOURCES = \
     Python/getcopyright.c \
     Python/getplatform.c \
     Python/getversion.c \
-    Python/graminit.c \
     Python/import.c \
     Python/importdl.c \
     Python/marshal.c \
     Python/modsupport.c \
     Python/mysnprintf.c \
     Python/mystrtoul.c \
-    Python/peephole.c \
     Python/pyarena.c \
     Python/pyfpe.c \
     Python/pymath.c \
@@ -246,6 +260,22 @@ PYTHON_SOURCES = \
     Python/hamt.c \
     Python/bootstrap_hash.c
 
+win32 {
+    PYTHON_SOURCES += \
+        PC/invalid_parameter_handler.c
+}
+
+greterThan(PY_MINOR_VERSION, 9) {
+    PYTHON_SOURCES += \
+        Python/suggestions.c
+}
+
+lessThan(PY_MINOR_VERSION, 10) {
+    PYTHON_SOURCES += \
+        Python/graminit.c \
+        Python/peephole.c
+}
+
 greaterThan(PY_MINOR_VERSION, 7) {
     PYTHON_SOURCES += \
         Python/initconfig.c \
@@ -270,17 +300,30 @@ equals(PY_DYNAMIC_LOADING, "enabled") {
 MODULE_SOURCES = \
     Modules/config.c \
     Modules/main.c \
-    Modules/gcmodule.c \
+    Modules/gcmodule.c
+
+win32 {
+    MODULE_SOURCES += \
+        PC/getpathp.c
+} else {
+    MODULE_SOURCES += \
+        Modules/getpath.c
+}
+
+MOD_SOURCES = \
     Modules/posixmodule.c \
     Modules/errnomodule.c \
     Modules/_sre.c \
     Modules/_codecsmodule.c \
     Modules/_weakref.c \
     Modules/_functoolsmodule.c \
+    Modules/_operator.c \
     Modules/_collectionsmodule.c \
     Modules/itertoolsmodule.c \
     Modules/atexitmodule.c \
     Modules/signalmodule.c \
+    Modules/_stat.c \
+    Modules/timemodule.c \
     Modules/_threadmodule.c \
     Modules/_localemodule.c \
     Modules/_io/_iomodule.c \
@@ -290,22 +333,27 @@ MODULE_SOURCES = \
     Modules/_io/bufferedio.c \
     Modules/_io/textio.c \
     Modules/_io/stringio.c \
-    Modules/_io/winconsoleio.c \
     Modules/faulthandler.c \
-    Modules/symtablemodule.c \
-    Modules/_operator.c \
-    Modules/_stat.c \
     Modules/_tracemalloc.c \
-    Modules/mmapmodule.c \
-    Modules/timemodule.c
+    Modules/symtablemodule.c
+
+win32 {
+    MOD_SOURCES += \
+        Modules/_io/winconsoleio.c \
+        PC/msvcrtmodule.c \
+        PC/winreg.c
+} else {
+    MOD_SOURCES += \
+        Modules/pwdmodule.c
+}
 
 lessThan(PY_MINOR_VERSION, 9) {
-    MODULE_SOURCES += \
+    MOD_SOURCES += \
         Modules/hashtable.c
 }
 
 isEqual(PY_MINOR_VERSION, 7) {
-    MODULE_SOURCES += Modules/zipimport.c
+    MOD_SOURCES += Modules/zipimport.c
 
     lessThan(PY_PATCH_VERSION, 3) {
         win32 {
@@ -316,23 +364,9 @@ isEqual(PY_MINOR_VERSION, 7) {
     }
 }
 
-greaterThan(PY_MINOR_VERSION, 8) {
+isEqual(PY_MINOR_VERSION, 8) {
     MOD_SOURCES += \
         Modules/_peg_parser.c
-}
-
-win32 {
-    MOD_SOURCES += \
-        PC/getpathp.c \
-        PC/msvcrtmodule.c \
-        PC/winreg.c
-
-    PYTHON_SOURCES += \
-        PC/invalid_parameter_handler.c
-} else {
-    MOD_SOURCES += \
-        Modules/getpath.c \
-        Modules/pwdmodule.c
 }
 
 SOURCES = Modules/getbuildinfo.c Python/frozen.c

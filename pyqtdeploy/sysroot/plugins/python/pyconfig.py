@@ -67,6 +67,12 @@ class Config:
 # The configuration values for all supported versions of Python.  Only those
 # that are set for at least one supported platform are specified.
 pyconfig = (
+    # The normal alignment of `long', in bytes.
+    Config('ALIGNOF_LONG', default=8)
+
+    # The normal alignment of `size_t', in bytes.
+    Config('ALIGNOF_SIZE_T', default=8)
+
     # Define if C doubles are 64-bit IEEE 754 binary format, stored with the
     # least significant byte first
     Config('DOUBLE_IS_LITTLE_ENDIAN_IEEE754', ios=1, linux=1, macos=1),
@@ -104,7 +110,8 @@ pyconfig = (
     # Define to 1 if your sem_getvalue is broken.
     Config('HAVE_BROKEN_SEM_GETVALUE', android=1, ios=1, macos=1),
 
-    # Define if you have builtin atomics.
+    # Define if you have builtin '__atomic_load_n' and '__atomic_store_n'
+    # functions.
     Config('HAVE_BUILTIN_ATOMIC', default=1),
 
     # Define to 1 if you have the 'chflags' function.
@@ -265,6 +272,9 @@ pyconfig = (
 
     # Define to 1 if you have the <errno.h> header file.
     Config('HAVE_ERRNO_H', default=1),
+
+    # Define to 1 if you have the 'eventfd' function.
+    Config('HAVE_EVENTFD', linux=1),
 
     # Define to 1 if you have the 'execv' function.
     Config('HAVE_EXECV', default=1),
@@ -910,6 +920,9 @@ pyconfig = (
     # Define to 1 if you have the <spawn.h> header file.
     Config('HAVE_SPAWN_H', default=1),
 
+    # Define to 1 if you have the 'splice' function.
+    Config('HAVE_SPLICE', linux=1),
+
     # Define if your compiler provides ssize_t
     Config('HAVE_SSIZE_T', default=1),
 
@@ -999,6 +1012,9 @@ pyconfig = (
 
     # Define to 1 if you have the <sys/epoll.h> header file.
     Config('HAVE_SYS_EPOLL_H', android=1, linux=1),
+
+    # Define to 1 if you have the <sys/eventfd.h> header file.
+    Config('HAVE_SYS_EVENTFD_H', linux=1),
 
     # Define to 1 if you have the <sys/event.h> header file.
     Config('HAVE_SYS_EVENT_H', ios=1, macos=1),
@@ -1151,6 +1167,9 @@ pyconfig = (
 
     # Define to 1 if you have the <uuid/uuid.h> header file.
     Config('HAVE_UUID_UUID_H', ios=1, linux=1, macos=1),
+
+    # Define to 1 if you have the 'vfork' function.
+    Config('HAVE_VFORK', default=1),
 
     # Define to 1 if you have the 'wait3' function.
     Config('HAVE_WAIT3', default=1, android=None),
