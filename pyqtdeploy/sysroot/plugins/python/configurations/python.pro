@@ -192,9 +192,9 @@ OBJECT_SOURCES = \
     Objects/odictobject.c \
     Objects/call.c
 
-greterThan(PY_MINOR_VERSION, 9) {
+greaterThan(PY_MINOR_VERSION, 9) {
     OBJECT_SOURCES += \
-        Object/unionobject.c
+        Objects/unionobject.c
 }
 
 greaterThan(PY_MINOR_VERSION, 7) {
@@ -265,7 +265,7 @@ win32 {
         PC/invalid_parameter_handler.c
 }
 
-greterThan(PY_MINOR_VERSION, 9) {
+greaterThan(PY_MINOR_VERSION, 9) {
     PYTHON_SOURCES += \
         Python/suggestions.c
 }
