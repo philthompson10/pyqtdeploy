@@ -55,6 +55,7 @@ The sysroot that will be created will contain the following components:
 - PyQt3D
 - PyQtChart
 - PyQtDataVisualization
+- PyQtNetworkAuth
 - PyQtPurchasing
 - QScintilla
 
@@ -90,7 +91,7 @@ Android
 .. image:: /images/pyqt-demo-android-32.png
     :align: center
 
-**Host platform used:** macOS Catalina (v10.15.6)
+**Host platform used:** macOS Monterey (v12.0.1)
 
 **Development tools used:** NDK r21d, SDK build tools v28.0.3
 
@@ -107,7 +108,7 @@ iOS
 .. image:: /images/pyqt-demo-ios-64.png
     :align: center
 
-**Host platform used:** macOS Catalina (v10.15.6)
+**Host platform used:** macOS Monterey (v12.0.1)
 
 **Development tools used:** Xcode v11.6
 
@@ -137,9 +138,9 @@ macOS
 .. image:: /images/pyqt-demo-macos-64.png
     :align: center
 
-**Host platform used:** macOS Catalina (v10.15.6)
+**Host platform used:** macOS Monterey (v12.0.1)
 
-**Development tools used:** Xcode v11.6
+**Development tools used:** Xcode v12.4
 
 **Python SSL support implemented:** statically linked OpenSSL.
 

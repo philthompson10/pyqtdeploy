@@ -2,7 +2,7 @@ Introduction
 ============
 
 :program:`pyqtdeploy` is a tool that, in conjunction with other tools provided
-with Qt, enables the deployment of PyQt applications written with Python v3.5
+with Qt, enables the deployment of PyQt applications written with Python v3.7
 or later.  It supports deployment to desktop platforms (Linux, Windows and
 macOS) and to mobile platforms (iOS and Android).
 
@@ -13,7 +13,7 @@ nothing to stop you using shared versions of any of these components in order
 to reduce the size of the application, but at the cost of increasing the
 complexity of the deployment.
 
-:program:`pyqtdeploy` itself requires PyQt5 and Python v3.5 or later.
+:program:`pyqtdeploy` itself requires PyQt5 and Python v3.7 or later.
 
 :program:`pyqtdeploy` works by taking the individual modules of a PyQt
 application, freezing them, and then placing them in a Qt resource file that is
@@ -64,35 +64,6 @@ alternative solution that includes support for ``.exe`` files (for Windows),
     external C extension modules) is not a simple task.  It requires experience
     of C code, compilers, build systems and the ability to debug associated
     problems.  You have been warned!
-
-
-Differences from Version 2
---------------------------
-
-There have been a number of changes to :program:`pyqtdeploy` since v2:
-
-- Project files created for v2 are automatically updated to the latest version.
-  v3 project files have a ``.pdt`` extension.
-
-- Python versions earlier than v3.5 (including v2) are no longer supported.
-  Note that SIP v5 will be support in :program:`pyqtdeploy` v3.1 and Python
-  v3.8 and later will be supported in :program:`pyqtdeploy` v3.2.
-
-- PyQt4 is no longer supported.
-
-- The use of a sysroot directory to contain the target-specific components to
-  be linked with the application is no longer optional.
-
-- The file used to specify the contents of a sysroot is now in `TOML
-  <https://github.com/toml-lang/toml>`__ format rather than JSON.
-
-- The API provided to write component plugins has changed requiring plugins to
-  be rewritten.
-
-- All component plugins included with :program:`pyqtdeploy` will download their
-  source packages automatically when required.
-
-- The :program:`pyqtdeploy` GUI has been greatly simplified.
 
 
 Author
