@@ -38,7 +38,7 @@ from .standard_library import standard_library
 LATEST_3_7_RELEASE = (3, 7, 12)
 LATEST_3_8_RELEASE = (3, 8, 12)
 LATEST_3_9_RELEASE = (3, 9, 10)
-LATEST_3_10_RELEASE = (3, 10, 0)
+LATEST_3_10_RELEASE = (3, 10, 1)
 
 
 class PythonComponent(AbstractPythonComponent):
