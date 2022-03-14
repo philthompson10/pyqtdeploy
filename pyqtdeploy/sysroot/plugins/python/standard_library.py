@@ -1894,8 +1894,9 @@ standard_library = {
                 deps=('enum', 'functools', '_signal')),
         PythonModule(min_version=(3, 9, 10), max_version=(3, 9),
                 deps=('enum', '_signal')),
-        PythonModule(min_version=(3, 10),
-                deps=('enum', 'functools', '_signal'))),
+        PythonModule(min_version=(3, 10), max_version=(3, 10, 1),
+                deps=('enum', 'functools', '_signal')),
+        PythonModule(min_version=(3, 10, 2), deps=('enum', '_signal'))),
 
     'smtpd':
         PythonModule(
