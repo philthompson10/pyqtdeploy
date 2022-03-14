@@ -133,7 +133,7 @@ pyconfig = (
     Config('HAVE_CLOCK_GETTIME', default=1),
 
     # Define to 1 if you have the 'clock_settime' function.
-    Config('HAVE_CLOCK_SETTIME', default=1),
+    Config('HAVE_CLOCK_SETTIME', default=1, ios=None),
 
     # Define if the C compiler supports computed gotos.
     Config('HAVE_COMPUTED_GOTOS', default=1),
@@ -1041,7 +1041,7 @@ pyconfig = (
     Config('HAVE_SYS_POLL_H', default=1),
 
     # Define to 1 if you have the <sys/random.h> header file.
-    Config('HAVE_SYS_RANDOM_H', default=1),
+    Config('HAVE_SYS_RANDOM_H', default=1, ios=None),
 
     # Define to 1 if you have the <sys/resource.h> header file.
     Config('HAVE_SYS_RESOURCE_H', default=1),
