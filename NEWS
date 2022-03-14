@@ -1,4 +1,4 @@
-v3.2.0 13th March 2022
+v3.2.0 14th March 2022
   - Added support for PyQtNetworkAuth as an add-on package.
   - Added support for Python v3.10.0, v3.10.1 and v3.10.2.
   - Added support for Python v3.9.0, v3.9.1, v3.9.2, v3.9.4, v3.9.5, v3.9.6,
