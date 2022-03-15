@@ -110,7 +110,7 @@ iOS
 
 **Host platform used:** macOS Monterey (v12.0.1)
 
-**Development tools used:** Xcode v11.6
+**Development tools used:** Xcode v13.2.1
 
 **Python SSL support implemented:** none.
 
@@ -140,7 +140,7 @@ macOS
 
 **Host platform used:** macOS Monterey (v12.0.1)
 
-**Development tools used:** Xcode v12.4
+**Development tools used:** Xcode v13.2.1
 
 **Python SSL support implemented:** statically linked OpenSSL.
 
