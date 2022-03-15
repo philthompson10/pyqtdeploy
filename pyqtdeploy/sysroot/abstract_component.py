@@ -437,7 +437,7 @@ class AbstractComponent(ABC):
         message = "v{0} is unsupported".format(self.version)
 
         if detail is not None:
-            message += ' ' + detail
+            message += ', ' + detail
 
         self.error(message)
 
