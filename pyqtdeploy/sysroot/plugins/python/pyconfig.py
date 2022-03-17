@@ -27,13 +27,14 @@
 class Config:
     """ Encapsulate a configuration value defined in pyconfig.h. """
 
-    def __init__(self, name, py_major=0, default=None, api=1, **targets):
+    def __init__(self, name, py_major=0, default=None, android_api=1,
+            **targets):
         """ Define the value allowing target-specific overrides. """
 
         self.name = name
         self.py_major = py_major
         self._default = default
-        self._api = api
+        self._android_api = android_api
         self._targets = targets
 
     def value(self, component):
@@ -45,6 +46,11 @@ class Config:
         arch_name = component.target_arch_name.replace('-', '_')
         plat_name = component.target_platform_name
 
+        # Return None if the targetted Android version is earlier than the one
+        # for which the value is defined.
+        if plat_name == 'android' and component.android_api < self._android_api:
+            return None
+
         # Try the architecture.
         try:
             value = self._targets[arch_name]
@@ -53,13 +59,8 @@ class Config:
             try:
                 value = self._targets[plat_name]
             except KeyError:
-                # Return the default.
-                return self._default
-
-        # Return None if the targetted Android version is earlier than the one
-        # for which the value is defined.
-        if plat_name == 'android' and component.android_api < self._api:
-            return None
+                # Use the default.
+                value = self._default
 
         return value
 
@@ -81,7 +82,7 @@ pyconfig = (
     Config('ENABLE_IPV6', default=1),
 
     # Define to 1 if you have the 'accept4' function.
-    Config('HAVE_ACCEPT4', android=1, api=21, linux=1),
+    Config('HAVE_ACCEPT4', android=1, android_api=21, linux=1),
 
     # Define to 1 if you have the 'acosh' function.
     Config('HAVE_ACOSH', default=1),
@@ -384,7 +385,7 @@ pyconfig = (
     Config('HAVE_GETC_UNLOCKED', default=1),
 
     # Define this if you have the 'getentropy' function.
-    Config('HAVE_GETENTROPY', default=1),
+    Config('HAVE_GETENTROPY', default=1, android_api=28),
 
     # Define to 1 if you have the 'getgrgid_r' function.
     Config('HAVE_GETGRGID_R', default=1),
@@ -438,13 +439,13 @@ pyconfig = (
     Config('HAVE_GETPRIORITY', default=1),
 
     # Define to 1 if you have the 'getpwent' function.
-    Config('HAVE_GETPWENT', default=1, android=1, api=26),
+    Config('HAVE_GETPWENT', default=1, android_api=26),
 
     # Define to 1 if you have the 'getpwnam_r' function.
-    Config('HAVE_GETPWNAM_R', default=1, android=1, api=26),
+    Config('HAVE_GETPWNAM_R', default=1, android_api=26),
 
     # Define to 1 if you have the 'getpwuid_r' function.
-    Config('HAVE_GETPWUID_R', default=1, android=1, api=26),
+    Config('HAVE_GETPWUID_R', default=1, android_api=26),
 
     # Define to 1 if the getrandom() function is available.
     Config('HAVE_GETRANDOM', linux=1),
@@ -459,7 +460,7 @@ pyconfig = (
     Config('HAVE_GETRESUID', android=1, linux=1),
 
     # Define to 1 if you have the 'getsid' function.
-    Config('HAVE_GETSID', default=1, android=1, api=21),
+    Config('HAVE_GETSID', default=1, android_api=21),
 
     # Define to 1 if you have the 'getspent' function.
     Config('HAVE_GETSPENT', android=1, linux=1),
@@ -555,7 +556,7 @@ pyconfig = (
     Config('HAVE_LINUX_CAN_H', android=1, linux=1),
 
     # Define to 1 if you have the <linux/can/j1939.h> header file.
-    Config('HAVE_LINUX_CAN_J1939_H', android=1, linux=1),
+    Config('HAVE_LINUX_CAN_J1939_H', linux=1),
 
     # Define if compiling using Linux 3.6 or later.
     Config('HAVE_LINUX_CAN_RAW_FD_FRAMES', android=1, linux=1),
@@ -591,7 +592,7 @@ pyconfig = (
     Config('HAVE_LOG1P', default=1),
 
     # Define to 1 if you have the 'log2' function.
-    Config('HAVE_LOG2', android=1, api=18, ios=1, linux=1, macos=1),
+    Config('HAVE_LOG2', default=1, android_api=18),
 
     # Define this if you have the type long double.
     Config('HAVE_LONG_DOUBLE', default=1),
@@ -606,7 +607,7 @@ pyconfig = (
     Config('HAVE_MAKEDEV', default=1),
 
     # Define to 1 if you have the 'mbrtowc' function.
-    Config('HAVE_MBRTOWC', default=1, android=1, api=21),
+    Config('HAVE_MBRTOWC', default=1, android_api=21),
 
     # Define to 1 if you have the 'memfd_create' function.
     Config('HAVE_MEMFD_CREATE', linux=1),
@@ -681,10 +682,10 @@ pyconfig = (
     Config('HAVE_POSIX_FALLOCATE', linux=1),
 
     # Define to 1 if you have the 'posix_spawn' function.
-    Config('HAVE_POSIX_SPAWN', default=1),
+    Config('HAVE_POSIX_SPAWN', default=1, android_api=28),
 
     # Define to 1 if you have the 'posix_spawnp' function.
-    Config('HAVE_POSIX_SPAWNP', default=1),
+    Config('HAVE_POSIX_SPAWNP', default=1, android_api=28),
 
     # Define to 1 if you have the 'pread' function.
     Config('HAVE_PREAD', default=1),
@@ -1041,7 +1042,7 @@ pyconfig = (
     Config('HAVE_SYS_POLL_H', default=1),
 
     # Define to 1 if you have the <sys/random.h> header file.
-    Config('HAVE_SYS_RANDOM_H', default=1, ios=None),
+    Config('HAVE_SYS_RANDOM_H', default=1, ios=None, android_api=28),
 
     # Define to 1 if you have the <sys/resource.h> header file.
     Config('HAVE_SYS_RESOURCE_H', default=1),
