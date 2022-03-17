@@ -35,10 +35,10 @@ from .standard_library import standard_library
 
 
 # The latest tested patch releases of each minor version.
-LATEST_3_7_RELEASE = (3, 7, 12)
-LATEST_3_8_RELEASE = (3, 8, 12)
-LATEST_3_9_RELEASE = (3, 9, 10)
-LATEST_3_10_RELEASE = (3, 10, 2)
+LATEST_3_7_RELEASE = (3, 7, 13)
+LATEST_3_8_RELEASE = (3, 8, 13)
+LATEST_3_9_RELEASE = (3, 9, 11)
+LATEST_3_10_RELEASE = (3, 10, 3)
 
 
 class PythonComponent(AbstractPythonComponent):

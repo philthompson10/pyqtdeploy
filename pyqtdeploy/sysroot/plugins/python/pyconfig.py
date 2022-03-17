@@ -549,6 +549,9 @@ pyconfig = (
     # Define to 1 if you have the 'linkat' function.
     Config('HAVE_LINKAT', ios=1, linux=1, macos=1),
 
+    # Define to 1 if you have the <linux/auxvec.h> header file.
+    Config('HAVE_LINUX_AUXVEC_H', linux=1),
+
     # Define to 1 if you have the <linux/can/bcm.h> header file.
     Config('HAVE_LINUX_CAN_BCM_H', android=1, linux=1),
 
