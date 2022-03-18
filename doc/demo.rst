@@ -140,7 +140,7 @@ macOS
 
 **Host platform used:** macOS Monterey (v12.0.1)
 
-**Development tools used:** Xcode v13.2.1
+**Development tools used:** Xcode v12.4
 
 **Python SSL support implemented:** statically linked OpenSSL.
 
