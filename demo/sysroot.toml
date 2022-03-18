@@ -14,7 +14,7 @@ install_from_source = false
 # Python ######################################################################
 
 [Python]
-version = "3.10.2"
+version = "3.10.3"
 install_host_from_source = true
 
 [Python.win]
