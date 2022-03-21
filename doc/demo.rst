@@ -153,7 +153,7 @@ Windows
 .. image:: /images/pyqt-demo-win-64.png
     :align: center
 
-**Host platform used:** Windows 10 Pro (v2004)
+**Host platform used:** Windows 10 Pro (21H1)
 
 **Development tools used:** Visual Studio Build Tools 2019 (v16.7.2)
 
