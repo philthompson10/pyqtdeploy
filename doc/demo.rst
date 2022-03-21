@@ -123,9 +123,9 @@ Linux
 .. image:: /images/pyqt-demo-linux-64.png
     :align: center
 
-**Host platform used:** Ubuntu 18.04.5 LTS
+**Host platform used:** Ubuntu 20.04.4 LTS
 
-**Development tools used:** gcc v7.5.0
+**Development tools used:** gcc v9.4.0
 
 **Python SSL support implemented:** dynamically linked system OpenSSL
 
