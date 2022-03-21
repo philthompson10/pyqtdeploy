@@ -189,9 +189,13 @@ class QtComponent(AbstractQtComponent):
                         "the 'edition' option must be specified when building "
                         "from source")
 
-            # Make sure we have a Python v2.7 installation on Windows.
-            if self.host_platform_name == 'win':
+            # Make sure we have a Python v2.7 installation on Windows for Qt
+            # versions prior to v5.15.  It probably isn't needed for earlier
+            # versions either (if at all).
+            if self.host_platform_name == 'win' and self.version < (5, 15):
                 self._py_27 = self.get_python_install_path(2, 7)
+            else:
+                self._py_27 = None
 
             # Check the OpenSSL version.
             if self._openssl is not None:
@@ -263,7 +267,9 @@ class QtComponent(AbstractQtComponent):
             new_path = [original_path]
 
             new_path.insert(0, os.path.abspath('gnuwin32\\bin'))
-            new_path.insert(0, self._py_27)
+
+            if self._py_27 is not None:
+                new_path.insert(0, self._py_27)
 
             os.environ['PATH'] = ';'.join(new_path)
         else:
