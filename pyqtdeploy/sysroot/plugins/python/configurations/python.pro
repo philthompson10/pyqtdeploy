@@ -71,6 +71,11 @@ greaterThan(PY_MINOR_VERSION, 7) {
 
 win32 {
     DEFINES += PLATFORM=\\\"win32\\\"
+
+    greaterThan(PY_MINOR_VERSION, 9) {
+        DEFINES += PY3_DLLNAME=\\\"python3\\\"
+    }
+
     INCLUDEPATH += PC
 } else {
     android {
