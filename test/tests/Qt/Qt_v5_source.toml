@@ -1,7 +1,7 @@
 # Build a static Qt5 from source with target-specific SSL configurations.
 
 [Qt]
-version = "5.12.9"
+version = "5.15.2"
 edition = "opensource"
 configure_options = ["-opengl", "desktop"]
 
@@ -16,7 +16,7 @@ ssl = "openssl-linked"
 
 
 [OpenSSL]
-version = "1.1.1g"
+version = "1.1.1m"
 enabled_targets = ["linux", "win"]
 
 [OpenSSL.linux]

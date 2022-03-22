@@ -1,8 +1,8 @@
-# Build a host Python v3.6 from source, and a target Python from the same
+# Build a host Python v3.9 from source, and a target Python from the same
 # source version.
 
 [Python]
-version = "3.6.11"
+version = "3.9.11"
 install_host_from_source = true
 install_from_source = true
 

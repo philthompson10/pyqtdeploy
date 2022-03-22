@@ -2,11 +2,11 @@
 
 
 [QScintilla]
-version = "2.11.5"
+version = "2.13.2"
 
 
 [PyQt]
-version = "5.15.0"
+version = "5.15.6"
 installed_modules = ["QtCore", "QtGui", "QtPrintSupport", "QtWidgets"]
 
 [PyQt.android]
@@ -22,7 +22,7 @@ installed_modules = ["QtCore", "QtGui", "QtWidgets"]
 
 
 [SIP]
-version = "12.8.1"
+version = "12.9.1"
 module_name = "PyQt5.sip"
 
 
