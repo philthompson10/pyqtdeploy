@@ -2,11 +2,11 @@
 
 
 [PyQtPurchasing]
-version = "5.15.0"
+version = "5.15.5"
 
 
 [PyQt]
-version = "5.15.0"
+version = "5.15.6"
 installed_modules = ["QtCore"]
 
 [PyQt.android]
@@ -21,7 +21,7 @@ disabled_features = ["PyQt_Desktop_OpenGL", "PyQt_MacOSXOnly",
 
 
 [SIP]
-version = "12.8.1"
+version = "12.9.1"
 module_name = "PyQt5.sip"
 
 
