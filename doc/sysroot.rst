@@ -350,13 +350,10 @@ SIP
     version = "12.8.1"
     module_name = "PyQt5.sip"
 
-When using SIP v5 and later the version number refers to the ABI implemented by
-the :mod:`sip` module and not the version of SIP itself.  Suitable versions of
-SIP and PyQt-builder must both be installed for the same Python installation
-being used to run :program:`pyqtdeploy`.
-
-If SIP v4 is being used then the version number refers to SIP itself and
-:program:`pyqtdeploy` will automatically build and install that version.
+The version number refers to the ABI implemented by the :mod:`sip` module and
+not the version of SIP itself.  Suitable versions of SIP and PyQt-builder must
+both be installed for the same Python installation being used to run
+:program:`pyqtdeploy`.
 
 
 zlib

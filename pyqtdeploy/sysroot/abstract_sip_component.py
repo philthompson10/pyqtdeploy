@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,17 @@ class AbstractSIPComponent(Component):
     ###########################################################################
     # The following make up the public API to be used by component plugins.
     ###########################################################################
+
+    def __init__(self, *args, **kwargs):
+        """ Initialise the component. """
+
+        import warnings
+
+        warnings.warn(
+                "AbstractSIPComponent is deprecated, use Component instead",
+                DeprecationWarning, stacklevel=2)
+
+        super().__init__(*args, **kwargs)
 
     @property
     @abstractmethod
