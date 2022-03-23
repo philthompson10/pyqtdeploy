@@ -94,10 +94,9 @@ class QScintillaComponent(Component):
             if self.target_platform_name == 'android':
                 qmake_args.append('ANDROID_ABIS={}'.format(self.android_abi))
 
-            if not pyqt.using_sip_v4:
-                # PyQt-builder explcitly specifies the release/debug mode and
-                # we can't make assumptions about the default.
-                qmake_args.append('CONFIG+=release')
+            # PyQt-builder explcitly specifies the release/debug mode and
+            # we can't make assumptions about the default.
+            qmake_args.append('CONFIG+=release')
 
             self.run(*qmake_args)
 
@@ -105,23 +104,19 @@ class QScintillaComponent(Component):
             self.run(self.host_make, 'install')
             os.chdir('..')
 
-        # Build the static Python bindings.
-        if pyqt.using_sip_v4:
-            self._install_using_sip_v4()
+        # Build the static Python bindings.  If there is no printer support
+        # then make sure we don't try and import it.
+        if self._is_print_support:
+            bindings_config = None
         else:
-            # Install using SIP v5 or later.  If there is no printer support
-            # then make sure we don't try and import it.
-            if self._is_print_support:
-                bindings_config = None
-            else:
-                bindings_config = {
-                    'disabled-features': ['PyQt_Printer']
-                }
+            bindings_config = {
+                'disabled-features': ['PyQt_Printer']
+            }
 
-            # The QScintilla pyproject.toml file doesn't have a bindings
-            # section so we need to explicitly specify the enabled modules.
-            pyqt.install_pyqt_component(self, bindings=bindings_config,
-                    enable=['Qsci'])
+        # The QScintilla pyproject.toml file doesn't have a bindings
+        # section so we need to explicitly specify the enabled modules.
+        pyqt.install_pyqt_component(self, bindings=bindings_config,
+                enable=['Qsci'])
 
     @property
     def provides(self):
@@ -160,61 +155,6 @@ class QScintillaComponent(Component):
         pyqt = self.get_component('PyQt')
         pyqt.verify_pyqt_component(pyqt.version, min_sipbuild_version=(5, 4),
                 min_pyqtbuild_version=(1, 9))
-
-    def _install_using_sip_v4(self):
-        """ Install using SIP v4. """
-
-        os.chdir('Python')
-
-        # Create a configuration file.
-        python = self.get_component('Python')
-        pyqt = self.get_component('PyQt')
-        qt = self.get_component('Qt')
-        sip = self.get_component('SIP')
-
-        cfg = '''py_inc_dir = {0}
-py_pylib_dir = {1}
-py_pylib_lib = {2}
-py_sip_dir = {3}
-[PyQt 5]
-module_dir = {4}
-sip_module = PyQt5.sip
-'''.format(python.target_py_include_dir, self.target_lib_dir,
-                python.target_py_lib, sip.target_sip_dir,
-                os.path.join(python.target_sitepackages_dir, 'PyQt5'))
-
-        # If there is no printer support then make sure we don't try and import
-        # it.
-        disabled_features = pyqt.disabled_features
-
-        if not self._is_print_support and 'PyQt_Printer' not in disabled_features:
-            disabled_features = list(disabled_features)
-            disabled_features.append('PyQt_Printer')
-
-        if disabled_features:
-            cfg += 'pyqt_disabled_features = {0}\n'.format(
-                    ' '.join(disabled_features))
-
-        cfg_name = 'qscintilla.cfg'
-
-        with self.create_file(cfg_name) as cfg_file:
-            cfg_file.write(cfg)
-
-        # Configure, build and install.
-        args = [python.host_python, 'configure.py', '--static', '--qmake',
-            qt.host_qmake, '--sysroot', self.sysroot_dir, '--no-qsci-api',
-            '--no-sip-files', '--no-stubs', '--configuration', cfg_name,
-            '--sip', sip.host_sip, '-c', '--pyqt', 'PyQt5', '--no-dist-info']
-
-        if self.verbose_enabled:
-            args.append('--verbose')
-
-        if self.target_platform_name == 'android':
-            args.append('ANDROID_ABIS={}'.format(self.android_abi))
-
-        self.run(*args)
-        self.run(self.host_make)
-        self.run(self.host_make, 'install')
 
     @property
     def _is_print_support(self):

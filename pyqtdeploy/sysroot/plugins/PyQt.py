@@ -166,12 +166,9 @@ class PyQtComponent(AbstractPyQtComponent):
         """ Return the filename of the source archive. """
 
         if self._license_file is not None:
-            return 'PyQt5_commercial-{}.tar.gz'.format(self._version_str)
+            return 'PyQt5_commercial-{}.tar.gz'.format(self.version)
 
-        if self.version <= (5, 13, 1):
-            return 'PyQt5_gpl-{}.tar.gz'.format(self._version_str)
-
-        return 'PyQt5-{}.tar.gz'.format(self._version_str)
+        return 'PyQt5-{}.tar.gz'.format(self.version)
 
     def get_archive_urls(self):
         """ Return the list of URLs where the source archive might be
@@ -180,9 +177,6 @@ class PyQtComponent(AbstractPyQtComponent):
 
         if self._license_file is not None:
             return super().get_archive_urls()
-
-        if self.version <= (5, 14):
-            return ['https://www.riverbankcomputing.com/static/Downloads/PyQt5/{}/'.format(self._version_str)]
 
         return self.get_pypi_urls('PyQt5')
 
@@ -222,28 +216,25 @@ class PyQtComponent(AbstractPyQtComponent):
         if self._license_file is not None:
             self.copy_file(self._license_file, 'sip')
 
-        if self.using_sip_v4:
-            self._install_using_sip_v4()
-        else:
-            # Install using SIP v5 or later.
-            project_config = {
-                'confirm-license': True,
-                'designer-plugin': False,
-                'qml-plugin': False,
-                'dbus-python': False,
-                'tools': False,
-            }
+        # Configure the project and bindings.
+        project_config = {
+            'confirm-license': True,
+            'designer-plugin': False,
+            'qml-plugin': False,
+            'dbus-python': False,
+            'tools': False,
+        }
 
-            bindings_config = {
-                'disabled-features': self.disabled_features,
-            }
+        bindings_config = {
+            'disabled-features': self.disabled_features,
+        }
 
-            self.install_pyqt_component(self, project=project_config,
-                    bindings=bindings_config, enable=self.installed_modules)
+        self.install_pyqt_component(self, project=project_config,
+                bindings=bindings_config, enable=self.installed_modules)
 
     def install_pyqt_component(self, component, project=None, bindings=None,
             enable=None):
-        """ Install a PyQt-based component using SIP v5 or later. """
+        """ Install a PyQt-based component. """
 
         # Load the component's pyproject.toml file.
         try:
@@ -376,42 +367,18 @@ class PyQtComponent(AbstractPyQtComponent):
 
         return pyqt_platform
 
-    @property
-    def using_sip_v4(self):
-        """ True if SIP v4 is being used. """
-
-        return self.get_component('SIP').version.major == 4
-
     def verify(self):
         """ Verify the component. """
 
-        if self.version < (5, 12):
+        # v5.14 is the first version supported by SIP v5.
+        if self.version < (5, 14):
             self.unsupported()
 
         if self.version > (5, 15):
             self.untested()
 
-        # Check the corresponding SIP version.
-        if self.using_sip_v4:
-            sip_version = self.get_component('SIP').version
-
-            if sip_version < (4, 19, 19):
-                if self.version >= (5, 13, 1):
-                    self.error("SIP v4.19.19 or later is required")
-            elif sip_version < (4, 19, 20):
-                if self.version >= (5, 14):
-                    self.error("SIP v4.19.20 or later is required")
-            elif sip_version < (4, 19, 23):
-                if self.version >= (5, 15):
-                    self.error("SIP v4.19.23 or later is required")
-
-            if self.version >= (5, 13, 1) and sip_version < (4, 19, 19):
-                self.error("SIP v4.19.19 or later is required")
-            elif self.version >= (5, 15) and sip_version < (4, 19, 23):
-                self.error("SIP v4.19.23 or later is required")
-        else:
-            self.verify_pyqt_component(self.version,
-                    min_sipbuild_version=(5, 4), min_pyqtbuild_version=(1, 9))
+        self.verify_pyqt_component(self.version, min_sipbuild_version=(5, 4),
+                min_pyqtbuild_version=(1, 9))
 
         # This is needed by dependent components.
         if not self.get_component('Qt').ssl:
@@ -420,25 +387,15 @@ class PyQtComponent(AbstractPyQtComponent):
     def verify_pyqt_component(self, min_pyqt_version, min_sipbuild_version,
             min_pyqtbuild_version):
         """ Verify a PyQt-based component.  All versions are minimum versions.
-        The sipbuild and pyqtbuild version numbers are ignored if SIP v4 is
-        being used.
         """
 
-        # Check the minimum PyQt requirement, ignoring the path version and
+        # Check the minimum PyQt requirement, ignoring the patch version and
         # making sure it is the same major version.
         min_pyqt_version = self.parse_version_number(min_pyqt_version)
 
         if min_pyqt_version.major != self.version.major or min_pyqt_version.minor > self.version.minor:
             self.error(
                     "PyQt v{} or later is required".format(min_pyqt_version))
-
-        if self.using_sip_v4:
-            return
-
-        # Support for SIP v5 was added to PyQt and sub-packages during v5.13.
-        # For simplicity require v5.14 if using SIP v5.
-        if self.version < (5, 14):
-            self.error("SIP v5 requires v5.14.0 or later")
 
         # Check the minimum SIP requirement.
         # TODO: this assumes that pyqtdeploy and sip are installed in the same
@@ -504,59 +461,3 @@ class PyQtComponent(AbstractPyQtComponent):
                 return {}
 
         return section
-
-    def _install_using_sip_v4(self):
-        """ Install using SIP v4. """
-
-        # Create a configuration file.
-        python = self.get_component('Python')
-        qt = self.get_component('Qt')
-        sip = self.get_component('SIP')
-
-        cfg = '''py_platform = {0}
-py_inc_dir = {1}
-py_pylib_dir = {2}
-py_pylib_lib = {3}
-pyqt_module_dir = {4}
-pyqt_sip_dir = {5}
-[Qt 5.0]
-pyqt_modules = {6}
-'''.format(self.pyqt_platform, python.target_py_include_dir,
-                self.target_lib_dir, python.target_py_lib,
-                python.target_sitepackages_dir,
-                os.path.join(sip.target_sip_dir, 'PyQt5'),
-                ' '.join(self.installed_modules))
-
-        if self.disabled_features:
-            cfg += 'pyqt_disabled_features = {0}\n'.format(
-                    ' '.join(self.disabled_features))
-
-        cfg_name = 'pyqt5.cfg'
-
-        with self.create_file(cfg_name) as cfg_file:
-            cfg_file.write(cfg)
-
-        # Configure, build and install.
-        args = [python.host_python, 'configure.py', '--static', '--qmake',
-            qt.host_qmake, '--sysroot', self.sysroot_dir, '--no-tools',
-            '--no-qsci-api', '--no-designer-plugin', '--no-python-dbus',
-            '--no-qml-plugin', '--no-stubs', '--configuration', cfg_name,
-            '--sip', sip.host_sip, '--confirm-license', '-c', '-j2',
-            '--no-dist-info']
-
-        if self.verbose_enabled:
-            args.append('--verbose')
-
-        if self.target_platform_name == 'android':
-            args.append('ANDROID_ABIS={}'.format(self.android_abi))
-
-        self.run(*args)
-        self.run(self.host_make)
-        self.run(self.host_make, 'install')
-
-    @property
-    def _version_str(self):
-        """ Return the version number as a string. """
-
-        # The current convention for .0 releases began with v5.13.0.
-        return '5.12' if self.version == (5, 12, 0) else str(self.version)

@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -48,14 +48,19 @@ class AbstractPyQtComponent(Component):
         """ The target platform name as recognised by PyQt. """
 
     @property
-    @abstractmethod
     def using_sip_v4(self):
         """ True if SIP v4 is being used. """
+
+        import warnings
+
+        warnings.warn(
+                "using_sip_v4 is deprecated and will always return False",
+                DeprecationWarning, stacklevel=2)
+
+        return False
 
     @abstractmethod
     def verify_pyqt_component(self, min_pyqt_version, min_sipbuild_version,
             min_pyqtbuild_version):
         """ Verify a PyQt-based component.  All versions are minimum versions.
-        The sipbuild and pyqtbuild version numbers are ignored if SIP v4 is
-        being used.
         """

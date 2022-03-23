@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,14 +37,12 @@ from ..user_exception import UserException
 from .abstract_component import AbstractComponent
 from .abstract_python_component import AbstractPythonComponent
 from .abstract_qt_component import AbstractQtComponent
-from .abstract_sip_component import AbstractSIPComponent
 
 
 # Certain well known components must implement specific interfaces.
 _COMPONENT_TYPES = {
     'Python': AbstractPythonComponent,
     'Qt': AbstractQtComponent,
-    'SIP': AbstractSIPComponent,
 }
 
 

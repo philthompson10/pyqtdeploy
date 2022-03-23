@@ -24,8 +24,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-import os
-
 from ... import Component, ComponentOption, ExtensionModule
 
 
@@ -50,13 +48,9 @@ class PyQtPurchasingComponent(Component):
         """ Return the filename of the source archive. """
 
         if self._commercial:
-            return 'PyQtPurchasing_commercial-{}.tar.gz'.format(
-                    self._version_str)
+            return 'PyQtPurchasing_commercial-{}.tar.gz'.format(self.version)
 
-        if self.version <= (5, 13, 0):
-            return 'PyQtPurchasing_gpl-{}.tar.gz'.format(self._version_str)
-
-        return 'PyQtPurchasing-{}.tar.gz'.format(self._version_str)
+        return 'PyQtPurchasing-{}.tar.gz'.format(self.version)
 
     def get_archive_urls(self):
         """ Return the list of URLs where the source archive might be
@@ -65,9 +59,6 @@ class PyQtPurchasingComponent(Component):
 
         if self._commercial:
             return super().get_archive_urls()
-
-        if self.version <= (5, 14):
-            return ['https://www.riverbankcomputing.com/static/Downloads/PyQtPurchasing/{}/'.format(self._version_str)]
 
         return self.get_pypi_urls('PyQtPurchasing')
 
@@ -80,69 +71,20 @@ class PyQtPurchasingComponent(Component):
         # Unpack the source.
         self.unpack_archive(self.get_archive())
 
+        # Install.
         pyqt = self.get_component('PyQt')
-        if pyqt.using_sip_v4:
-            self._install_using_sip_v4()
-        else:
-            # Install using SIP v5 or later.
-            pyqt.install_pyqt_component(self)
+        pyqt.install_pyqt_component(self)
 
     def verify(self):
         """ Verify the component. """
 
+        # v5.14 is the first version supported by SIP v5.
+        if self.version < (5, 14):
+            self.unsupported()
+
+        if self.version > (5, 15):
+            self.untested()
+
         pyqt = self.get_component('PyQt')
         pyqt.verify_pyqt_component(self.version, min_sipbuild_version=(5, 4),
                 min_pyqtbuild_version=(1, 9))
-
-    def _install_using_sip_v4(self):
-        """ Install using SIP v4. """
-
-        # Create a configuration file.
-        python = self.get_component('Python')
-        pyqt = self.get_component('PyQt')
-        qt = self.get_component('Qt')
-        sip = self.get_component('SIP')
-
-        cfg = '''py_platform = {0}
-py_inc_dir = {1}
-py_pylib_dir = {2}
-py_pylib_lib = {3}
-py_sip_dir = {4}
-[PyQt 5]
-module_dir = {5}
-sip_module = PyQt5.sip
-'''.format(pyqt.pyqt_platform, python.target_py_include_dir,
-                self.target_lib_dir, python.target_py_lib, sip.target_sip_dir,
-                os.path.join(python.target_sitepackages_dir, 'PyQt5'))
-
-        if pyqt.disabled_features:
-            cfg += 'pyqt_disabled_features = {0}\n'.format(
-                    ' '.join(pyqt.disabled_features))
-
-        cfg_name = 'pyqtpurchasing.cfg'
-
-        with self.create_file(cfg_name) as cfg_file:
-            cfg_file.write(cfg)
-
-        # Configure, build and install.
-        args = [python.host_python, 'configure.py', '--static', '--qmake',
-            qt.host_qmake, '--sysroot', self.sysroot_dir, '--no-qsci-api',
-            '--no-sip-files', '--no-stubs', '--configuration', cfg_name,
-            '--sip', sip.host_sip, '-c', '--no-dist-info']
-
-        if self.verbose_enabled:
-            args.append('--verbose')
-
-        if self.target_platform_name == 'android':
-            args.append('ANDROID_ABIS={}'.format(self.android_abi))
-
-        self.run(*args)
-        self.run(self.host_make)
-        self.run(self.host_make, 'install')
-
-    @property
-    def _version_str(self):
-        """ Return the version number as a string. """
-
-        # The current convention for .0 releases began with v5.13.0.
-        return '5.12' if self.version == (5, 12, 0) else str(self.version)
