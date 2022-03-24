@@ -369,7 +369,7 @@ isEqual(PY_MINOR_VERSION, 7) {
     }
 }
 
-isEqual(PY_MINOR_VERSION, 8) {
+isEqual(PY_MINOR_VERSION, 9) {
     MOD_SOURCES += \
         Modules/_peg_parser.c
 }
