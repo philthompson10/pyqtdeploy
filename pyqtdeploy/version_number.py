@@ -257,7 +257,7 @@ class VersionNumber:
             version_parts.append(int_part)
         elif len(version_parts) == 0:
             raise UserException(
-                    "'{0}' has no major number".format(version_nr))
+                    "'{0}' is not a valid version number".format(version_nr))
 
         # Make sure there are 3 integer parts.
         while len(version_parts) < 3:
