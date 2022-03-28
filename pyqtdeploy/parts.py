@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,6 +24,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
+from .user_exception import UserException
 from .version_number import VersionNumber
 
 
@@ -69,27 +70,29 @@ class Part:
         # Python module).
         self.core = core
 
-    def applies_to(self, version):
-        """ Returns True if the given version applies to this part. """
-
-        if self._version is not None:
-            return version == self._version
-
-        if self._min_version is not None:
-            if version < self._min_version:
-                return False
-
-        if self._max_version is not None:
-            if version > self._max_version:
-                return False
-
-        return True
-
     @property
     def component_name(self):
         """ The name of the component that provides the part. """
 
         return self.name.split(':', maxsplit=1)[0]
+
+    @staticmethod
+    def get_applicable_part(component_name, part_name, parts, target, version):
+
+        if not isinstance(parts, tuple):
+            parts = (parts, )
+
+        applicable_parts = [p for p in parts
+                if p._is_targeted(target) and p._applies_to(version)]
+
+        if len(applicable_parts) == 0:
+            return None
+
+        if len(applicable_parts) > 1:
+            raise UserException(
+                    "the {0} component provides more than one applicable '{1}' part".format(component_name, part_name))
+
+        return applicable_parts[0]
 
     @classmethod
     def get_component_name(cls, name):
@@ -130,6 +133,30 @@ class Part:
         """ The unscoped name of the part. """
 
         return self.get_unscoped_name(self.name)
+
+    def _applies_to(self, version):
+        """ Returns True if the given version applies to this part. """
+
+        if self._version is not None:
+            return version == self._version
+
+        if self._min_version is not None:
+            if version < self._min_version:
+                return False
+
+        if self._max_version is not None:
+            if version > self._max_version:
+                return False
+
+        return True
+
+    def _is_targeted(self, target):
+        """ Returns True if the given target applies to this part. """
+
+        if self.target == '':
+            return True
+
+        return target.is_targeted(self.target)
 
 
 class CompiledPart(Part):

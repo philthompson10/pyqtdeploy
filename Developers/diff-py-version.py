@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-#
 # Copyright (c) 2017, Riverbank Computing Limited
 # All rights reserved.
 
