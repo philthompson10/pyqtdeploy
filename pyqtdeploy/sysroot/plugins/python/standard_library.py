@@ -667,7 +667,7 @@ standard_library = {
                         're')),
 
     'distutils.util': (
-        PythonModule(min_version=(3, 9),
+        PythonModule(version=(3, 9),
                 deps=('distutils.dep_util', 'distutils.errors',
                         'distutils.log', 'distutils.spawn',
                         'distutils.sysconfig', 'importlib.util', 'os',
