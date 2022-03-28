@@ -721,42 +721,32 @@ class AbstractComponent(ABC):
         All target-specific values are resolved.
         """
 
-        if not isinstance(versions, tuple):
-            versions = (versions, )
+        # Note that we can't check the Android API level because we don't yet
+        # know which level is being targeted.
+        part = Part.get_applicable_part(self.name, unscoped_name, versions,
+                self._sysroot.target, self.version)
 
-        # Go through each version of the part.
-        for part in versions:
-            if part.applies_to(self.version):
-                # Discard parts for other targets.  Note that we can't check
-                # the Android API level because we don't yet know which level
-                # is being targeted.
-                if part.target != '' and not self._sysroot.target.is_targeted(part.target):
-                    part = None
-                    break
+        if part is None:
+            return None
 
-                # Don't modify the original part.
-                part = copy.deepcopy(part)
+        # Don't modify the original part.
+        part = copy.deepcopy(part)
 
-                # Save the scoped name of the part.
-                part.name = Part.get_name(self.name, unscoped_name)
+        # Save the scoped name of the part.
+        part.name = Part.get_name(self.name, unscoped_name)
 
-                # Normalise the dependencies.
-                part.deps = self._normalised_deps(part.deps)
-                part.hidden_deps = self._normalised_deps(part.hidden_deps)
+        # Normalise the dependencies.
+        part.deps = self._normalised_deps(part.deps)
+        part.hidden_deps = self._normalised_deps(part.hidden_deps)
 
-                # Resolve all target-specific values.
-                if isinstance(part, CompiledPart):
-                    part.defines = self._normalised_values(part.defines)
-                    part.includepath = self._normalised_values(
-                            part.includepath)
-                    part.libs = self._normalised_values(part.libs)
+        # Resolve all target-specific values.
+        if isinstance(part, CompiledPart):
+            part.defines = self._normalised_values(part.defines)
+            part.includepath = self._normalised_values(part.includepath)
+            part.libs = self._normalised_values(part.libs)
 
-                if isinstance(part, ExtensionModule):
-                    part.source = self._normalised_values(part.source)
-
-                break
-        else:
-            part = None
+        if isinstance(part, ExtensionModule):
+            part.source = self._normalised_values(part.source)
 
         return part
 
