@@ -490,6 +490,15 @@ build_time_vars = {
             self.patch_file(os.path.join('Modules', 'posixmodule.c'),
                     self._patch_for_ios_system)
 
+        elif self.target_platform_name == 'macos':
+            # We use the macOS libffi from Python v3.8.10.
+            if self.version >= (3, 8, 10):
+                ctypes_dir = os.path.join('Modules', '_ctypes')
+
+                for src in ('_ctypes.c', 'callbacks.c', 'callproc.c', 'stgdict.c', 'cfield.c', 'malloc_closure.c'):
+                    self.patch_file(os.path.join(ctypes_dir, src),
+                            self._patch_for_macos_ctypes)
+
         elif self.target_platform_name == 'win':
             # If we are supporting dynamic loading then we must be being built
             # as a DLL.
@@ -520,6 +529,14 @@ build_time_vars = {
         minimal = line.strip().replace(' ', '')
         if minimal != '#defineHAVE_SYSTEM1':
             patch_file.write(line)
+
+    @staticmethod
+    def _patch_for_macos_ctypes(line, patch_file):
+        """ ctypes specifies <ffi.h> in various files but macOS needs
+        <ffi/ffi.h>.
+        """
+
+        patch_file.write(line.replace('<ffi.h>', '<ffi/ffi.h>'))
 
     @staticmethod
     def _patch_for_win_expat(line, patch_file):
