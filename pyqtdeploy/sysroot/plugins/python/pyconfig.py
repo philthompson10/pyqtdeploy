@@ -256,6 +256,9 @@ pyconfig = (
     # Define to 1 if you have the 'dup3' function.
     Config('HAVE_DUP3', linux=1),
 
+    # Define if you have the '_dyld_shared_cache_contains_path' function.
+    Config('HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH', ios=1, macos=1),
+
     # Define to 1 if you have the <endian.h> header file.
     Config('HAVE_ENDIAN_H', android=1, linux=1),
 

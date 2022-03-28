@@ -1,6 +1,10 @@
 # This is used to test packages in the Python standard library.
 
 
+[zlib]
+version = "1.2.11"
+
+
 [Python]
 version = "$PYTHON_VERSION"
 
