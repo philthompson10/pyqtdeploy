@@ -37,8 +37,8 @@ from .standard_library import standard_library
 # The latest tested patch releases of each minor version.
 LATEST_3_7_RELEASE = (3, 7, 13)
 LATEST_3_8_RELEASE = (3, 8, 13)
-LATEST_3_9_RELEASE = (3, 9, 11)
-LATEST_3_10_RELEASE = (3, 10, 3)
+LATEST_3_9_RELEASE = (3, 9, 12)
+LATEST_3_10_RELEASE = (3, 10, 4)
 
 
 class PythonComponent(AbstractPythonComponent):

@@ -1017,6 +1017,9 @@ pyconfig = (
     # Define to 1 if you have the <sysexits.h> header file.
     Config('HAVE_SYSEXITS_H', default=1, android=None),
 
+    # Define to 1 if you have the <sys/auxv.h> header file.
+    Config('HAVE_SYS_AUXV_H', linux=1),
+
     # Define to 1 if you have the <sys/epoll.h> header file.
     Config('HAVE_SYS_EPOLL_H', android=1, linux=1),
 
