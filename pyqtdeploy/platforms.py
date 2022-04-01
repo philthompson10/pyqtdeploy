@@ -269,26 +269,22 @@ class ApplePlatform(Platform):
 
         super().verify_as_target(message_handler)
 
+        # Get the SDK path and version number.
         self.apple_sdk = self.run('xcrun', '--sdk', self.sdk_name,
                 '--show-sdk-path', message_handler=message_handler,
                 capture=True)
 
-        if not self.apple_sdk:
+        self.apple_sdk_version = self.run('xcrun', '--sdk', self.sdk_name,
+                '--show-sdk-version', message_handler=message_handler,
+                capture=True)
+
+        if not self.apple_sdk or not self.apple_sdk_version:
             raise UserException(
                     "a valid '{0}' SDK could not be found".format(
                             self.sdk_name))
 
-        # Parse the version number.
-        version_str = os.path.basename(self.apple_sdk)
-
-        if version_str.startswith(self.sdk_prefix):
-            version_str = version_str[len(self.sdk_prefix):]
-
-        if version_str.endswith('.sdk'):
-            version_str = version_str[:-len('.sdk')]
-
         self.apple_sdk_version = VersionNumber.parse_version_number(
-                version_str)
+                self.apple_sdk_version)
 
 
 # Define and implement the different platforms and architectures.  These should
