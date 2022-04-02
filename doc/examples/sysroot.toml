@@ -20,6 +20,9 @@ version = "0.0.0"
 [PyQtDataVisualization]
 version = "0.0.0"
 
+[PyQtNetworkAuth]
+version = "0.0.0"
+
 [PyQtPurchasing]
 version = "0.0.0"
 

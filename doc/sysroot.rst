@@ -736,6 +736,9 @@ expected to be found in the directory containing the TOML specification file.
 
     .. py:attribute:: must_install_from_source
 
+        .. deprecated:: 3.2.0
+            Use :py:attr:`option_install_from_source` instead.
+
         This is set by the component if it must be installed from a source
         archive.
 
@@ -746,6 +749,13 @@ expected to be found in the directory containing the TOML specification file.
 
         :param str name: the name of the file.
         :return: the file object of the opened file.
+
+    .. py:attribute:: option_install_from_source
+
+        .. versionadded:: 3.2.0
+
+        This is set by the component if it supports the ``install_from_source``
+        component option.
 
     .. py:method:: parse_version_number(version_nr)
         :staticmethod:

@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -44,8 +44,11 @@ class Component(AbstractComponent):
     # The following make up the public API to be used by component plugins.
     ###########################################################################
 
-    # Set if installing from source is mandatory.
+    # Set if installing from source is mandatory.  This is deprecated.
     must_install_from_source = False
+
+    # Set if the 'install_from_source' option is supported.
+    option_install_from_source = False
 
     def get_archive(self):
         """ Return the pathname of a local copy of a source archive.  The
@@ -201,6 +204,15 @@ class Component(AbstractComponent):
         options = super().get_options()
 
         if not self.must_install_from_source:
+            import warnings
+
+            warnings.warn(
+                    "'must_install_from_source' is deprecated, use 'option_install_from_source' instead",
+                    DeprecationWarning, stacklevel=2)
+
+            self.option_install_from_source = True
+
+        if self.option_install_from_source:
             options.append(
                     ComponentOption('install_from_source', type=bool,
                             default=True,

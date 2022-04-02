@@ -43,6 +43,9 @@ from ... import Component, ComponentLibrary
 class OpenSSLComponent(Component):
     """ The OpenSSL component. """
 
+    # Add the 'install_from_source' option.
+    option_install_from_source = True
+
     def get_archive_name(self):
         """ Return the filename of the source archive. """
 

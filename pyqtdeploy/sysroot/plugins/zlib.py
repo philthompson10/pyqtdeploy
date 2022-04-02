@@ -32,6 +32,9 @@ from ... import Component, ComponentLibrary, ComponentOption
 class zlibComponent(Component):
     """ The zlib component. """
 
+    # Add the 'install_from_source' option.
+    option_install_from_source = True
+
     def get_archive_name(self):
         """ Return the filename of the source archive. """
 

@@ -33,6 +33,9 @@ from ... import AbstractQtComponent, ComponentOption
 class QtComponent(AbstractQtComponent):
     """ The Qt component. """
 
+    # Add the 'install_from_source' option.
+    option_install_from_source = True
+
     # The list of components that, if specified, should be installed before
     # this one.
     preinstalls = ['OpenSSL', 'zlib']
