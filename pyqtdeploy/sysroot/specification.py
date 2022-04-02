@@ -92,6 +92,10 @@ class SysrootSpecification:
 
             # Get the name of the plugin.
             plugin_name = value.get('plugin', name)
+            if plugin_name is None:
+                plugin_name = name
+            else:
+                del value['plugin']
 
             # Find the component's plugin.  First search the directory
             # containing the specification file.
