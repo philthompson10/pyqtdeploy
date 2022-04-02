@@ -30,9 +30,6 @@ from ... import Component, ExtensionModule
 class PyQtChartComponent(Component):
     """ The PyQtChart component. """
 
-    # The component must be installed from source.
-    must_install_from_source = True
-
     # The list of components that, if specified, should be installed before
     # this one.
     preinstalls = ['Python', 'PyQt', 'Qt', 'SIP']

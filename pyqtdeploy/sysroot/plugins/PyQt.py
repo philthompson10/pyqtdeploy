@@ -155,9 +155,6 @@ _ALL_PARTS = {
 class PyQtComponent(AbstractPyQtComponent):
     """ The PyQt component. """
 
-    # The component must be installed from source.
-    must_install_from_source = True
-
     # The list of components that, if specified, should be installed before
     # this one.
     preinstalls = ['Python', 'Qt', 'SIP']
