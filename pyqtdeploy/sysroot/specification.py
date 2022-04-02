@@ -90,28 +90,34 @@ class SysrootSpecification:
             if not isinstance(value, OrderedDict):
                 raise UserException("unexpected option '{0}'".format(name))
 
+            # Get the name of the plugin.
+            plugin_name = value.get('plugin', name)
+
             # Find the component's plugin.  First search the directory
             # containing the specification file.
-            plugin = self._plugin_from_file(name, default_plugin_dir)
+            plugin = self._plugin_from_file(plugin_name, default_plugin_dir)
 
             # Search the bundled plugin packages.
             if plugin is None:
                 for package in ('.plugins', '.plugins.contrib'):
-                    plugin = self._plugin_from_package(name, package,
+                    plugin = self._plugin_from_package(plugin_name, package,
                             package_root)
                     if plugin is not None:
                         break
                 else:
                     raise UserException(
-                            "unable to find a plugin for '{0}'".format(name))
+                            "unable to find a plugin called '{0}'".format(
+                                    plugin_name))
 
             # Certain components must implement specific interfaces.
             plugin_type = _COMPONENT_TYPES.get(name)
             if plugin_type is not None and not issubclass(plugin, plugin_type):
                 raise UserException(
                         "the {0} plugin must implement a subclass of "
-                                "{1}".format(name, plugin_type.__name__))
+                                "{1}".format(plugin_name,
+                                        plugin_type.__name__))
 
+            # Note that the same plugin can have multiple names.
             self._plugins[name] = plugin
 
     def create_components_for_target(self, target, sysroot):
