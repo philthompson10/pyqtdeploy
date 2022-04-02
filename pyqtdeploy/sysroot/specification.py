@@ -91,7 +91,7 @@ class SysrootSpecification:
                 raise UserException("unexpected option '{0}'".format(name))
 
             # Get the name of the plugin.
-            plugin_name = value.get('plugin', name)
+            plugin_name = value.get('plugin')
             if plugin_name is None:
                 plugin_name = name
             else:
