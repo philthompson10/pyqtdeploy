@@ -24,7 +24,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from ... import Component, ComponentOption, ExtensionModule
+from ... import Component, ExtensionModule
 
 
 class PyQtPurchasingComponent(Component):

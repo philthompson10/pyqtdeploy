@@ -26,7 +26,7 @@
 
 import os
 
-from ... import Component, ComponentOption, ExtensionModule
+from ... import Component, ExtensionModule
 
 
 class QScintillaComponent(Component):
