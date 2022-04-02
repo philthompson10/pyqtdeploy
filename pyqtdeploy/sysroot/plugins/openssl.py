@@ -28,7 +28,7 @@ import glob
 import os
 import shutil
 
-from ... import Component, ComponentLibrary, ComponentOption
+from ... import Component, ComponentLibrary
 
 
 # OpenSSL currently has 2 relevent 'releases': v1.1.0 and v1.1.1.
