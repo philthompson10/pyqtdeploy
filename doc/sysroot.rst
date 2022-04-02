@@ -41,7 +41,7 @@ The following component plugins are included as standard with
 :program:`pyqtdeploy`.
 
 **OpenSSL**
-    This provides the OpenSSL libraries for v1.0.2 and later on Android (as a
+    This provides the OpenSSL libraries for v1.1.0 and later on Android (as a
     shared library), Linux (using the OS supplied library), macOS (as a static
     library) and Windows (as a static library).  When building from source it
     requires ``perl`` to be installed on :envvar:`PATH`.
@@ -61,6 +61,10 @@ The following component plugins are included as standard with
 **PyQtDataVisualization**
     This provides a static version of the PyQtDataVisualization extension
     module for all target architectures.
+
+**PyQtNetworkAuth**
+    This provides a static version of the PyQtNetworkAuth extension module for
+    all target architectures.
 
 **PyQtPurchasing**
     This provides a static version of the PyQtPurchasing extension module for
@@ -86,9 +90,7 @@ The following component plugins are included as standard with
 **Qt**
     This will provide a static version of Qt5 from source (but not for the
     Android and iOS targets).  It will use an existing installation created by
-    the standard Qt installer.  When building from source on Windows it
-    requires Python v2.7 to be installed (but it does not need to be on
-    :envvar:`PATH`).
+    the standard Qt installer.
 
 **SIP**
     This provides a static version of the :mod:`sip` extension module for all
@@ -149,7 +151,7 @@ OpenSSL
 
     [OpenSSL]
     disabled_targets = ["ios"]
-    version = "1.1.1g"
+    version = "1.1.1m"
 
     [OpenSSL.linux]
     install_from_source = false
@@ -166,7 +168,7 @@ Python
 ::
 
     [Python]
-    version = "3.7.8"
+    version = "3.10.4"
     install_host_from_source = true
 
     [Python.win]
@@ -188,7 +190,7 @@ PyQt
 ::
 
     [PyQt]
-    version = "5.15.0"
+    version = "5.15.6"
 
     [PyQt.android]
     disabled_features = ["PyQt_Desktop_OpenGL", "PyQt_Printer"]
@@ -233,7 +235,7 @@ PyQt3D
 ::
 
     [PyQt3D]
-    version = "5.15.0"
+    version = "5.15.5"
 
 It is only necessary to specifiy the version to install.
 
@@ -244,7 +246,7 @@ PyQtChart
 ::
 
     [PyQtChart]
-    version = "5.15.0"
+    version = "5.15.5"
 
 It is only necessary to specifiy the version to install.
 
@@ -255,7 +257,18 @@ PyQtDataVisualization
 ::
 
     [PyQtDataVisualization]
-    version = "5.15.0"
+    version = "5.15.5"
+
+It is only necessary to specifiy the version to install.
+
+
+PyQtNetworkAuth
+...............
+
+::
+
+    [PyQtNetworkAuth]
+    version = "5.15.5"
 
 It is only necessary to specifiy the version to install.
 
@@ -266,7 +279,7 @@ PyQtPurchasing
 ::
 
     [PyQtPurchasing]
-    version = "5.15.0"
+    version = "5.15.5"
 
 It is only necessary to specifiy the version to install.
 
@@ -277,7 +290,7 @@ QScintilla
 ::
 
     [QScintilla]
-    version = "2.11.5"
+    version = "2.13.2"
 
 It is only necessary to specifiy the version to install.
 
@@ -288,7 +301,7 @@ Qt
 ::
 
     [Qt]
-    version = "5.15.0"
+    version = "5.15.2"
     edition = "opensource"
     configure_options = ["-opengl", "desktop", "-no-dbus", "-qt-pcre"]
     skip = ["qtactiveqt", "qtconnectivity", "qtdoc", "qtgamepad", "qtlocation",
@@ -347,7 +360,7 @@ SIP
 ::
 
     [SIP]
-    version = "12.8.1"
+    version = "12.9.1"
     module_name = "PyQt5.sip"
 
 The version number refers to the ABI implemented by the :mod:`sip` module and
