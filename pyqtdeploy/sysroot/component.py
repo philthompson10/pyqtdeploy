@@ -45,7 +45,7 @@ class Component(AbstractComponent):
     ###########################################################################
 
     # Set if installing from source is mandatory.  This is deprecated.
-    must_install_from_source = False
+    must_install_from_source = None
 
     # Set if the 'install_from_source' option is supported.
     option_install_from_source = False
@@ -103,10 +103,10 @@ class Component(AbstractComponent):
 
     @abstractmethod
     def get_archive_name(self):
-        """ Return the filename of the source archive. """
+        """ Return the filename of the source archive or wheel. """
 
     def get_archive_urls(self):
-        """ Return the list of URLs where the source archive might be
+        """ Return the list of URLs where a source archive or wheel might be
         downloaded from.
         """
 
@@ -203,14 +203,14 @@ class Component(AbstractComponent):
 
         options = super().get_options()
 
-        if not self.must_install_from_source:
+        if self.must_install_from_source is not None:
             import warnings
 
             warnings.warn(
                     "'must_install_from_source' is deprecated, use 'option_install_from_source' instead",
                     DeprecationWarning, stacklevel=2)
 
-            self.option_install_from_source = True
+            self.option_install_from_source = not self.must_install_from_source
 
         if self.option_install_from_source:
             options.append(
