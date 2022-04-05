@@ -44,6 +44,9 @@ LATEST_3_10_RELEASE = (3, 10, 4)
 class PythonComponent(AbstractPythonComponent):
     """ The host and target Python component. """
 
+    # Add the 'install_from_source' option.
+    option_install_from_source = True
+
     # The list of components that, if specified, should be installed before
     # this one.  Note that we don't need to specify things like 'OpenSSL' as
     # these are only used by this component when building the application and
