@@ -188,7 +188,7 @@ class SysrootTest(TestCase):
             print("Build of sysroot from {} successful".format(self.test))
 
 
-class StdlibTest(TestCase):
+class BuildTest(TestCase):
     """ Encapsulate a pyqtdeploy-build test for a particular target. """
 
     # The filename extension of pyqtdeploy-build tests.
@@ -233,18 +233,23 @@ class StdlibTest(TestCase):
         target = self.target.split('-')[0]
 
         if target in ('linux', 'macos', 'win'):
-            executable = 'python_stdlib'
+            if self.test.startswith('stdlib_'):
+                executable = 'python_stdlib'
+
+                # Map tests to packages for non-trivial packages.
+                test_package_map = {'expat': 'xml.parsers.expat'}
+
+                test_package = self.test.split('_')[1].split('.')[0]
+                test_package = test_package_map.get(test_package, test_package)
+                args = [os.path.abspath(executable), test_package]
+            else:
+                executable = os.path.basename(self.test).split('.')[0]
+                args = [os.path.abspath(executable)]
+
             if target == 'win':
                 executable = os.path.join('release', executable)
 
-            # Map tests to packages for non-trivial packages.
-            test_package_map = {'expat': 'xml.parsers.expat'}
-
-            test_package = self.test.split('_')[1].split('.')[0]
-            test_package = test_package_map.get(test_package, test_package)
-
-            self.call([os.path.abspath(executable), test_package],
-                    verbose, "python_stdlib failed")
+            self.call(args, verbose, executable + " failed")
 
         os.chdir('..')
 
@@ -363,11 +368,11 @@ if __name__ == '__main__':
                             args.no_clean, args.verbose)
 
         for test, expected_fail in tests:
-            if test.endswith(StdlibTest.test_extension):
+            if test.endswith(BuildTest.test_extension):
                 if args.show:
                     print(test + " (expected to fail)" if expected_fail else '')
                 else:
-                    StdlibTest(test, expected_fail, target).run(python, qmake,
+                    BuildTest(test, expected_fail, target).run(python, qmake,
                             args.no_clean, args.verbose)
 
     except UserException as e:
