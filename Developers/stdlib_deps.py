@@ -114,7 +114,7 @@ parser.add_argument('--no-zlib', help="assume zlib is not available",
 parser.add_argument('--show-cached', help="show cached dependency checks",
         default=False, action='store_true')
 parser.add_argument('--target', help="the target architecture")
-parser.add_argument('--version', help="the version of Python to use")
+parser.add_argument('--python-version', help="the version of Python to use")
 parser.add_argument('package', help="the name of the Python package")
 
 args = parser.parse_args()
@@ -124,7 +124,7 @@ if args.target:
 else:
     target = Architecture.architecture()
 
-if args.version:
+if args.python_version:
     version = VersionNumber.parse_version_number(args.python_version)
 else:
     version = VersionNumber.parse_version_number(sys.hexversion >> 8)
