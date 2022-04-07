@@ -2,9 +2,15 @@
 
 
 [certifi]
-version= "2021.10.8"
+version = "2021.10.8"
 wheel = "certifi-2021.10.8-py2.py3-none-any.whl"
 plugin = "wheel"
+dependencies = ["Python:importlib.resources", "Python:os"]
+exclusions = ["__main__.py"]
+
+
+[zlib]
+version = "1.2.12"
 
 
 [Python]
