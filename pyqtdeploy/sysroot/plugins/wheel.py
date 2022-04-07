@@ -24,9 +24,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-import os
-import zipfile
-
 from ... import Component, ComponentOption, PythonPackage
 
 
@@ -87,6 +84,9 @@ class wheelPlugin(Component):
 
     def install(self):
         """ Install for the target. """
+
+        import os
+        import zipfile
 
         # Unpack the wheel to the site-packages directory.
         wheel_path = self.get_archive()
