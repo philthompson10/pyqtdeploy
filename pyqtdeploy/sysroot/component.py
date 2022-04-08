@@ -192,6 +192,18 @@ class Component(AbstractComponent):
 
         return archive_root
 
+    def unpack_wheel(self, wheel_path):
+        """ Unpack a wheel in the target Python installation's site-packages
+        directory.
+        """
+
+        import zipfile
+
+        self.progress("unpacking '{0}'".format(os.path.basename(wheel_path)))
+
+        with zipfile.ZipFile(wheel_path) as zf:
+            zf.extractall(self.get_component('Python').target_sitepackages_dir)
+
     ###########################################################################
     # The following are not part of the public API used by component plugins.
     ###########################################################################
