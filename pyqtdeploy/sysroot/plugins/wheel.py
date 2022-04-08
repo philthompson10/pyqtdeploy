@@ -85,13 +85,4 @@ class wheelPlugin(Component):
     def install(self):
         """ Install for the target. """
 
-        import os
-        import zipfile
-
-        # Unpack the wheel to the site-packages directory.
-        wheel_path = self.get_archive()
-
-        self.progress("unpacking '{0}'".format(os.path.basename(wheel_path)))
-
-        with zipfile.ZipFile(wheel_path) as zf:
-            zf.extractall(self.get_component('Python').target_sitepackages_dir)
+        self.unpack_wheel(self.get_archive())
