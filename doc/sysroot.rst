@@ -31,8 +31,15 @@ inconvenient when debugging the installation of a later component.
 An API is provided to allow you to develop your own component plugins.  If you
 develop a plugin for a commonly used component then please consider
 contributing it so that it can be included in a future release of
-:program:`pyqtdeploy`.
+:program:`pyqtdeploy`.  Defining a component in this way is described in
+:ref:`ref-component-plugin`.
 
+Many applications will use third-party packages packaged as wheels and
+installed from PyPI.  Rather than require you to write a component plugin in
+Python for these, :program:`pyqtdeploy` provides the ``wheel`` plugin which
+takes the necessary information about the package from the sysroot
+specification file.  Defining a component in this way is described in
+:ref:`ref-component-spec-file`.
 
 Standard Component Plugins
 --------------------------
@@ -409,8 +416,8 @@ The full set of command line options is:
 
     ``COMPONENT`` is the name of the component that will be installed.  It may
     be used more than once to install multiple components.  If the option is
-    not specified then all components specified in the TOML specification file
-    will be installed.
+    not specified then all components specified in the sysroot specification
+    file will be installed.
 
 .. option:: --force
 
@@ -428,28 +435,28 @@ The full set of command line options is:
 .. option:: --options
 
     This causes the configurable options of each component specified in the
-    TOML specification file to be displayed on ``stdout``.  The program will
+    sysroot specification file to be displayed on ``stdout``.  The program will
     then terminate.
 
 .. option:: --python EXECUTABLE
 
     ``EXECUTABLE`` is the full path name of the host Python interpreter.  It
     overrides any value provided by the sysroot but the version must be
-    compatible with that specified in the TOML specification file.
+    compatible with that specified in the sysroot specification file.
 
 .. option:: --qmake EXECUTABLE
 
     ``EXECUTABLE`` is the full path name of the host :program:`qmake`.  It
     overrides any value provided by the sysroot but the version must be
-    compatible with that specified in the TOML specification file.
+    compatible with that specified in the sysroot specification file.
 
 .. option:: --source-dir DIR
 
     ``DIR`` is the name of a directory containing any local copies of source
-    archives used to install the components specified in the TOML specification
-    file.  It may be specified any number of times and each directory will be
-    searched in turn.  If a local copy cannot be found then the component
-    plugin will attempt to download it.
+    archives used to install the components specified in the sysroot
+    specification file.  It may be specified any number of times and each
+    directory will be searched in turn.  If a local copy cannot be found then
+    the component plugin will attempt to download it.
 
 .. option:: --sysroots-dir DIR
 
@@ -475,21 +482,135 @@ The full set of command line options is:
 
 .. option:: specification
 
-    ``specification`` is the name of the TOML specification file that defines
-    each component to be included in the sysroot and how each is to be
+    ``specification`` is the name of the sysroot specification file that
+    defines each component to be included in the sysroot and how each is to be
     configured.
 
 
-Writing a Component Plugin
---------------------------
+.. _ref-component-spec-file:
+
+Defining a Component Using the Sysroot Specification File
+---------------------------------------------------------
+
+.. versionadded:: 3.2.0
+
+As an example we will define a component for the
+`certifi <https://pypi.org/project/certifi/>`__ project on PyPI.  It contains
+a small number of :file:`.py` files and a data file, and only imports modules
+from the Python standard library.
+
+A component defined in the sysroot specification file makes use of the
+``wheel`` component plugin that is included with :program:`pyqtdeploy`.
+
+The following is the complete component definition::
+
+    [certifi]
+    plugin = "wheel"
+    version = "2021.10.8"
+    wheel = "certifi-2021.10.8-py2.py3-none-any.whl"
+    dependencies = ["Python:importlib.resources", "Python:os"]
+    exclusions = ["__main__.py"]
+
+``plugin`` specifies that ``wheel`` is the component plugin to use.  For
+components that have a dedicated plugin it is not normally required as it
+defaults to the name of the component.
+
+``version`` specifies the version of the component to use.
+
+``wheel`` specifies the name of the wheel file that will be installed in the
+sysroot.
+
+``dependencies`` specifies a list of packages that the component depends on,
+i.e. packages that are imported by the component.  A dependency is specified as
+a component name and package name separated by ``:``.  In this case
+:mod:`certifi` imports :mod:`importlib.resources` and :mod:`os` from the Python
+standard library.
+
+``exclusions`` specifies a list of files in the wheel that should not be
+included as part of the deployed application.  In this case the
+:file:`__main__.py` file is not used and therefore excluded.
+
+.. note::
+
+    :mod:`certifi` reads it's data file (:file:`cacert.pem`) using Python's
+    resources mechanism (i.e. :mod:`importlib.resources`).  This means that it
+    can read the file even though it will be embedded in the executable created
+    by :program:`pyqtdeploy`.
+
+
+.. _ref-component-plugin:
+
+Defining a Component Using a Plugin
+-----------------------------------
+
+While using the sysroot specification file to define a component is convenient
+in simple cases, it is often better to define a component using a component
+plugin.  For example:
+
+- you may need to check the component's version number to determine its exact
+  dependencies and what it provides
+
+- you may need to check the version numbers of any components on which it
+  depends
+
+- you may need to check that other requirements have been met, such as the
+  correct version of an SDK.
+
+Using a component plugin also makes it easier to build up a library of plugins
+to be used in multiple projects.
 
 A component plugin is a Python module that defines a sub-class of
-:py:class:`pyqtdeploy.Component`.  The name of the module is the name used in
-the TOML specification file.  It doesn't matter what the name of the sub-class
-is.
+:py:class:`pyqtdeploy.Component`.  Normally the name of the module is the name
+used in the sysroot specification file (although ``plugin`` can be used to
+change this).  It doesn't matter what the name of the sub-class is.
+
+The following is a complete implementation of a component plugin for the
+`certifi <https://pypi.org/project/certifi/>`__ project on PyPI.
+
+::
+
+    from pyqtdeploy import Component, PythonPackage
+
+    class certifiComponent(Component):
+
+        # The list of components that should be installed before this one.
+        preinstalls = ['Python']
+
+        # The dictionary of parts provided by the component keyed by the name
+        # of the part.  In this case there is a single part which is a Python
+        # package (ie. a directory containing a __init__.py file).
+        provides = {
+            'certifi': PythonPackage(
+                    deps=['Python:importlib.resources', 'Python:os'],
+                    exclusions='__main__.py')
+        }
+
+        def get_archive_name(self):
+            """ Get the version dependent name of the wheel. """
+
+            return 'certifi-{}-py2.py3-none-any.whl'.format(self.version)
+
+        def get_archive_urls(self):
+            """ Get the list of URLs where the wheel might be downloaded from.
+            """
+
+            # Return the PyPI URLs for the project.
+            return self.get_pypi_urls('certifi')
+
+        def install(self):
+            """ Install the component. """
+
+            # Unpack the wheel into the target Python installation's
+            # site-packages directory.
+            self.unpack_wheel(self.get_archive())
+
+Hopefully the comments in the code are self explainatory.
 
 Component plugins (other than those bundled with :program:`pyqtdeploy`) are
-expected to be found in the directory containing the TOML specification file.
+expected to be found in the directory containing the sysroot specification
+file.
+
+The following is the complete API available to a plugin.
 
 .. py:module:: pyqtdeploy
 
@@ -875,6 +996,15 @@ expected to be found in the directory containing the TOML specification file.
             the archive directory.
         :return: the name of the archive directory.
 
+    .. py:method:: unpack_wheel(wheel_path)
+
+        .. versionadded:: 3.2.0
+
+        A wheel is unpacked in the target Python installation's
+        ``site-packages`` directory.
+
+        :param str wheel_path: the pathname of the wheel file.
+
     .. py:method:: unsupported(detail=None)
 
         Issue an error message that the version of the component is
@@ -887,9 +1017,8 @@ expected to be found in the directory containing the TOML specification file.
         Issue a warning message that the version of the component is untested.
 
     .. py:method:: verify()
-        :abstractmethod:
 
-        This must be re-implemented to verify the component.  A component
+        This can be re-implemented to verify the component.  A component
         will always be verified even if it does not get installed.  The plugin
         should check that everything is available (e.g. other components,
         external tools) using the specified versions for a successful
