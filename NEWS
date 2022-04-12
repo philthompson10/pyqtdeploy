@@ -1,4 +1,4 @@
-v3.2.0 8th April 2022
+v3.2.0 12th April 2022
   - A component plugin can now be used to create multiple, similar components.
   - Added the 'wheel' plugin for specifying pure-Python components in the
     sysroot .toml file rather than writing a component plugin in Python.

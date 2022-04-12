@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,6 +26,7 @@
 
 import csv
 import glob
+from importlib import resources
 import os
 import shlex
 import shutil
@@ -40,6 +41,10 @@ from ..sysroot import Sysroot
 from ..user_exception import UserException
 from ..version import PYQTDEPLOY_HEXVERSION
 from ..version_number import VersionNumber
+
+from . import lib as lib_package
+from .lib import bootstrap as bootstrap_package
+from .lib import bootstrap_external as bootstrap_external_package
 
 
 class Builder:
@@ -141,9 +146,9 @@ class Builder:
         # original source.  We continue to use a local copy of _bootstrap.py
         # as it still needs to be frozen and we don't want to depend on an
         # external source.
-        self._freeze_bootstrap('bootstrap', self._build_dir, job_writer,
+        self._freeze_bootstrap(bootstrap_package, self._build_dir, job_writer,
                 python)
-        self._freeze_bootstrap('bootstrap_external', self._build_dir,
+        self._freeze_bootstrap(bootstrap_external_package, self._build_dir,
                 job_writer, python)
 
         # Freeze any main application script.
@@ -263,6 +268,12 @@ class Builder:
 
             used_values.add(value)
 
+    def _copy_to_build_dir(self, name):
+        """ Copy a file resource to the build directory. """
+
+        with resources.path(lib_package, name) as path:
+            shutil.copy2(path, self._build_dir)
+
     @staticmethod
     def _freeze(job_writer, label, out_file, in_file, name, as_c=False):
         """ Freeze a Python source file to a C header file or a data file. """
@@ -275,16 +286,15 @@ class Builder:
 
         job_writer.writerow([label, out_file, in_file, name, conversion])
 
-    def _freeze_bootstrap(self, name, build_dir, job_writer, python):
+    def _freeze_bootstrap(self, package, build_dir, job_writer, python):
         """ Freeze a version dependent bootstrap script. """
 
         # Find the bootstrap script appropriate for this version of Python.
-        bootstrap_dir = self._get_lib_path(name)
         bootstrap = None
         bootstrap_version = None
 
-        for fn in os.listdir(bootstrap_dir):
-            version = fn.split('-')[-1]
+        for fn in resources.contents(package):
+            name, version = fn.split('-')
             if version.endswith('.py'):
                 version = version[:-3]
 
@@ -304,10 +314,10 @@ class Builder:
 
         assert bootstrap is not None
 
-        bootstrap_path = os.path.join(bootstrap_dir, bootstrap)
-        self._freeze(job_writer, bootstrap,
-                os.path.join(build_dir, 'frozen_' + name + '.h'),
-                bootstrap_path, 'pyqtdeploy_' + name, as_c=True)
+        with resources.path(package, fn) as path:
+            self._freeze(job_writer, bootstrap,
+                    os.path.join(build_dir, 'frozen_' + name + '.h'), path,
+                    'pyqtdeploy_' + name, as_c=True)
 
     def _generate_resources(self, parts, job_writer, nr_resources):
         """ Generate the application resource files and return the names of
@@ -366,13 +376,6 @@ class Builder:
 
         return abs_resource_path
 
-    @staticmethod
-    def _get_lib_path(name):
-        """ Get the pathname of a file or directory in the 'lib' sub-directory.
-        """
-
-        return os.path.join(os.path.dirname(__file__), 'lib', name)
-
     def _run_freeze(self, python, job_filename, opt):
         """ Run the accumlated freeze jobs. """
 
@@ -383,10 +386,12 @@ class Builder:
         elif opt == 1:
             args.append('-O')
 
-        args.append(self._get_lib_path('freeze.py'))
-        args.append(job_filename)
+        with resources.path(lib_package, 'freeze.py') as path:
+            args.append(str(path))
+            args.append(job_filename)
 
-        self._host.platform.run(*args, message_handler=self._message_handler)
+            self._host.platform.run(*args,
+                    message_handler=self._message_handler)
 
     def _write_inittab(self, f, inittab, c_inittab):
         """ Write the Python version specific extension module inittab. """
@@ -741,10 +746,8 @@ int main(int argc, char **argv)
         f.write('SOURCES = pyqtdeploy_main.cpp pyqtdeploy_start.cpp pdytools_module.cpp\n')
         self._write_used_values(f, used_sources, 'SOURCES')
         self._write_main(used_inittab, used_defines)
-        shutil.copy2(self._get_lib_path('pyqtdeploy_start.cpp'),
-                self._build_dir)
-        shutil.copy2(self._get_lib_path('pdytools_module.cpp'),
-                self._build_dir)
+        self._copy_to_build_dir('pyqtdeploy_start.cpp')
+        self._copy_to_build_dir('pdytools_module.cpp')
 
         f.write('\n')
         f.write('HEADERS = {0}\n'.format(' '.join(headers)))
@@ -770,9 +773,8 @@ int main(int argc, char **argv)
             self._copy_windows_dlls(python, used_dlls, f)
 
         # Add the project independent post-configuration stuff.
-        with open_file(self._get_lib_path('post_configuration.pro')) as pro_f:
-            f.write('\n')
-            f.write(pro_f.read())
+        f.write('\n')
+        f.write(resources.read_text(lib_package, 'post_configuration.pro'))
 
         # Add any application specific stuff.
         qmake_configuration = project.qmake_configuration.strip()
