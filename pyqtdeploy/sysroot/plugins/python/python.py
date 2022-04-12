@@ -24,6 +24,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
+from importlib import resources
 import os
 import shutil
 import sys
@@ -32,6 +33,9 @@ from .... import AbstractPythonComponent, ComponentOption
 
 from .pyconfig import generate_pyconfig_h
 from .standard_library import standard_library
+
+from . import configurations as configurations_package
+from .configurations import pyconfig as pyconfig_package
 
 
 # The latest tested patch releases of each minor version.
@@ -269,17 +273,14 @@ class PythonComponent(AbstractPythonComponent):
 
         py_src_dir = os.getcwd()
 
-        configurations_dir = os.path.join(os.path.dirname(__file__),
-                'configurations')
-
         # Copy the modules config.c file.
         config_c_src_file = 'config_py{0}.c'.format(self.version.major)
         config_c_dst_file = os.path.join(py_src_dir, 'Modules', 'config.c')
 
         self.verbose("installing {0}".format(config_c_dst_file))
 
-        self.copy_file(os.path.join(configurations_dir, config_c_src_file),
-                config_c_dst_file)
+        with resources.path(configurations_package, config_c_src_file) as path:
+            self.copy_file(path, config_c_dst_file)
 
         # Generate the pyconfig.h file.  We follow the Python approach of a
         # static version for Windows and a dynamically created version for
@@ -290,11 +291,10 @@ class PythonComponent(AbstractPythonComponent):
             self.verbose("installing {0}".format(pyconfig_h_dst_file))
 
             # Find the pyconfig.h file appropriate for this version of Python.
-            pyconfig_dir = os.path.join(configurations_dir, 'pyconfig')
             pyconfig = None
             pyconfig_version = None
 
-            for fn in os.listdir(pyconfig_dir):
+            for fn in resources.contents(pyconfig_package):
                 version = fn.split('-')[-1]
                 if version.endswith('.h'):
                     version = version[:-2]
@@ -315,9 +315,10 @@ class PythonComponent(AbstractPythonComponent):
 
             assert pyconfig is not None
 
-            self.copy_file(os.path.join(pyconfig_dir, pyconfig),
-                    pyconfig_h_dst_file, macros={
-                        '@PY_DYNAMIC_LOADING@': '#define' if self.dynamic_loading else '#undef'})
+            with resources.path(pyconfig_package, pyconfig) as path:
+                self.copy_file(path,
+                        pyconfig_h_dst_file, macros={
+                            '@PY_DYNAMIC_LOADING@': '#define' if self.dynamic_loading else '#undef'})
 
             # Rename these otherwise MSVC confuses them with the ones we want
             # to use.
@@ -342,13 +343,14 @@ class PythonComponent(AbstractPythonComponent):
         # This is needed by Qt v5.14 and later on Android.
         android_abis = self.android_abi if self.target_platform_name == 'android' else ''
 
-        self.copy_file(os.path.join(configurations_dir, 'python.pro'),
-                python_pro_dst_file, macros={
-                    '@PY_MAJOR_VERSION@': str(self.version.major),
-                    '@PY_MINOR_VERSION@': str(self.version.minor),
-                    '@PY_PATCH_VERSION@': str(self.version.patch),
-                    '@PY_DYNAMIC_LOADING@': 'enabled' if self.dynamic_loading else 'disabled',
-                    '@ANDROID_ABIS@': android_abis})
+        with resources.path(configurations_package, 'python.pro') as path:
+            self.copy_file(path,
+                    python_pro_dst_file, macros={
+                        '@PY_MAJOR_VERSION@': str(self.version.major),
+                        '@PY_MINOR_VERSION@': str(self.version.minor),
+                        '@PY_PATCH_VERSION@': str(self.version.patch),
+                        '@PY_DYNAMIC_LOADING@': 'enabled' if self.dynamic_loading else 'disabled',
+                        '@ANDROID_ABIS@': android_abis})
 
     def _create_sysconfigdata(self):
         """ Create the _sysconfigdata module. """
