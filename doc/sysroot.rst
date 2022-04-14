@@ -367,7 +367,7 @@ SIP
 ::
 
     [SIP]
-    version = "12.9.1"
+    version = "12.10.1"
     module_name = "PyQt5.sip"
 
 The version number refers to the ABI implemented by the :mod:`sip` module and
@@ -389,13 +389,15 @@ zlib
     version = "1.2.7"
 
     [zlib.win]
+    version = "1.2.12"
     install_from_source = true
     static_msvc_runtime = true
 
 On all targets, except for Windows, we choose to use the zlib library provided
 by the OS.  On Android this is an earlier version.
 
-On Windows we choose to link to static versions of the MSVC runtime libraries.
+On Windows we choose to build from the latest version of the source and link to
+static versions of the MSVC runtime libraries.
 
 
 The Command Line
