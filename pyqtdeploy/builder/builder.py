@@ -314,7 +314,7 @@ class Builder:
 
         assert bootstrap is not None
 
-        with resources.path(package, fn) as path:
+        with resources.path(package, bootstrap) as path:
             self._freeze(job_writer, bootstrap,
                     os.path.join(build_dir, 'frozen_' + name + '.h'), path,
                     'pyqtdeploy_' + name, as_c=True)
