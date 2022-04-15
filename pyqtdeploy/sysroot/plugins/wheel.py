@@ -43,6 +43,9 @@ class wheelPlugin(Component):
                         exclusions=self.exclusions)
         }
 
+    # The version will be extracted from the name of the wheel.
+    version_is_optional = True
+
     def get_archive_name(self):
         """ Return the filename of the wheel. """
 
@@ -86,3 +89,15 @@ class wheelPlugin(Component):
         """ Install for the target. """
 
         self.unpack_wheel(self.get_archive())
+
+    def verify(self):
+        """ Verify the component. """
+
+        wheel_version = self.parse_version_number(self.wheel.split('-')[1])
+
+        if self.version is None:
+            self.version = wheel_version
+        elif self.version != wheel_version:
+            self.error(
+                    "v{0} is specified but the wheel is v{1}".format(
+                            self.version, installed_version))

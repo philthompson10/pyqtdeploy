@@ -504,7 +504,6 @@ The following is the complete component definition::
 
     [certifi]
     plugin = "wheel"
-    version = "2021.10.8"
     wheel = "certifi-2021.10.8-py2.py3-none-any.whl"
     dependencies = ["Python:importlib.resources", "Python:os"]
     exclusions = ["__main__.py"]
@@ -512,8 +511,6 @@ The following is the complete component definition::
 ``plugin`` specifies that ``wheel`` is the component plugin to use.  For
 components that have a dedicated plugin it is not normally required as it
 defaults to the name of the component.
-
-``version`` specifies the version of the component to use.
 
 ``wheel`` specifies the name of the wheel file that will be installed in the
 sysroot.
@@ -603,6 +600,11 @@ The following is a complete implementation of a component plugin for the
             self.unpack_wheel(self.get_archive())
 
 Hopefully the comments in the code are self explainatory.
+
+The complete would be used as follows::
+
+    [certifi]
+    version = "2021.10.8"
 
 Component plugins (other than those bundled with :program:`pyqtdeploy`) are
 expected to be found in the directory containing the sysroot specification
