@@ -2431,9 +2431,10 @@ standard_library = {
 
     '_asyncio': (
         ExtensionModule(max_version=(3, 8), internal=True,
-                source='_asynciomodule.c'),
+                source='_asynciomodule.c', pyd='_asyncio.pyd'),
         ExtensionModule(min_version=(3, 9), internal=True,
-                source='_asynciomodule.c', defines='Py_BUILD_CORE_MODULE')),
+                source='_asynciomodule.c', defines='Py_BUILD_CORE_MODULE',
+                pyd='_asyncio.pyd')),
 
     'asyncio.base_events': (
         PythonModule(version=(3, 7), internal=True,
@@ -2892,7 +2893,8 @@ standard_library = {
                         'macos#_ctypes/darwin',
                         'macos#_ctypes/libffi_osx/include'),
                 libs=('linux#-lffi', 'win#-llibffi-7'),
-                pyd='_ctypes.pyd'),
+                pyd='_ctypes.pyd',
+                dlls='libffi-7.dll'),
         ExtensionModule(min_version=(3, 8, 10), max_version=(3, 8),
                 target='linux|macos|win', internal=True,
                 source=('_ctypes/_ctypes.c', '_ctypes/callbacks.c',
@@ -2911,7 +2913,8 @@ standard_library = {
                         'macos#_ctypes/darwin'),
                 libs=('linux|macos#-lffi', 'linux|macos#-ldl',
                         'win#-llibffi-7'),
-                pyd='_ctypes.pyd'),
+                pyd='_ctypes.pyd',
+                dlls='libffi-7.dll'),
         ExtensionModule(min_version=(3, 9), target='linux|macos|win',
                 internal=True,
                 source=('_ctypes/_ctypes.c', '_ctypes/callbacks.c',
@@ -2930,7 +2933,8 @@ standard_library = {
                         'macos#_ctypes/darwin'),
                 libs=('linux|macos#-lffi', 'linux|macos#-ldl',
                         'win#-llibffi-7'),
-                pyd='_ctypes.pyd')),
+                pyd='_ctypes.pyd',
+                dlls='libffi-7.dll')),
 
     'ctypes._endian':
         PythonModule(target='linux|macos|win', internal=True, deps='ctypes'),
@@ -3390,7 +3394,8 @@ standard_library = {
         CoreExtensionModule(internal=True),
 
     '_overlapped':
-        ExtensionModule(target='win', internal=True, source='overlapped.c'),
+        ExtensionModule(target='win', internal=True, source='overlapped.c',
+                pyd='_overlapped.pyd'),
 
     '_osx_support':
         PythonModule(target='ios|macos', internal=True,
@@ -3440,9 +3445,10 @@ standard_library = {
 
     '_queue': (
         ExtensionModule(max_version=(3, 9), internal=True,
-                source='_queuemodule.c'),
+                source='_queuemodule.c', pyd='_queue.pyd'),
         ExtensionModule(min_version=(3, 10), internal=True,
-                source='_queuemodule.c', defines='Py_BUILD_CORE_MODULE')),
+                source='_queuemodule.c', defines='Py_BUILD_CORE_MODULE',
+                pyd='_queue.pyd')),
 
     '_random': (
         ExtensionModule(max_version=(3, 8), internal=True,
@@ -3559,10 +3565,10 @@ standard_library = {
         # uuid.h.
         ExtensionModule(max_version=(3, 9, 7), target='ios|macos',
                 internal=True,
-                source='_uuidmodule.c'),
+                source='_uuidmodule.c', pyd='_uuid.pyd'),
         ExtensionModule(min_version=(3, 9, 8), target='ios|linux|macos',
                 internal=True,
-                source='_uuidmodule.c', libs='linux#-luuid')),
+                source='_uuidmodule.c', libs='linux#-luuid', pyd='_uuid.pyd')),
 
     '_warnings':
         CoreExtensionModule(internal=True),
@@ -3621,9 +3627,11 @@ standard_library = {
         ExtensionModule(version=(3, 9), internal=True,
                 source='_zoneinfo.c',
                 deps=('zoneinfo', 'io', 'zoneinfo._common',
-                        'zoneinfo._tzpath')),
+                        'zoneinfo._tzpath'),
+                pyd='_zoneinfo.pyd'),
         ExtensionModule(min_version=(3, 10), internal=True,
                 source='_zoneinfo.c', defines='Py_BUILD_CORE_MODULE',
                 deps=('zoneinfo', 'io', 'zoneinfo._common',
-                        'zoneinfo._tzpath'))),
+                        'zoneinfo._tzpath'),
+                pyd='_zoneinfo.pyd')),
 }
