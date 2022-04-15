@@ -161,12 +161,14 @@ OpenSSL
     version = "1.1.1m"
 
     [OpenSSL.linux]
+    version = ""
     install_from_source = false
 
 On iOS we choose to not support SSL from Python and use Qt's SSL support
 instead (which will use Apple's Secure Transport).
 
-On Linux we will use the OS supplied OpenSSL libraries.
+On Linux we will use the OS supplied OpenSSL libraries and make no assumption
+about what version might be installed.
 
 
 Python
