@@ -249,24 +249,21 @@ class Sysroot:
                 with open(self._manifest_file) as mf:
                     for line in mf:
                         name, version_str = line.split()
-                        manifest[name] = VersionNumber.parse_version_number(
-                                version_str)
+
+                        # See if the component is still being used.
+                        component = self.get_component(name, required=False)
+                        if component is not None:
+                            version = component.parse_version_number(
+                                    version_str)
+
+                            # Keep the component in the manifest if it is the
+                            # required version.
+                            if component.version == version:
+                                manifest[name] = version
             except FileNotFoundError:
                 pass
             except Exception as e:
                 raise UserException("invalid 'Manifest' file", detail=str(e))
-
-            # Force a complete re-install if the version of any component
-            # currently installed is not the same version as that required.
-            # Note that we don't do the same if the configuration of a
-            # component has changed, even though this may have similar
-            # consequences.
-            for component in components:
-                installed = manifest.get(component.name)
-                if installed is not None and installed != component.version:
-                    force = True
-                    manifest = {}
-                    break
 
         # Normalise the list of source directories to search.
         if source_dirs:
@@ -378,11 +375,11 @@ class Sysroot:
 
         # Verify the components.
         for component in self.components:
-            self.progress(
-                    "verifying {0} v{1}".format(component.name,
-                            component.version))
-
+            self.progress("verifying {0}".format(component.name))
             component.verify()
+            self.verbose(
+                    "verified {0} v{1}".format(component.name,
+                            component.version))
 
     def verbose(self, message, component=None):
         """ Issue a verbose progress message. """

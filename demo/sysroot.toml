@@ -130,11 +130,7 @@ module_name = "PyQt5.sip"
 # zlib ########################################################################
 
 [zlib]
-version = "1.2.11"
 install_from_source = false
-
-[zlib.android]
-version = "1.2.7"
 
 [zlib.win]
 version = "1.2.12"

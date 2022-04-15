@@ -382,11 +382,7 @@ zlib
 ::
 
     [zlib]
-    version = "1.2.11"
     install_from_source = false
-
-    [zlib.android]
-    version = "1.2.7"
 
     [zlib.win]
     version = "1.2.12"
@@ -394,7 +390,7 @@ zlib
     static_msvc_runtime = true
 
 On all targets, except for Windows, we choose to use the zlib library provided
-by the OS.  On Android this is an earlier version.
+by the OS.
 
 On Windows we choose to build from the latest version of the source and link to
 static versions of the MSVC runtime libraries.
@@ -807,19 +803,6 @@ The following is the complete API available to a plugin.
         :param int minor: the major version number.
         :return: the absolute path of the installation directory.
 
-    .. py:method:: get_version()
-
-        .. versionadded:: 3.2.0
-
-        This is called to return the version number of the component as a
-        string.  It will not be called if the version number has been
-        explicitly set in the specification file.  It will be called after the
-        options have been parsed and before the component is verified.  It is
-        normally used when the component is using an existing library provided
-        by the operating system.
-
-        :return: the version number of the component.
-
     .. py:method:: get_version_from_file(identifier, filename)
 
         A file is read and a (stripped) line containing an identifier
@@ -1039,6 +1022,13 @@ The following is the complete API available to a plugin.
         external tools) using the specified versions for a successful
         installation.
 
+        .. versionadded:: 3.2.0
+
+        If the version number is optional for the component and it has been
+        omitted then the ``version`` attribute will be ``None``.  In this case
+        the component must determine the version number and set the ``version``
+        attribute accordingly.
+
     .. py:method:: verbose(message)
 
         A verbose progress message is displayed to the user.  It will be
@@ -1052,6 +1042,13 @@ The following is the complete API available to a plugin.
 
         This is set if the :option:`--verbose <pyqtdeploy-sysroot --verbose>`
         option was specified.
+
+    .. py:attribute:: version_is_optional
+
+        .. versionadded:: 3.2.0
+
+        This is set by the component if the version number specified in the
+        sysroot specification file is optional.
 
     .. py:method:: warning(message)
 
