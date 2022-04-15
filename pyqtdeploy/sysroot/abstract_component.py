@@ -49,6 +49,10 @@ class AbstractComponent(ABC):
     # The dict of parts provided by the component.
     provides = {}
 
+    # This is set if the version number is optional.  If it is then it must be
+    # set by the component's verify() method.
+    version_is_optional = False
+
     @property
     def android_abi(self):
         """ The Android ABI being used. """
@@ -240,11 +244,8 @@ class AbstractComponent(ABC):
         configurable options.
         """
 
-        # If the component has not reimplemented get_version() then assume the
-        # option is required.
-        required = getattr(type(self), 'get_version') is AbstractComponent.get_version
-
-        return [ComponentOption('version', required=required,
+        return [ComponentOption('version',
+                required=not self.version_is_optional,
                 help="The version number of the component.")]
 
     def get_python_install_path(self, major, minor):
@@ -282,18 +283,6 @@ class AbstractComponent(ABC):
                             reg_version))
 
         return install_path
-
-    def get_version(self):
-        """ Return the version number of the component as a string.  This will
-        be called after the options have been parsed and before the component
-        is verified.  It will not be called if the version number has been set
-        explicitly in the specification file.
-        """
-
-        # This default implementation just raises an exception although this
-        # would be expected to be trapped with the option being set as being
-        # 'required'.
-        self.error("'version' has not been specified")
 
     def get_version_from_file(self, identifier, filename):
         """ Return the stripped line from a file containing an identifier
@@ -540,13 +529,14 @@ class AbstractComponent(ABC):
         if unused:
             self.error("unknown option(s): {0}".format(', '.join(unused)))
 
-        # If the version hasn't been specified then ask the component for it.
+        # Parse any version number.
         if self.version == '':
-            self.version = self.get_version()
-
-        # Allow the version number to be defined by an environment variable.
-        self.version = self.parse_version_number(
-                os.path.expandvars(self.version))
+            self.version = None
+        else:
+            # Allow the version number to be defined by an environment
+            # variable.
+            self.version = self.parse_version_number(
+                    os.path.expandvars(self.version))
 
     @staticmethod
     def add_to_path(name):
