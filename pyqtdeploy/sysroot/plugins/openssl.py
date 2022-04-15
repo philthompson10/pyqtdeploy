@@ -125,10 +125,6 @@ class OpenSSLComponent(Component):
     def verify(self):
         """ Verify the component. """
 
-        # We only support v1.1.0 and later.
-        if (1, 1, 0) > self.version > (1, 1, 1):
-            self.unsupported()
-
         if self.install_from_source:
             if self.version is None:
                 self.error(
@@ -155,6 +151,10 @@ class OpenSSLComponent(Component):
                 self.error(
                         "v{0} is specified but the host installation is "
                                 "v{1}".format(self.version, installed_version))
+
+        # We only support v1.1.0 and later.
+        if (1, 1, 0) > self.version > (1, 1, 1):
+            self.unsupported()
 
     def _install_1_1(self, common_options):
         """ Install v1.1 for supported platforms. """
@@ -269,6 +269,6 @@ class OpenSSLComponent(Component):
         major = (version >> 28) & 0xff
         minor = (version >> 20) & 0xff
         patch = (version >> 12) & 0xff
-        suffix = chr((version >> 4) & 0xff + ord('a') - 1)
+        suffix = chr(((version >> 4) & 0x0f) + ord('a') - 1)
 
         return self.parse_version_number((major, minor, patch, suffix))
