@@ -157,8 +157,8 @@ OpenSSL
 ::
 
     [OpenSSL]
-    disabled_targets = ["ios"]
     version = "1.1.1m"
+    disabled_targets = ["ios"]
 
     [OpenSSL.linux]
     version = ""
