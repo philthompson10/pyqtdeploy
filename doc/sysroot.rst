@@ -807,6 +807,19 @@ The following is the complete API available to a plugin.
         :param int minor: the major version number.
         :return: the absolute path of the installation directory.
 
+    .. py:method:: get_version()
+
+        .. versionadded:: 3.2.0
+
+        This is called to return the version number of the component as a
+        string.  It will not be called if the version number has been
+        explicitly set in the specification file.  It will be called after the
+        options have been parsed and before the component is verified.  It is
+        normally used when the component is using an existing library provided
+        by the operating system.
+
+        :return: the version number of the component.
+
     .. py:method:: get_version_from_file(identifier, filename)
 
         A file is read and a (stripped) line containing an identifier
