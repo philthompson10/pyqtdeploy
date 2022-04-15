@@ -46,6 +46,10 @@ class OpenSSLComponent(Component):
     # Add the 'install_from_source' option.
     option_install_from_source = True
 
+    # The version will be determined dynamically if the system provided version
+    # is being used.
+    version_is_optional = True
+
     def get_archive_name(self):
         """ Return the filename of the source archive. """
 
@@ -125,24 +129,32 @@ class OpenSSLComponent(Component):
         if (1, 1, 0) > self.version > (1, 1, 1):
             self.unsupported()
 
-        # Make sure any installed version is the one specified.
-        if not self.install_from_source:
-            self._verify_installed_version()
+        if self.install_from_source:
+            if self.version is None:
+                self.error(
+                        "'version' must be specified when installing from "
+                        "source")
 
-            # That's all we need to check if the installed version is used.
-            return
+            # We only cross-compile to Android.
+            host = self.host_platform_name
+            target = self.target_platform_name
 
-        # We only cross-compile to Android.
-        host = self.host_platform_name
-        target = self.target_platform_name
+            if target != host and target != 'android':
+                self.error(
+                        "installing for {0} on {1} is not supported".format(
+                                target, host))
 
-        if target != host and target != 'android':
-            self.error(
-                    "installing for {0} on {1} is not supported".format(target,
-                            host))
+            # Check the required host tools are available.
+            self.find_exe('perl')
+        else:
+            installed_version = self._get_installed_version()
 
-        # Check the required host tools are available.
-        self.find_exe('perl')
+            if self.version is None:
+                self.version = installed_version
+            elif self.version != installed_version:
+                self.error(
+                        "v{0} is specified but the host installation is "
+                                "v{1}".format(self.version, installed_version))
 
     def _install_1_1(self, common_options):
         """ Install v1.1 for supported platforms. """
@@ -230,10 +242,8 @@ class OpenSSLComponent(Component):
         self.run(self.host_make)
         self.run(self.host_make, 'install')
 
-    def _verify_installed_version(self):
-        """ Verify that the installed version is compatible with the specified
-        version.
-        """
+    def _get_installed_version(self):
+        """ Get the installed version. """
 
         # We only support Linux native versions.
         if self.target_platform_name != 'linux':
@@ -259,11 +269,6 @@ class OpenSSLComponent(Component):
         major = (version >> 28) & 0xff
         minor = (version >> 20) & 0xff
         patch = (version >> 12) & 0xff
+        suffix = chr((version >> 4) & 0xff + ord('a') - 1)
 
-        # Note that we ignore any suffix and only check the parts that affect
-        # binary compatibility.
-        if self.version != (major, minor, patch):
-            self.error(
-                    "v{0} is specified but the host installation is "
-                            "v{1}.{2}.{3}".format(self.version, major, minor,
-                                    patch))
+        return self.parse_version_number((major, minor, patch, suffix))
