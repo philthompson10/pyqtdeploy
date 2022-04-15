@@ -240,7 +240,11 @@ class AbstractComponent(ABC):
         configurable options.
         """
 
-        return [ComponentOption('version', required=True,
+        # If the component has not reimplemented get_version() then assume the
+        # option is required.
+        required = getattr(type(self), 'get_version') is AbstractComponent.get_version
+
+        return [ComponentOption('version', required=required,
                 help="The version number of the component.")]
 
     def get_python_install_path(self, major, minor):
@@ -278,6 +282,18 @@ class AbstractComponent(ABC):
                             reg_version))
 
         return install_path
+
+    def get_version(self):
+        """ Return the version number of the component as a string.  This will
+        be called after the options have been parsed and before the component
+        is verified.  It will not be called if the version number has been set
+        explicitly in the specification file.
+        """
+
+        # This default implementation just raises an exception although this
+        # would be expected to be trapped with the option being set as being
+        # 'required'.
+        self.error("'version' has not been specified")
 
     def get_version_from_file(self, identifier, filename):
         """ Return the stripped line from a file containing an identifier
@@ -523,6 +539,10 @@ class AbstractComponent(ABC):
         unused = configuration.keys()
         if unused:
             self.error("unknown option(s): {0}".format(', '.join(unused)))
+
+        # If the version hasn't been specified then ask the component for it.
+        if self.version == '':
+            self.version = self.get_version()
 
         # Allow the version number to be defined by an environment variable.
         self.version = self.parse_version_number(
