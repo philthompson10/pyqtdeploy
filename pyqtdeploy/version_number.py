@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,16 +35,20 @@ class VersionNumber:
     to determine the chronology of releases.
     """
 
-    def __init__(self, major, minor=0, patch=0, suffix=''):
+    def __init__(self, major, minor=0, patch=0, suffix='', raw=None):
         """ Initialise the version number. """
 
         self.major = major
         self.minor = minor
         self.patch = patch
         self.suffix = suffix
+        self._raw = raw
 
     def __str__(self):
         """ Return the version number as a string. """
+
+        if self._raw is not None:
+            return self._raw
 
         return "{}.{}.{}{}".format(self.major, self.minor, self.patch,
                 self.suffix)
@@ -227,14 +231,14 @@ class VersionNumber:
             return version_nr
 
         if isinstance(version_nr, tuple):
-            return VersionNumber(*version_nr)
+            return cls(*version_nr)
 
         if isinstance(version_nr, int):
             major = (version_nr >> 16) & 0xff
             minor = (version_nr >> 8) & 0xff
             patch = version_nr & 0xff
 
-            return VersionNumber(major, minor, patch)
+            return cls(major, minor, patch)
 
         assert isinstance(version_nr, str)
 
@@ -283,7 +287,7 @@ class VersionNumber:
                     "the patch number of '{0}' is invalid".format(version_nr))
 
         # Create the VersionNumber object.
-        return cls(major, minor, patch, suffix)
+        return cls(major, minor, patch, suffix, raw=version_nr)
 
     def _resolve_other(self, other):
         """ Return an appropriate 4-tuple from the value provided as the right

@@ -47,6 +47,12 @@ Standard Component Plugins
 The following component plugins are included as standard with
 :program:`pyqtdeploy`.
 
+**libffi**
+    This provides a static version of the libffi library for Windows.  On macOS
+    and Linux it provides access to the OS supplied library.  It is currently
+    not supported on other target architectures.  It is required by the Python
+    :mod:`ctypes` module.
+
 **OpenSSL**
     This provides the OpenSSL libraries for v1.1.0 and later on Android (as a
     shared library), Linux (using the OS supplied library), macOS (as a static
