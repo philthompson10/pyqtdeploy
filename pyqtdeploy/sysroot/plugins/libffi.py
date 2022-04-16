@@ -35,6 +35,10 @@ class libffiComponent(Component):
     # Add the 'install_from_source' option.
     option_install_from_source = True
 
+    # The list of components that, if specified, should be installed before
+    # this one.
+    preinstalls = ['Python']
+
     # The version will be determined dynamically if the system provided version
     # is being used.
     version_is_optional = True
@@ -60,53 +64,20 @@ class libffiComponent(Component):
         # Unpack the source.
         self.unpack_archive(self.get_archive())
 
-        if self.target_platform_name == 'win':
-            make_args = [self.host_make, '-f', 'win32\\Makefile.msc',
-                    'zlib.lib']
+        # Use the script included with Python to do the build.
+        arch = '-x64' if self.target_arch_name == 'win-64' else '-x86'
 
-            if self.static_msvc_runtime:
-                make_args.append('LOC=-MT')
+        prep = os.path.join(self.target_src_dir,
+                'Python-{}'.format(self.get_component('Python').version),
+                'PCbuild', 'prepare_libffi.bat')
 
-            self.run(*make_args)
+        src_dir = os.getcwd()
+        os.environ['LIBFFI_SOURCE'] = src_dir
+        os.environ['LIBFFI_OUT'] = os.path.join(src_dir, 'out')
 
-            self.copy_file('zconf.h', self.target_include_dir)
-            self.copy_file('zlib.h', self.target_include_dir)
-            self.copy_file('zlib.lib', self.target_lib_dir)
+        self.run(prep, arch)
 
-        elif self.target_platform_name == 'android':
-            # Configure the environment.
-            original_path = self.add_to_path(self.android_toolchain_bin)
-            os.environ['CROSS_PREFIX'] = self.android_toolchain_prefix
-            os.environ['CC'] = self.android_toolchain_cc
-
-            # It isn't clear why this is needed, possibly a clang bug.
-            if self.target_arch_name == 'android-32':
-                os.environ['CFLAGS'] = '-fPIC'
-
-            self.run('./configure', '--static', '--prefix=' + self.sysroot_dir)
-            self.run(self.host_make,
-                    'AR=' + self.android_toolchain_prefix + 'ar cqs',
-                    'install')
-
-            if self.target_arch_name == 'android-32':
-                del os.environ['CFLAGS']
-
-            del os.environ['CROSS_PREFIX']
-            del os.environ['CC']
-            os.environ['PATH'] = original_path
-
-        else:
-            if self.target_platform_name == 'ios':
-                # Note that this doesn't create a library that can be used with
-                # an x86-based simulator.
-                os.environ['CFLAGS'] = '-fembed-bitcode -O3 -arch arm64 -isysroot ' + self.apple_sdk
-
-            self.run('./configure', '--static', '--prefix=' + self.sysroot_dir)
-            self.run(self.host_make)
-            self.run(self.host_make, 'install')
-
-            if self.target_platform_name == 'ios':
-                del os.environ['CFLAGS']
+        del os.environ['LIBFFI_SOURCE']
 
     @property
     def provides(self):
@@ -134,7 +105,9 @@ class libffiComponent(Component):
                         "'version' must be specified when installing from "
                         "source")
 
-            # TODO: check tool availability.
+            # Check Cygwin is installed.
+            if not os.path.isdir('C:\\cygwin'):
+                self.error("Cygwin must be installed in C:\\cygwin")
         else:
             installed_version = self._get_installed_version()
 
