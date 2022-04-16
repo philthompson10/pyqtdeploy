@@ -29,8 +29,8 @@ import os
 from ... import Component, ComponentLibrary, ComponentOption
 
 
-class zlibComponent(Component):
-    """ The zlib component. """
+class libffiComponent(Component):
+    """ The libffi component. """
 
     # Add the 'install_from_source' option.
     option_install_from_source = True
@@ -42,28 +42,14 @@ class zlibComponent(Component):
     def get_archive_name(self):
         """ Return the filename of the source archive. """
 
-        return 'zlib-{}.tar.gz'.format(self.version)
+        return 'libffi-{}.tar.gz'.format(self.version)
 
     def get_archive_urls(self):
         """ Return the list of URLs where the source archive might be
         downloaded from.
         """
 
-        return ['https://zlib.net/']
-
-    def get_options(self):
-        """ Return a list of ComponentOption objects that define the components
-        configurable options.
-        """
-
-        options = super().get_options()
-
-        options.append(
-                ComponentOption('static_msvc_runtime', type=bool,
-                        help="Set if the MSVC runtime should be statically "
-                                "linked."))
-
-        return options
+        return ['https://github.com/libffi/libffi/releases/download/v{}/'.format(self.version)]
 
     def install(self):
         """ Install for the target. """
@@ -126,16 +112,29 @@ class zlibComponent(Component):
     def provides(self):
         """ The dict of parts provided by the component. """
 
-        return {'zlib': ComponentLibrary(libs=('win#-lzlib', '!win#-lz'))}
+        dll_version = '7' if self.version == (3, 3) else '8'
+
+        return {
+                'libffi': ComponentLibrary(
+                        libs=('win#-llibffi-{}'.format(dll_version),
+                                '!win#-lffi'))
+        }
 
     def verify(self):
         """ Verify the component. """
+
+        if self.target_platform_name in ('android', 'ios'):
+            self.error(
+                    "'{0}' is not a supported target platform".format(
+                            self.target_platform_name))
 
         if self.install_from_source:
             if self.version is None:
                 self.error(
                         "'version' must be specified when installing from "
                         "source")
+
+            # TODO: check tool availability.
         else:
             installed_version = self._get_installed_version()
 
@@ -146,28 +145,26 @@ class zlibComponent(Component):
                         "v{0} is specified but the host installation is "
                                 "v{1}".format(self.version, installed_version))
 
+        if (3, 3) > self.version >= (3, 5):
+            self.unsupported("use v3.3 or v3.4")
+
     def _get_installed_version(self):
         """ Get the installed version. """
 
-        # We support native versions for everything except Windows.
-        if self.target_platform_name == 'android':
-            root_dir = self.android_ndk_sysroot
-        elif self.target_platform_name in ('ios', 'macos'):
-            root_dir = self.apple_sdk
-        elif self.target_platform_name == 'linux':
-            root_dir = ''
-        else:
+        if self.target_platform_name == 'win':
             self.error(
                     "using an existing installation is not supported for "
                     "Windows targets")
 
-        version_file = root_dir + '/usr/include/zlib.h'
-        version_line = self.get_version_from_file('ZLIB_VERSION', version_file)
+        if self.target_platform_name == 'macos':
+            ffi_h_dir = self.apple_sdk + '/usr/include/ffi'
+        elif self.target_platform_name == 'linux':
+            ffi_h_dir = '/usr/include/x86_64-linux-gnu'
 
-        version_str = version_line.split()[-1]
-        if version_str.startswith('"'):
-            version_str = version_str[1:]
-        if version_str.endswith('"'):
-            version_str = version_str[:-1]
+        version_file = ffi_h_dir + '/ffi.h'
+        version_line = self.get_version_from_file('libffi', version_file)
+
+        # The version number seems to be the second 'word' of the line.
+        version_str = version_line.split()[1]
 
         return self.parse_version_number(version_str)

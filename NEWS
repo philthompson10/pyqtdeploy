@@ -5,6 +5,8 @@ v3.2.0 15th April 2022
   - A component plugin can now be used to create multiple, similar components.
   - Added the 'wheel' plugin for specifying pure-Python components in the
     sysroot .toml file rather than writing a component plugin in Python.
+  - Added the 'libffi' component required to support ctypes on Python v3.8 and
+    later.
   - Added 'Component.unpack_wheel()'.
   - Added support for PyQtNetworkAuth as an add-on package.
   - Added support for Python v3.10.0, v3.10.1, v3.10.2, v3.10.3 and v3.10.4.

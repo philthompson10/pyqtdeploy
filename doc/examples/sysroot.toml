@@ -1,6 +1,9 @@
 # A skeleton sysroot specification file.
 
 
+[libffi]
+version = "0.0.0"
+
 [OpenSSL]
 version = "0.0.0"
 
