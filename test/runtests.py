@@ -235,21 +235,22 @@ class BuildTest(TestCase):
         if target in ('linux', 'macos', 'win'):
             test_name = os.path.basename(self.test)
 
+            executable = os.getcwd()
+            if target == 'win':
+                executable = os.path.join(executable, 'release')
+
             if test_name.startswith('stdlib_'):
-                executable = 'python_stdlib'
+                executable = os.path.join(executable, 'python_stdlib')
 
                 # Map tests to packages for non-trivial packages.
                 test_package_map = {'expat': 'xml.parsers.expat'}
 
                 test_package = self.test.split('_')[1].split('.')[0]
                 test_package = test_package_map.get(test_package, test_package)
-                args = [os.path.abspath(executable), test_package]
+                args = [executable, test_package]
             else:
-                executable = test_name.split('.')[0]
-                args = [os.path.abspath(executable)]
-
-            if target == 'win':
-                executable = os.path.join('release', executable)
+                executable = os.path.join(executable, test_name.split('.')[0])
+                args = [executable]
 
             self.call(args, verbose, executable + " failed")
 
