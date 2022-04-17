@@ -233,7 +233,9 @@ class BuildTest(TestCase):
         target = self.target.split('-')[0]
 
         if target in ('linux', 'macos', 'win'):
-            if self.test.startswith('stdlib_'):
+            test_name = os.path.basename(self.test)
+
+            if test_name.startswith('stdlib_'):
                 executable = 'python_stdlib'
 
                 # Map tests to packages for non-trivial packages.
@@ -243,7 +245,7 @@ class BuildTest(TestCase):
                 test_package = test_package_map.get(test_package, test_package)
                 args = [os.path.abspath(executable), test_package]
             else:
-                executable = os.path.basename(self.test).split('.')[0]
+                executable = test_name.split('.')[0]
                 args = [os.path.abspath(executable)]
 
             if target == 'win':
