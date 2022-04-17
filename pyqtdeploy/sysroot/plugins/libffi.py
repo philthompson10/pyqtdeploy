@@ -65,30 +65,45 @@ class libffiComponent(Component):
         self.unpack_archive(self.get_archive())
 
         # Use the script included with Python to do the build.
-        arch = '-x64' if self.target_arch_name == 'win-64' else '-x86'
+        if self.target_arch_name == 'win-64':
+            arch_flag = '-x64'
+            arch_subdir = 'amd64'
+        else:
+            arch_flag = '-x86'
+            arch_subdir = 'win32'
 
         prep = os.path.join(self.target_src_dir,
                 'Python-{}'.format(self.get_component('Python').version),
                 'PCbuild', 'prepare_libffi.bat')
 
         src_dir = os.getcwd()
-        os.environ['LIBFFI_SOURCE'] = src_dir
-        os.environ['LIBFFI_OUT'] = os.path.join(src_dir, 'out')
+        out_dir = os.path.join(src_dir, 'out')
+        arch_dir = os.path.join(out_dir, arch_subdir)
 
-        self.run(prep, arch)
+        os.environ['LIBFFI_SOURCE'] = src_dir
+        os.environ['LIBFFI_OUT'] = out_dir
+
+        self.run(prep, arch_flag)
 
         del os.environ['LIBFFI_SOURCE']
+        del os.environ['LIBFFI_OUT']
+
+        # Install in the target sysroot.
+        for ext in ('.dll', '.lib'):
+            self.copy_file(os.path.join(arch_dir, self._lib_name + ext),
+                    self.target_lib_dir)
+
+        for hdr in ('ffi.h', 'fficonfig.h', 'ffitarget.h'):
+            self.copy_file(os.path.join(arch_dir, 'include', hdr),
+                    self.target_include_dir)
 
     @property
     def provides(self):
         """ The dict of parts provided by the component. """
 
-        dll_version = '7' if self.version == (3, 3) else '8'
-
         return {
                 'libffi': ComponentLibrary(
-                        libs=('win#-llibffi-{}'.format(dll_version),
-                                '!win#-lffi'))
+                        libs=('win#-l{}'.format(self._lib_name), '!win#-lffi'))
         }
 
     def verify(self):
@@ -141,3 +156,11 @@ class libffiComponent(Component):
         version_str = version_line.split()[1]
 
         return self.parse_version_number(version_str)
+
+    @property
+    def _lib_name(self):
+        """ The name of the Windows library, excluding the extension. """
+
+        lib_version = 7 if self.version == (3, 3) else 8
+
+        return 'libffi-{}'.format(lib_version)
