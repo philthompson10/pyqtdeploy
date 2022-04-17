@@ -48,10 +48,14 @@ The following component plugins are included as standard with
 :program:`pyqtdeploy`.
 
 **libffi**
-    This provides a static version of the libffi library for Windows.  On macOS
-    and Linux it provides access to the OS supplied library.  It is currently
-    not supported on other target architectures.  It is required by the Python
-    :mod:`ctypes` module.
+    This provides the libffi library as a DLL for Windows.  On macOS and Linux
+    it provides access to the OS supplied library.  It is currently not
+    supported on other target architectures.  It is required by the Python
+    :mod:`ctypes` module.  In order to build it on Windows Cygwin must be
+    installed in :file:`C:\cygwin` (although it does not need to be included in
+    :envvar:`PATH`).  Current Python source packages include
+    :file:`prepare_libffi.bat` in the :file:`PCbuild` directory which will can
+    be run to install an appropriate version of Cygwin.
 
 **OpenSSL**
     This provides the OpenSSL libraries for v1.1.0 and later on Android (as a
@@ -1178,7 +1182,11 @@ current component is assumed.
         ``INCLUDEPATH`` :program:`qmake` variable.
     :param bool bundle_shared_libs: ``True`` if the libraries are shared and
         need to be bundled with the application.  Current this only applies to
-        Android targets.
+        Android and Windows targets.  In the case of Windows the component's
+        DLLs are copied to the same directory as the final executable so that
+        it will run in situ, however it is up to the developer to ensure that
+        the DLLs are included with the executable when the application is
+        actually deployed.
 
 
 .. py:class:: DataFile(name, min_version=None, version=None, max_version=None, target='')
