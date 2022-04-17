@@ -101,9 +101,12 @@ class libffiComponent(Component):
     def provides(self):
         """ The dict of parts provided by the component. """
 
+        bundle_shared_libs = (self.target_platform_name == 'win')
+
         return {
                 'libffi': ComponentLibrary(
-                        libs=('win#-l{}'.format(self._lib_name), '!win#-lffi'))
+                        libs=('win#-l{}'.format(self._lib_name), '!win#-lffi'),
+                        bundle_shared_libs=bundle_shared_libs)
         }
 
     def verify(self):
