@@ -182,7 +182,7 @@ class Builder:
         """
 
         lib_dir = self._sysroot.target_lib_dir
-        lib_so = []
+        shlibs = []
 
         for value in libs:
             if value.startswith('-L'):
@@ -191,10 +191,13 @@ class Builder:
                 if not os.path.isabs(lib_dir):
                     lib_dir = os.path.join(self._sysroot.sysroot_dir, lib_dir)
             elif value.startswith('-l'):
-                lib_so.append('lib' + value[2:] + '.so')
+                if self._target.platform.name == 'win':
+                    shlibs.append(value[2:] + '.dll')
+                else:
+                    shlibs.append('lib' + value[2:] + '.so')
 
         if lib_dir != '':
-            for lib in lib_so:
+            for lib in shlibs:
                 lib_path = os.path.realpath(os.path.join(lib_dir, lib))
 
                 if not os.path.isfile(lib_path):
@@ -757,20 +760,24 @@ int main(int argc, char **argv)
             f.write('\n')
             self._write_used_values(f, used_libs, 'LIBS')
 
-        # Additional configuration for Android.
+        # Additional platform=specific configuration.
         if target_platform == 'android':
             f.write('\n')
             f.write('ANDROID_ABIS = {}\n'.format(self._target.android_abi))
 
-            if bundled_shared_libs and target_platform == 'android':
+            if bundled_shared_libs:
                 f.write(
                         'ANDROID_EXTRA_LIBS += %s\n' % ' '.join(
                                 bundled_shared_libs))
+        elif target_platform == 'win':
+            # If we are using the installed Python on Windows then copy in the
+            # required DLLs.
+            if used_dlls:
+                self._copy_python_dlls(python, used_dlls, f)
 
-        # If we are using the installed Python on Windows then copy in the
-        # required DLLs.
-        if used_dlls:
-            self._copy_windows_dlls(python, used_dlls, f)
+            # Copy in any component DLLs.
+            if bundled_shared_libs:
+                self._copy_dlls(bundled_shared_libs, f)
 
         # Add the project independent post-configuration stuff.
         f.write('\n')
@@ -837,9 +844,26 @@ int main(int argc, char **argv)
 
             f.write('{0} += {1}\n'.format(qmake_var, value))
 
-    def _copy_windows_dlls(self, python, parts, f):
-        """ Generate additional qmake commands to install additional Windows
-        DLLs so that the application will be able to run.
+    def _copy_dlls(self, dlls, f):
+        """ Generate additional qmake commands to install additional DLLs so
+        that the application will be able to run.
+        """
+
+        for dll in dlls:
+            f.write('''
+PDY_DLL = %s
+exists($$PDY_DLL) {
+    CONFIG(debug, debug|release) {
+        QMAKE_POST_LINK += $(COPY_FILE) $$shell_path($$PDY_DLL) $$shell_path($$OUT_PWD/debug) &
+    } else {
+        QMAKE_POST_LINK += $(COPY_FILE) $$shell_path($$PDY_DLL) $$shell_path($$OUT_PWD/release) &
+    }
+}
+''' % dll)
+
+    def _copy_python_dlls(self, python, parts, f):
+        """ Generate additional qmake commands to install additional DLLs from
+        the Python installation so that the application will be able to run.
         """
 
         dlls = []
@@ -862,14 +886,6 @@ int main(int argc, char **argv)
         if python.version >= (3, 8):
             dlls.append('vcruntime140_1.dll')
 
-        for name in dlls:
-            f.write('''
-PDY_DLL = %s\\%s
-exists($$PDY_DLL) {
-    CONFIG(debug, debug|release) {
-        QMAKE_POST_LINK += $(COPY_FILE) $$shell_path($$PDY_DLL) $$shell_path($$OUT_PWD/debug) &
-    } else {
-        QMAKE_POST_LINK += $(COPY_FILE) $$shell_path($$PDY_DLL) $$shell_path($$OUT_PWD/release) &
-    }
-}
-''' % (python.target_lib_dir, name))
+        dlls = [os.path.join(python.target_lib_dir, dll) for dll in dlls]
+
+        self._copy_dlls(dlls, f)

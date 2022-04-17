@@ -197,7 +197,8 @@ class ComponentLibrary(CompiledPart):
                 defines=defines, libs=libs, includepath=includepath)
 
         # True if the libs are shared and need to be bundled with the
-        # application.  Currently this is only applicable to Android targets.
+        # application.  Currently this is only applicable to Android and
+        # Windows targets.
         self.bundle_shared_libs = bundle_shared_libs
 
 
