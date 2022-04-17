@@ -3484,7 +3484,8 @@ standard_library = {
                 source='socketmodule.c', pyd='_socket.pyd'),
         ExtensionModule(min_version=(3, 9), internal=True,
                 source='socketmodule.c',
-                defines='ios|macos#__APPLE_USE_RFC_3542', pyd='_socket.pyd')),
+                defines='ios|macos#__APPLE_USE_RFC_3542',
+                libs='win#-liphlpapi', pyd='_socket.pyd')),
 
     '_sqlite3':
         ExtensionModule(internal=True,
