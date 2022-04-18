@@ -509,7 +509,7 @@ standard_library = {
                         'distutils.fancy_getopt', 'distutils.file_util',
                         'distutils.log', 'distutils.sysconfig',
                         'distutils.util', 'os', 'pprint')),
-        PythonModule(max_version=(3, 10),
+        PythonModule(min_version=(3, 10),
                 deps=('distutils.core', 'distutils.debug', 'distutils.errors',
                         'distutils.fancy_getopt', 'distutils.file_util',
                         'distutils.log', 'distutils.sysconfig',
