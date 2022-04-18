@@ -93,23 +93,25 @@ class Platform:
 
         try:
             with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True) as process:
-                try:
-                    while process.poll() is None:
-                        line = process.stdout.readline()
-                        if not line:
-                            continue
+                if capture:
+                    stdout, _ = process.communicate()
+                    stdout = stdout.strip()
+                else:
+                    stdout = None
 
-                        if capture:
-                            stdout.append(line)
-                        else:
+                    try:
+                        while process.poll() is None:
+                            line = process.stdout.readline()
+                            if not line:
+                                continue
+
                             message_handler.verbose_message(line.rstrip())
 
-                    if process.returncode != 0:
-                        detail = "returned exit code {}".format(
-                                process.returncode)
+                    except Exception as e:
+                        process.kill()
 
-                except Exception as e:
-                    process.kill()
+                if process.returncode != 0:
+                    detail = "returned exit code {}".format(process.returncode)
         except Exception as e:
             detail = str(e)
 
@@ -117,7 +119,7 @@ class Platform:
             raise UserException(
                     "execution of '{0}' failed: {1}".format(args[0], detail))
 
-        return ''.join(stdout).strip() if capture else None
+        return stdout
 
     def verify_as_target(self, message_handler):
         """ Verify the platform as a target. """
