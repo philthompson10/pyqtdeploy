@@ -2,7 +2,7 @@
 
 
 [PyQt]
-version = "5.15.2"
+version = "5.15.6"
 
 [PyQt.android]
 disabled_features = ["PyQt_Desktop_OpenGL", "PyQt_Printer", "PyQt_PrintDialog",
@@ -21,9 +21,9 @@ disabled_features = ["PyQt_Desktop_OpenGL", "PyQt_MacOSXOnly",
         "PyQt_NotBootstrapped"]
 installed_modules = ["QtBluetooth", "QtCore", "QtGui", "QtHelp", "QtLocation",
         "QtMultimedia", "QtMultimediaWidgets", "QtNetwork", "QtNfc",
-        "QtOpenGL", "QtPositioning", "QtPrintSupport", "QtQml", "QtQuick",
-        "QtQuickWidgets", "QtSensors", "QtSql", "QtSvg", "QtTest",
-        "QtWebChannel", "QtWebSockets", "QtWidgets", "QtXml", "QtXmlPatterns",
+        "QtOpenGL", "QtPositioning", "QtQml", "QtQuick", "QtQuickWidgets",
+        "QtSensors", "QtSql", "QtSvg", "QtTest", "QtWebChannel",
+        "QtWebSockets", "QtWidgets", "QtXml", "QtXmlPatterns",
         "_QOpenGLFunctions_ES2"]
 
 [PyQt.linux]
@@ -52,7 +52,7 @@ installed_modules = ["QAxContainer", "QtBluetooth", "QtCore", "QtGui",
 
 
 [SIP]
-version = "12.9.1"
+version = "12.10.1"
 module_name = "PyQt5.sip"
 
 
