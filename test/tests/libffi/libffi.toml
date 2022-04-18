@@ -1,6 +1,7 @@
 # Build a static libffi on Windows.
 
 [libffi]
+disabled_targets = ["android", "ios"]
 install_from_source = false
 
 [libffi.win]
