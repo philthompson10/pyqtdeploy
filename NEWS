@@ -1,4 +1,4 @@
-v3.2.0 17th April 2022
+v3.2.0 18th April 2022
   - The version number of a component may be determined dynamically (if the
     component plugin supports it) rather than being specified in the sysroot
     specification file.
