@@ -99,8 +99,7 @@ class zlibComponent(Component):
 
             self.run('./configure', '--static', '--prefix=' + self.sysroot_dir)
             self.run(self.host_make,
-                    'AR=' + self.android_toolchain_prefix + 'ar cqs',
-                    'install')
+                    'AR=' + self.android_toolchain_prefix + 'ar', 'install')
 
             if self.target_arch_name == 'android-32':
                 del os.environ['CFLAGS']
