@@ -297,6 +297,9 @@ class Builder:
         bootstrap_version = None
 
         for fn in resources.contents(package):
+            if fn.startswith('__'):
+                continue
+
             name, version = fn.split('-')
             if version.endswith('.py'):
                 version = version[:-3]
