@@ -69,7 +69,7 @@ def package_provided(package, target, version, no_openssl, no_zlib,
                 if ':' in dep:
                     component, dep = dep.split(':', maxsplit=1)
 
-                    if component != 'zlib':
+                    if component not in ('libffi', 'zlib'):
                         raise ValueError(f"unknown component '{component}'")
 
                     if no_zlib:
