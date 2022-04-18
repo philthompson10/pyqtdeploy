@@ -11,7 +11,7 @@ from pyqtdeploy.version_number import VersionNumber
 from pyqtdeploy.sysroot.plugins.Python.standard_library import standard_library
 
 
-def package_provided(package, target, version, no_openssl, no_zlib,
+def package_provided(package, target, version, no_libffi, no_openssl, no_zlib,
         show_cached, depth=0, memo=None):
     """ Show the availability of a package and it's dependencies. """
 
@@ -72,7 +72,10 @@ def package_provided(package, target, version, no_openssl, no_zlib,
                     if component not in ('libffi', 'zlib'):
                         raise ValueError(f"unknown component '{component}'")
 
-                    if no_zlib:
+                    if component == 'libffi' and no_libffi:
+                        provided = False
+
+                    if component == 'zlib' and no_zlib:
                         provided = False
 
                     continue
@@ -90,8 +93,8 @@ def package_provided(package, target, version, no_openssl, no_zlib,
                         continue
 
                 dep_provided = package_provided(dep, target, version,
-                        no_openssl, no_zlib, show_cached, depth=depth + 1,
-                        memo=memo)
+                        no_libffi, no_openssl, no_zlib, show_cached,
+                        depth=depth + 1, memo=memo)
 
                 if not dep_provided:
                     provided = False
@@ -107,6 +110,8 @@ def package_provided(package, target, version, no_openssl, no_zlib,
 # Parse the command line.
 parser = argparse.ArgumentParser()
 
+parser.add_argument('--no-libffi', help="assume libffi is not available",
+        default=False, action='store_true')
 parser.add_argument('--no-openssl', help="assume OpenSSL is not available",
         default=False, action='store_true')
 parser.add_argument('--no-zlib', help="assume zlib is not available",
@@ -130,5 +135,5 @@ else:
     version = VersionNumber.parse_version_number(sys.hexversion >> 8)
 
 # Show the package and it's dependencies.
-package_provided(args.package, target, version, args.no_openssl, args.no_zlib,
-        args.show_cached)
+package_provided(args.package, target, version, args.no_libffi,
+        args.no_openssl, args.no_zlib, args.show_cached)
