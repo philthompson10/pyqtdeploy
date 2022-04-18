@@ -12,6 +12,10 @@ exclusions = ["__main__.py"]
 [zlib]
 version = "1.2.12"
 
+[zlib.ios]
+version = ""
+install_from_source = false
+
 
 [Python]
 version = "$PYTHON_VERSION"
