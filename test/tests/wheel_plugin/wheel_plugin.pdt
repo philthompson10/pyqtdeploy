@@ -1,6 +1,6 @@
 version = 0
 sysroot = "wheel_plugin.toml"
-sysroots_dir = "/Users/phil/hg/pyqtdeploy/test/sysroot/wheel_plugin"
+sysroots_dir = "../../sysroot/wheel_plugin"
 parts = [ "certifi:certifi",]
 
 [Application]
