@@ -3400,8 +3400,8 @@ standard_library = {
                 deps=('contextlib', 'os', 're')),
 
     '_pickle': (
-        ExtensionModule(max_version=(3, 8), internal=True, source='_pickle.c'),
-        ExtensionModule(min_version=(3, 9), internal=True, source='_pickle.c',
+        ExtensionModule(max_version=(3, 7), internal=True, source='_pickle.c'),
+        ExtensionModule(min_version=(3, 8), internal=True, source='_pickle.c',
                 defines='Py_BUILD_CORE_MODULE')),
 
     'posixpath':
