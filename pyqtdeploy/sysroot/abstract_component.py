@@ -605,8 +605,6 @@ class AbstractComponent(ABC):
         if self._parts is None:
             self._parts = {}
 
-            openssl = self.get_component('OpenSSL', required=False)
-
             # Get the provided version and target-specific parts.
             provides = {}
             for unscoped_name, versions in self.provides.items():
@@ -617,7 +615,7 @@ class AbstractComponent(ABC):
             # For each provided part remember the part or None if any of its
             # dependencies are unavailable.
             for name, part in provides.items():
-                self._add_part(name, part, openssl, provides)
+                self._add_part(name, part, provides)
 
             # Remove all unavailable parts.
             self._parts = {n: p for n, p in self._parts.items()
@@ -635,7 +633,7 @@ class AbstractComponent(ABC):
         # site-packages directory.
         return self.get_component('Python').target_sitepackages_dir
 
-    def _add_part(self, name, part, openssl, provides):
+    def _add_part(self, name, part, provides):
         """ Add a part if all its dependencies are available. """
 
         # Handle the trivial case.
@@ -666,7 +664,7 @@ class AbstractComponent(ABC):
                 dep_name = Part.get_name(component_name, part_name[1:])
             elif part_name.startswith('!'):
                 # This is only provided if OpenSSL is not available.
-                if openssl is not None:
+                if self.get_component('OpenSSL', required=False) is not None:
                     continue
 
                 dep_name = Part.get_name(component_name, part_name[1:])
@@ -681,7 +679,7 @@ class AbstractComponent(ABC):
                         part = None
                         break
                 else:
-                    self._add_part(dep_name, dep_part, openssl, provides)
+                    self._add_part(dep_name, dep_part, provides)
 
                     # See if the dependency was actually available.
                     if self._parts[dep_name] is None:
