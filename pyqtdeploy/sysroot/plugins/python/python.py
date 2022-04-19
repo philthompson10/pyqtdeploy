@@ -228,9 +228,7 @@ class PythonComponent(AbstractPythonComponent):
 
             # Check the OpenSSL support.
             openssl = self.get_component('OpenSSL', required=False)
-            if openssl is None:
-                self._has_openssl = False
-            else:
+            if openssl is not None:
                 if self.version >= (3, 8):
                     if openssl.version < (1, 1, 1):
                         self.error(
@@ -251,15 +249,10 @@ class PythonComponent(AbstractPythonComponent):
                         self.error(
                                 "v{0} requires OpenSSL v1.0.2".format(
                                         self.version))
-
-                self._has_openssl = True
         elif self.host_platform_name != 'win':
             self.error(
                     "using an existing Python installation for the target is "
                     "not supported on {0}".format(self.target_platform_name))
-
-            # A standard Python builds support OpenSSL.
-            self._has_openssl = True
 
         if self.target_platform_name == 'android' and self.android_api < 21:
             self.error("Android API level 21 or greater is required")

@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,6 @@ class PackagesPage(QWidget):
 
         self._project = None
         self._part_items = {}
-        self._has_openssl = False
 
         # Create the page's GUI.
         layout = QVBoxLayout()
@@ -279,16 +278,11 @@ class PackagesPage(QWidget):
         if project.sysroot_specification is None:
             return
 
-        self._has_openssl = False
-
         for target in Architecture.all_architectures:
             sysroot = Sysroot(project.sysroot_specification, host, target,
                     project.absolute_sysroots_dir)
 
             for component in sysroot.components:
-                if component.name == 'OpenSSL':
-                    self._has_openssl = True
-
                 stdlib = (component.name == 'Python')
 
                 parts = component.parts
