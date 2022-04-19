@@ -2877,7 +2877,7 @@ standard_library = {
                 pyd='_ctypes.pyd'),
         ExtensionModule(min_version=(3, 8), max_version=(3, 8, 9),
                 target='linux|macos|win', internal=True,
-                deps='linux|win#libffi:libffi',
+                deps='libffi:linux|win#libffi',
                 source=('_ctypes/_ctypes.c', '_ctypes/callbacks.c',
                         '_ctypes/callproc.c', '_ctypes/stgdict.c',
                         '_ctypes/cfield.c',
