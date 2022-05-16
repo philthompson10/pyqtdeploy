@@ -29,7 +29,7 @@ import os
 import shutil
 import sys
 
-from .... import AbstractPythonComponent, ComponentOption
+from .... import AbstractPythonComponent, ComponentOption, UserException
 
 from .pyconfig import generate_pyconfig_h
 from .standard_library import standard_library
@@ -288,6 +288,9 @@ class PythonComponent(AbstractPythonComponent):
             pyconfig_version = None
 
             for fn in resources.contents(pyconfig_package):
+                if fn.startswith('__'):
+                    continue
+
                 version = fn.split('-')[-1]
                 if version.endswith('.h'):
                     version = version[:-2]
