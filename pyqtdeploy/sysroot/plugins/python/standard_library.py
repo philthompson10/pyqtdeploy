@@ -2311,12 +2311,21 @@ standard_library = {
     'xml.etree':
         PythonModule(deps='xml'),
 
-    'xml.etree.ElementTree':
-        PythonModule(
+    'xml.etree.ElementTree': (
+        PythonModule(max_version=(3, 9, 12),
                 deps=('xml.etree', 'collections', 'collections.abc',
                         'contextlib', '_elementtree', 'io', 'locale', 're',
                         'warnings', 'xml.etree.ElementPath',
                         'xml.parsers.expat')),
+        PythonModule(min_version=(3, 9, 13), max_version=(3, 9),
+                deps=('xml.etree', 'collections', 'collections.abc',
+                        'contextlib', '_elementtree', 'io', 're', 'warnings',
+                        'xml.etree.ElementPath', 'xml.parsers.expat')),
+        PythonModule(min_version=(3, 10),
+                deps=('xml.etree', 'collections', 'collections.abc',
+                        'contextlib', '_elementtree', 'io', 'locale', 're',
+                        'warnings', 'xml.etree.ElementPath',
+                        'xml.parsers.expat'))),
 
     'xml.parsers':
         PythonModule(deps='xml'),

@@ -1,5 +1,5 @@
-v3.2.1 16th May 2022
-  - A bug fix only release.
+v3.2.1 17th May 2022
+  - Added support for Python v3.9.13.
 
 v3.2.0 19th April 2022
   - The version number of a component may be determined dynamically (if the
