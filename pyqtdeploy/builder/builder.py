@@ -648,7 +648,7 @@ int main(int argc, char **argv)
         used_includepath.add(self._sysroot.target_include_dir)
         used_includepath.add(python.target_py_include_dir)
 
-        if python.version >= (3, 9):
+        if python.version >= (3, 8):
             used_includepath.add(python.target_py_include_dir + '/internal')
 
         used_libs.add('-L' + self._sysroot.target_lib_dir)
