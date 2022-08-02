@@ -42,7 +42,7 @@ from .configurations import pyconfig as pyconfig_package
 LATEST_3_7_RELEASE = (3, 7, 13)
 LATEST_3_8_RELEASE = (3, 8, 13)
 LATEST_3_9_RELEASE = (3, 9, 13)
-LATEST_3_10_RELEASE = (3, 10, 5)
+LATEST_3_10_RELEASE = (3, 10, 6)
 
 
 class PythonComponent(AbstractPythonComponent):
