@@ -1,6 +1,8 @@
-v3.2.1 2nd August 2022
-  - Added support for Python v3.10.5 and v3.10.6.
-  - Added support for Python v3.9.13.
+v3.2.1 9th September 2022
+  - Added support for Python v3.10.5, v3.10.6 and v3.10.7.
+  - Added support for Python v3.9.13 and v3.9.14.
+  - Added support for Python v3.8.14.
+  - Added support for Python v3.7.14.
 
 v3.2.0 19th April 2022
   - The version number of a component may be determined dynamically (if the
