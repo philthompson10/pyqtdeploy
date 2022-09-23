@@ -1615,7 +1615,7 @@ standard_library = {
                         'errno', 'mmap',
                         '!win#multiprocessing.resource_tracker', 'os',
                         'secrets', 'struct')),
-        PythonModule(min_version=(3, 9), max_version(3, 10, 5),
+        PythonModule(min_version=(3, 9), max_version=(3, 10, 5),
                 deps=('multiprocessing', '!win#_posixshmem', 'win#_winapi',
                         'errno', 'mmap',
                         '!win#multiprocessing.resource_tracker', 'os',
