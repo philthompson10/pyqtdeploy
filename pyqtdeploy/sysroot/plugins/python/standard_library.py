@@ -1509,8 +1509,9 @@ standard_library = {
                         '!win#fcntl', 'io', 'os', 'socket', 'time', 'types',
                         'warnings'))),
 
-    'mailcap':
-        PythonModule(deps=('os', 'warnings')),
+    'mailcap': (
+        PythonModule(max_version=(3, 10, 7), deps=('os', 'warnings')),
+        PythonModule(min_version=(3, 10, 8), deps=('os', 're', 'warnings'))),
 
     'marshal':
         CoreExtensionModule(),
@@ -2679,11 +2680,16 @@ standard_library = {
                 deps=('asyncio', 'asyncio.coroutines', 'asyncio.events',
                         'asyncio.log', 'asyncio.protocols', 'asyncio.tasks',
                         'socket')),
-        PythonModule(min_version=(3, 8), internal=True,
+        PythonModule(min_version=(3, 8), max_version=(3, 10, 7), internal=True,
                 deps=('asyncio', 'asyncio.coroutines', 'asyncio.events',
                         'asyncio.exceptions', 'asyncio.format_helpers',
                         'asyncio.log', 'asyncio.protocols', 'asyncio.tasks',
-                        'socket', 'warnings', 'weakref'))),
+                        'socket', 'warnings', 'weakref')),
+        PythonModule(min_version=(3, 10, 8), internal=True,
+                deps=('asyncio', 'asyncio.coroutines', 'asyncio.events',
+                        'asyncio.exceptions', 'asyncio.format_helpers',
+                        'asyncio.log', 'asyncio.protocols', 'asyncio.tasks',
+                        'collections', 'socket', 'warnings', 'weakref'))),
 
     'asyncio.subprocess': (
         PythonModule(version=(3, 7), internal=True,
