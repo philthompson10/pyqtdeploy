@@ -39,10 +39,10 @@ from .configurations import pyconfig as pyconfig_package
 
 
 # The latest tested patch releases of each minor version.
-LATEST_3_7_RELEASE = (3, 7, 14)
-LATEST_3_8_RELEASE = (3, 8, 14)
-LATEST_3_9_RELEASE = (3, 9, 14)
-LATEST_3_10_RELEASE = (3, 10, 7)
+LATEST_3_7_RELEASE = (3, 7, 15)
+LATEST_3_8_RELEASE = (3, 8, 15)
+LATEST_3_9_RELEASE = (3, 9, 15)
+LATEST_3_10_RELEASE = (3, 10, 8)
 
 
 class PythonComponent(AbstractPythonComponent):
