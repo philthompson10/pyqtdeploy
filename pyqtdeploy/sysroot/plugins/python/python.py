@@ -29,7 +29,7 @@ import os
 import shutil
 import sys
 
-from .... import AbstractPythonComponent, ComponentOption
+from .... import AbstractPythonComponent, ComponentOption, UserException
 
 from .pyconfig import generate_pyconfig_h
 from .standard_library import standard_library
@@ -39,10 +39,10 @@ from .configurations import pyconfig as pyconfig_package
 
 
 # The latest tested patch releases of each minor version.
-LATEST_3_7_RELEASE = (3, 7, 13)
-LATEST_3_8_RELEASE = (3, 8, 13)
-LATEST_3_9_RELEASE = (3, 9, 12)
-LATEST_3_10_RELEASE = (3, 10, 4)
+LATEST_3_7_RELEASE = (3, 7, 15)
+LATEST_3_8_RELEASE = (3, 8, 15)
+LATEST_3_9_RELEASE = (3, 9, 15)
+LATEST_3_10_RELEASE = (3, 10, 8)
 
 
 class PythonComponent(AbstractPythonComponent):
@@ -288,6 +288,9 @@ class PythonComponent(AbstractPythonComponent):
             pyconfig_version = None
 
             for fn in resources.contents(pyconfig_package):
+                if fn.startswith('__'):
+                    continue
+
                 version = fn.split('-')[-1]
                 if version.endswith('.h'):
                     version = version[:-2]

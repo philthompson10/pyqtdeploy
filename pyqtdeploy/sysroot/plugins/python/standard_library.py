@@ -1509,8 +1509,9 @@ standard_library = {
                         '!win#fcntl', 'io', 'os', 'socket', 'time', 'types',
                         'warnings'))),
 
-    'mailcap':
-        PythonModule(deps=('os', 'warnings')),
+    'mailcap': (
+        PythonModule(max_version=(3, 10, 7), deps=('os', 'warnings')),
+        PythonModule(min_version=(3, 10, 8), deps=('os', 're', 'warnings'))),
 
     'marshal':
         CoreExtensionModule(),
@@ -1615,11 +1616,15 @@ standard_library = {
                         'errno', 'mmap',
                         '!win#multiprocessing.resource_tracker', 'os',
                         'secrets', 'struct')),
-        PythonModule(min_version=(3, 9),
+        PythonModule(min_version=(3, 9), max_version=(3, 10, 5),
                 deps=('multiprocessing', '!win#_posixshmem', 'win#_winapi',
                         'errno', 'mmap',
                         '!win#multiprocessing.resource_tracker', 'os',
-                        'secrets', 'struct', 'types'))),
+                        'secrets', 'struct', 'types')),
+        PythonModule(min_version=(3, 10, 6),
+                deps=('multiprocessing', '!win#_posixshmem', 'win#_winapi',
+                        'errno', 'mmap', 'multiprocessing.resource_tracker',
+                        'os', 'secrets', 'struct', 'types'))),
 
     'multiprocessing.sharedctypes':
         PythonModule(
@@ -2311,12 +2316,25 @@ standard_library = {
     'xml.etree':
         PythonModule(deps='xml'),
 
-    'xml.etree.ElementTree':
-        PythonModule(
+    'xml.etree.ElementTree': (
+        PythonModule(max_version=(3, 9, 12),
                 deps=('xml.etree', 'collections', 'collections.abc',
                         'contextlib', '_elementtree', 'io', 'locale', 're',
                         'warnings', 'xml.etree.ElementPath',
                         'xml.parsers.expat')),
+        PythonModule(min_version=(3, 9, 13), max_version=(3, 9),
+                deps=('xml.etree', 'collections', 'collections.abc',
+                        'contextlib', '_elementtree', 'io', 're', 'warnings',
+                        'xml.etree.ElementPath', 'xml.parsers.expat')),
+        PythonModule(min_version=(3, 10), max_version=(3, 10, 4),
+                deps=('xml.etree', 'collections', 'collections.abc',
+                        'contextlib', '_elementtree', 'io', 'locale', 're',
+                        'warnings', 'xml.etree.ElementPath',
+                        'xml.parsers.expat')),
+        PythonModule(min_version=(3, 10, 5),
+                deps=('xml.etree', 'collections', 'collections.abc',
+                        'contextlib', '_elementtree', 'io', 're', 'warnings',
+                        'xml.etree.ElementPath', 'xml.parsers.expat'))),
 
     'xml.parsers':
         PythonModule(deps='xml'),
@@ -2662,11 +2680,16 @@ standard_library = {
                 deps=('asyncio', 'asyncio.coroutines', 'asyncio.events',
                         'asyncio.log', 'asyncio.protocols', 'asyncio.tasks',
                         'socket')),
-        PythonModule(min_version=(3, 8), internal=True,
+        PythonModule(min_version=(3, 8), max_version=(3, 10, 7), internal=True,
                 deps=('asyncio', 'asyncio.coroutines', 'asyncio.events',
                         'asyncio.exceptions', 'asyncio.format_helpers',
                         'asyncio.log', 'asyncio.protocols', 'asyncio.tasks',
-                        'socket', 'warnings', 'weakref'))),
+                        'socket', 'warnings', 'weakref')),
+        PythonModule(min_version=(3, 10, 8), internal=True,
+                deps=('asyncio', 'asyncio.coroutines', 'asyncio.events',
+                        'asyncio.exceptions', 'asyncio.format_helpers',
+                        'asyncio.log', 'asyncio.protocols', 'asyncio.tasks',
+                        'collections', 'socket', 'warnings', 'weakref'))),
 
     'asyncio.subprocess': (
         PythonModule(version=(3, 7), internal=True,
@@ -3326,10 +3349,11 @@ standard_library = {
                         'threading')),
 
     'multiprocessing.resource_tracker':
-        PythonModule(min_version=(3, 8), target='!win', internal=True,
-                deps=('multiprocessing', '_multiprocessing', '_posixshmem',
-                        'multiprocessing.spawn', 'multiprocessing.util', 'os',
-                        'signal', 'threading', 'warnings')),
+        PythonModule(min_version=(3, 8), internal=True,
+                deps=('multiprocessing', '!win#_multiprocessing',
+                        '!win#_posixshmem', 'multiprocessing.spawn',
+                        'multiprocessing.util', 'os', 'signal', 'threading',
+                        'warnings')),
 
     'multiprocessing.semaphore_tracker':
         PythonModule(version=(3, 7), target='!win', internal=True,
@@ -3374,9 +3398,12 @@ standard_library = {
     'nt':
         CoreExtensionModule(target='win', internal=True),
 
-    'ntpath':
-        PythonModule(internal=True,
+    'ntpath': (
+        PythonModule(max_version=(3, 10, 5), internal=True,
                 deps=('genericpath', 'win#nt', 'os', 'stat', 'string')),
+        PythonModule(min_version=(3, 10, 6), internal=True,
+                deps=('genericpath', 'win#nt', 'os', 'stat', 'string',
+                        'win#_winapi'))),
 
     'nturl2path':
         PythonModule(target='win', internal=True,
