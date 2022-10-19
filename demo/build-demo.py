@@ -46,6 +46,10 @@ def run(args):
 
 # Parse the command line.
 parser = argparse.ArgumentParser()
+parser.add_argument('--jobs',
+        help="the number of make jobs to be run in parallel on Linux and "
+                "macOS [default: 1]",
+        metavar="NUMBER", type=int, default=1)
 parser.add_argument('--qmake',
         help="the qmake executable when using an existing Qt installation",
         metavar="FILE")
@@ -55,6 +59,7 @@ parser.add_argument('--quiet', help="disable progress messages",
 parser.add_argument('--verbose', help="enable verbose progress messages",
         action='store_true')
 cmd_line_args = parser.parse_args()
+jobs = cmd_line_args.jobs
 qmake = os.path.abspath(cmd_line_args.qmake) if cmd_line_args.qmake else None
 target = cmd_line_args.target
 quiet = cmd_line_args.quiet
@@ -103,6 +108,10 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Build the sysroot.  This won't do anything if it is already built.
 args = ['pyqtdeploy-sysroot', '--target', target]
+
+if jobs > 1:
+    args.append('--jobs')
+    args.append(str(jobs))
 
 if qmake:
     args.append('--qmake')

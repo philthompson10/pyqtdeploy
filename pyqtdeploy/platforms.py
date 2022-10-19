@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,8 +39,8 @@ class Platform:
     # The list of all platforms.
     all_platforms = []
 
-    # The name of the make executable.
-    make = 'make'
+    # The number of make jobs to run in parallel.
+    jobs = 1
     
     def __init__(self, full_name, name, archs):
         """ Initialise the object. """
@@ -69,6 +69,18 @@ class Platform:
 
         return name
 
+    @property
+    def make(self):
+        """ The name of the make executable. """
+
+        # We assume a POSIX make.
+        make = 'make'
+
+        if self.jobs > 1:
+            make = (make, '-j', str(self.jobs))
+
+        return make
+
     @classmethod
     def platform(cls, name):
         """ Return the singleton Platform instance for a platform.  A
@@ -84,6 +96,14 @@ class Platform:
     @staticmethod
     def run(*args, message_handler, capture=False):
         """ Run a command, optionally capturing stdout. """
+
+        # Allow the first argument to be a sequence of arguments.  This allows
+        # default arguments to be specified for all invocations without
+        # requiring support from individual plugins.
+        if isinstance(args[0], (list, tuple)):
+            new_args = list(args[0])
+            new_args.extend(args[1:])
+            args = new_args
 
         message_handler.verbose_message(
                 "Running '{0}'.".format(' '.join(args)))
@@ -674,9 +694,6 @@ class Windows_x86_64(WindowsArchitecture):
 class Windows(Platform):
     """ Encapsulate the Windows platform. """
 
-    # The name of the make executable.
-    make = 'nmake'
-    
     def __init__(self):
         """ Initialise the object. """
         
@@ -690,5 +707,12 @@ class Windows(Platform):
             name += '.exe'
 
         return name
+
+    @property
+    def make(self):
+        """ The name of the make executable. """
+
+        return 'nmake'
+
 
 Windows()

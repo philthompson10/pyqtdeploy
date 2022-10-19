@@ -434,6 +434,11 @@ The full set of command line options is:
     This causes all components to be installed even if components with the
     required versions have already been installed.
 
+.. option:: --jobs NUMBER
+
+    This specifies the number of :program:`make` jobs that will be run in
+    parallel.  It only has an affect on Linux and macOS hosts.
+
 .. option:: --no-clean
 
     A temporary build directory (called ``build`` in the sysroot) is created in
