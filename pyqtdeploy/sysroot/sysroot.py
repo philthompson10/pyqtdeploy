@@ -223,7 +223,7 @@ class Sysroot:
         return self.host.platform.exe(name)
 
     def install_components(self, component_names, source_dirs, no_clean,
-            force):
+            force, jobs):
         """ Install a sequence of components.  If no names are given then
         use the Manifest file to determine what needs to be installed.  Raise a
         UserException if there is an error.
@@ -288,6 +288,7 @@ class Sysroot:
 
         # Install the components.
         self.building_for_target = True
+        self.host.platform.jobs = jobs
 
         for component in components:
             component.ensure_installed(build_dir, all_components, manifest)

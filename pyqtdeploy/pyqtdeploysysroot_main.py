@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,10 @@ def main():
             action='append')
     parser.add_argument('--force', help="force a complete build",
             action='store_true')
+    parser.add_argument('--jobs',
+            help="the number of make jobs to be run in parallel on Linux and "
+                    "macOS [default: 1]",
+            metavar="NUMBER", type=int, default=1)
     parser.add_argument('--no-clean',
             help="do not remove the temporary build directory",
             action='store_true')
@@ -101,7 +105,7 @@ def main():
             sysroot.verify()
         else:
             sysroot.install_components(args.component, args.source_dirs,
-                    args.no_clean, args.force)
+                    args.no_clean, args.force, args.jobs)
     except UserException as e:
         message_handler.exception(e)
         return 1
