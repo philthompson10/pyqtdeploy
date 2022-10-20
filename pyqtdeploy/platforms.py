@@ -39,14 +39,14 @@ class Platform:
     # The list of all platforms.
     all_platforms = []
 
-    # The number of make jobs to run in parallel.
-    jobs = 1
-    
     def __init__(self, full_name, name, archs):
         """ Initialise the object. """
 
         self.full_name = full_name
         self.name = name
+
+        # The number of jobs to be run in parallel.
+        self.jobs = 1
 
         # Create the architectures.
         for arch_name, arch_factory in archs:
