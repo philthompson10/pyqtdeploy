@@ -99,13 +99,16 @@ def main():
                 message_handler=message_handler, python=args.python,
                 qmake=args.qmake)
 
+        # This is a bit of a hack as platforms are singletons.
+        host.platform.jobs = args.jobs
+
         if args.options:
             sysroot.show_options(args.component)
         elif args.verify:
             sysroot.verify()
         else:
             sysroot.install_components(args.component, args.source_dirs,
-                    args.no_clean, args.force, args.jobs)
+                    args.no_clean, args.force)
     except UserException as e:
         message_handler.exception(e)
         return 1
