@@ -24,6 +24,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
+import glob
 import os
 
 from ... import Component, ComponentOption, ExtensionModule
@@ -36,18 +37,28 @@ class SIPComponent(Component):
     # this one.
     preinstalls = ['Python', 'Qt']
 
-    def get_archive_name(self):
-        """ Return the filename of the source archive. """
+    # The version will be determined dynamically.
+    version_is_optional = True
 
-        return '{}-{}.tar.gz'.format(self.module_name.replace('.', '_'),
-                self.version)
+    def get_archive(self):
+        """ Return the pathname of a local copy of the source archive. """
 
-    def get_archive_urls(self):
-        """ Return the list of URLs where the source archive might be
-        downloaded from.
-        """
+        # Create the archive in the current directory.
+        self.run('sip-module', '--sdist', self.module_name, '--abi-version',
+                str(self.abi_major_version))
 
-        return self.get_pypi_urls(self.module_name.replace('.', '-'))
+        # Work out what the name was.
+        pattern = '{}-{}.*.tar.gz'.format(
+                self.module_name.replace('.', '_'), self.abi_major_version)
+        archives = glob.glob(pattern)
+
+        if len(archives) == 0:
+            self.error("sip-module didn't create an sdist")
+
+        if len(archives) > 1:
+            self.error("Several possible sdists found: " + ', '.join(archives))
+
+        return archives[0]
 
     def get_options(self):
         """ Return a list of ComponentOption objects that define the components
@@ -55,6 +66,10 @@ class SIPComponent(Component):
         """
 
         options = super().get_options()
+
+        options.append(
+                ComponentOption('abi_major_version', required=True, type=int,
+                        help="The major number of the ABI of the sip module."))
 
         options.append(
                 ComponentOption('module_name', required=True,
@@ -123,7 +138,21 @@ class SIPComponent(Component):
     def verify(self):
         """ Verify the component. """
 
-        self.find_exe('sip-install')
+        installed_version = self.parse_version_number(
+                self.run('sip-module', '--version', capture=True))
+
+        if self.version is None:
+            self.version = installed_version
+        elif self.version != installed_version:
+            self.error(
+                    "v{0} is specified but the host installation is "
+                            "v{1}".format(self.version, installed_version))
+
+        # SIP v6.2 is the minimum version required as it is the first that
+        # doesn't implement multiple minor versions of the same major version
+        # of the ABI.
+        if self.version < (6, 2):
+            sip.unsupported()
 
 
 # The skeleton .pro file for the sip module.

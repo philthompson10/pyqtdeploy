@@ -101,9 +101,11 @@ class Component(AbstractComponent):
 
         self.error("unable to find '{0}'".format(archive))
 
-    @abstractmethod
     def get_archive_name(self):
         """ Return the filename of the source archive or wheel. """
+
+        # It is not abstract as it may not ever be called.
+        raise NotImplementedError
 
     def get_archive_urls(self):
         """ Return the list of URLs where a source archive or wheel might be
@@ -149,8 +151,11 @@ class Component(AbstractComponent):
 
         # Windows has a problem extracting the Qt source archive (probably the
         # long pathnames).  As a work around we copy it to the current
-        # directory and extract it from there.
-        self.copy_file(archive, '.')
+        # directory and extract it from there (unless it is already in the
+        # current directory).
+        if os.path.dirname(archive):
+            self.copy_file(archive, '.')
+
         archive_name = os.path.basename(archive)
 
         # Unpack the archive.
