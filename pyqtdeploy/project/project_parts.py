@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -65,7 +65,7 @@ class QrcPackage():
                     key = node_name[:-3]
                     part = PythonModule()
                 else:
-                    key = parent_name + '/' + node.name
+                    key = parent_name.replace('.', '/') + '/' + node.name
                     part = DataFile(node.name)
 
                 parts[key] = part
