@@ -141,7 +141,7 @@ class QScintillaComponent(Component):
         if self.target_platform_name == 'ios' and (2, 12) <= self.version <= (2, 13, 1):
             self.unsupported("use v2.13.2 or later")
 
-        if self.version > (2, 13, 2):
+        if self.version > (2, 13, 3):
             self.untested()
 
         # The Scintilla code uses C++ library functions that are missing prior
