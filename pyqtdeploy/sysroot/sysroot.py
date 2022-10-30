@@ -375,11 +375,7 @@ class Sysroot:
 
         # Verify the components.
         for component in self.components:
-            self.progress("verifying {0}".format(component.name))
-            component.verify()
-            self.verbose(
-                    "verified {0} v{1}".format(component.name,
-                            component.version))
+            component.ensure_verified()
 
     def verbose(self, message, component=None):
         """ Issue a verbose progress message. """

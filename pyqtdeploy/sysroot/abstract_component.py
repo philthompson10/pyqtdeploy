@@ -479,12 +479,13 @@ class AbstractComponent(ABC):
     ###########################################################################
 
     # The installation status.
-    _IS_NOT_INSTALLED, _IS_IN_PROGRESS, _IS_INSTALLED = range(3)
+    _IS_NOT_DONE, _IS_IN_PROGRESS, _IS_DONE = range(3)
 
     def __init__(self, name, configuration, sysroot):
         """ Initialise the component. """
 
-        self._install_status = self._IS_NOT_INSTALLED
+        self._install_status = self._IS_NOT_DONE
+        self._verify_status = self._IS_NOT_DONE
 
         self.name = name
         self._sysroot = sysroot
@@ -556,13 +557,13 @@ class AbstractComponent(ABC):
     def ensure_installed(self, build_dir, all_components, manifest):
         """ Ensure the component is installed. """
 
-        # Handle the trivial case where the manifest show that the component is
-        # already installed.
+        # Handle the trivial case where the manifest shows that the component
+        # is already installed.
         if self.name in manifest:
-            self._install_status = self._IS_INSTALLED
+            self._install_status = self._IS_DONE
             return
 
-        if self._install_status == self._IS_NOT_INSTALLED:
+        if self._install_status == self._IS_NOT_DONE:
             self._install_status = self._IS_IN_PROGRESS
 
             # If all components are being installed then make sure they are
@@ -578,7 +579,7 @@ class AbstractComponent(ABC):
             os.chdir(build_dir)
             self.install()
 
-            self._install_status = self._IS_INSTALLED
+            self._install_status = self._IS_DONE
             manifest[self.name] = self.version
 
             # Checkpoint the manifest.
@@ -586,6 +587,28 @@ class AbstractComponent(ABC):
 
         elif self._install_status == self._IS_IN_PROGRESS:
             self.error("the component is part of a circular dependency")
+
+    def ensure_verified(self):
+        """ Ensure the compoent is verified. """
+
+        if self._verify_status == self._IS_DONE:
+            return
+
+        if self._verify_status == self._IS_IN_PROGRESS:
+            self.error("the component is part of a circular dependency")
+
+        self._verify_status = self._IS_IN_PROGRESS
+
+        for preinstall in self.preinstalls:
+            component = self.get_component(preinstall, required=False)
+            if component is not None:
+                component.ensure_verified()
+
+        self.progress("verifying")
+        self.verify()
+        self.verbose("verified v{0}".format(self.version))
+
+        self._verify_status = self._IS_DONE
 
     def get_target_src_path(self, name):
         """ Return the absolute pathname of a source file provided by the

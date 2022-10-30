@@ -1,10 +1,11 @@
-v3.3.0 20th October 2022
+v3.3.0 30th October 2022
   - Added the '--jobs' option to pyqtdeploy-sysroot for Linux and macOS.
   - Added the '--jobs' option to build-demo.py for Linux and macOS.
   - Added support for Python v3.10.5, v3.10.6, v3.10.7 and v3.10.8.
   - Added support for Python v3.9.13, v3.9.14 and v3.9.15.
   - Added support for Python v3.8.14 and v3.8.15.
   - Added support for Python v3.7.14 and v3.7.15.
+  - Component plugins are now verified in dependency order.
 
 v3.2.0 19th April 2022
   - The version number of a component may be determined dynamically (if the
