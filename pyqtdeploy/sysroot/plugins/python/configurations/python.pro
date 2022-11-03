@@ -123,7 +123,15 @@ greaterThan(PY_MINOR_VERSION, 9) {
         Parser/pegen.c \
         Parser/parser.c \
         Parser/string_parser.c \
-        Parser/peg_api.c \
+        Parser/peg_api.c
+
+    greaterThan(PY_MINOR_VERSION, 10) {
+        PARSER_SOURCES += \
+            Parser/pegen_errors.c \
+            Parser/action_helpers.c
+    }
+
+    PARSER_SOURCES += \
         Parser/token.c
 } else {
     PARSER_SOURCES += \
@@ -157,9 +165,13 @@ greaterThan(PY_MINOR_VERSION, 9) {
 
 OBJECT_SOURCES = \
     Objects/abstract.c \
+    Objects/accu.c \
     Objects/boolobject.c \
     Objects/bytes_methods.c \
     Objects/bytearrayobject.c \
+    Objects/bytesobject.c \
+    Objects/call.c \
+    Objects/capsule.c \
     Objects/cellobject.c \
     Objects/classobject.c \
     Objects/codeobject.c \
@@ -176,12 +188,13 @@ OBJECT_SOURCES = \
     Objects/listobject.c \
     Objects/longobject.c \
     Objects/dictobject.c \
+    Objects/odictobject.c \
     Objects/memoryobject.c \
     Objects/methodobject.c \
     Objects/moduleobject.c \
+    Objects/namespaceobject.c \
     Objects/object.c \
     Objects/obmalloc.c \
-    Objects/capsule.c \
     Objects/rangeobject.c \
     Objects/setobject.c \
     Objects/sliceobject.c \
@@ -190,12 +203,7 @@ OBJECT_SOURCES = \
     Objects/typeobject.c \
     Objects/unicodeobject.c \
     Objects/unicodectype.c \
-    Objects/weakrefobject.c \
-    Objects/accu.c \
-    Objects/bytesobject.c \
-    Objects/namespaceobject.c \
-    Objects/odictobject.c \
-    Objects/call.c
+    Objects/weakrefobject.c
 
 greaterThan(PY_MINOR_VERSION, 9) {
     OBJECT_SOURCES += \
@@ -218,10 +226,14 @@ PYTHON_SOURCES = \
     Python/Python-ast.c \
     Python/asdl.c \
     Python/ast.c \
+    Python/ast_opt.c \
+    Python/ast_unparse.c \
     Python/bltinmodule.c \
     Python/ceval.c \
-    Python/compile.c \
     Python/codecs.c \
+    Python/compile.c \
+    Python/context.c \
+    Python/dynamic_annotations.c \
     Python/errors.c \
     Python/frozenmain.c \
     Python/future.c \
@@ -230,17 +242,24 @@ PYTHON_SOURCES = \
     Python/getcopyright.c \
     Python/getplatform.c \
     Python/getversion.c \
+    Python/hamt.c \
     Python/import.c \
     Python/importdl.c \
     Python/marshal.c \
     Python/modsupport.c \
     Python/mysnprintf.c \
     Python/mystrtoul.c \
+    Python/pathconfig.c \
     Python/pyarena.c \
+    Python/pyctype.c \
     Python/pyfpe.c \
+    Python/pyhash.c \
+    Python/pylifecycle.c \
     Python/pymath.c \
     Python/pystate.c \
     Python/pythonrun.c \
+    Python/pytime.c \
+    Python/bootstrap_hash.c \
     Python/structmember.c \
     Python/symtable.c \
     Python/sysmodule.c \
@@ -249,25 +268,21 @@ PYTHON_SOURCES = \
     Python/getopt.c \
     Python/pystrcmp.c \
     Python/pystrtod.c \
-    Python/formatter_unicode.c \
-    Python/pyctype.c \
-    Python/pytime.c \
-    Python/dtoa.c \
-    Python/fileutils.c \
-    Python/pyhash.c \
-    Python/dynamic_annotations.c \
-    Python/pylifecycle.c \
     Python/pystrhex.c \
-    Python/ast_opt.c \
-    Python/ast_unparse.c \
-    Python/pathconfig.c \
-    Python/context.c \
-    Python/hamt.c \
-    Python/bootstrap_hash.c
+    Python/dtoa.c \
+    Python/formatter_unicode.c \
+    Python/fileutils.c
 
 win32 {
     PYTHON_SOURCES += \
         PC/invalid_parameter_handler.c
+}
+
+greaterThan(PY_MINOR_VERSION, 10) {
+    PYTHON_SOURCES += \
+        Python/Python-tokenize.c \
+        Python/frame.c \
+        Python/specialize.c
 }
 
 greaterThan(PY_MINOR_VERSION, 9) {
@@ -316,21 +331,14 @@ win32 {
 }
 
 MOD_SOURCES = \
-    Modules/posixmodule.c \
-    Modules/errnomodule.c \
-    Modules/_sre.c \
-    Modules/_codecsmodule.c \
-    Modules/_weakref.c \
-    Modules/_functoolsmodule.c \
-    Modules/_operator.c \
-    Modules/_collectionsmodule.c \
-    Modules/itertoolsmodule.c \
     Modules/atexitmodule.c \
+    Modules/faulthandler.c \
+    Modules/posixmodule.c \
     Modules/signalmodule.c \
-    Modules/_stat.c \
-    Modules/timemodule.c \
-    Modules/_threadmodule.c \
-    Modules/_localemodule.c \
+    Modules/_tracemalloc.c \
+    Modules/_codecsmodule.c \
+    Modules/_collectionsmodule.c \
+    Modules/errnomodule.c \
     Modules/_io/_iomodule.c \
     Modules/_io/iobase.c \
     Modules/_io/fileio.c \
@@ -338,8 +346,15 @@ MOD_SOURCES = \
     Modules/_io/bufferedio.c \
     Modules/_io/textio.c \
     Modules/_io/stringio.c \
-    Modules/faulthandler.c \
-    Modules/_tracemalloc.c \
+    Modules/itertoolsmodule.c \
+    Modules/_sre.c \
+    Modules/_threadmodule.c \
+    Modules/timemodule.c \
+    Modules/_weakref.c \
+    Modules/_functoolsmodule.c \
+    Modules/_localemodule.c \
+    Modules/_operator.c \
+    Modules/_stat.c \
     Modules/symtablemodule.c
 
 win32 {
@@ -350,6 +365,11 @@ win32 {
 } else {
     MOD_SOURCES += \
         Modules/pwdmodule.c
+}
+
+greaterThan(PY_MINOR_VERSION, 10) {
+    MOD_SOURCES += \
+        Modules/_abc.c
 }
 
 lessThan(PY_MINOR_VERSION, 9) {

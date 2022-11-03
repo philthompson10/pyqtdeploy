@@ -66,6 +66,9 @@ extern PyObject *PyInit_zipimport(void);
 
 /* The internal modules. */
 
+#if PY_VERSION_HEX >= 0x030b0000
+extern PyObject *PyInit__abc(void);
+#endif
 extern PyObject *PyInit__ast(void);
 extern PyObject *PyInit__codecs(void);
 extern PyObject *PyInit__collections(void);
@@ -118,6 +121,9 @@ struct _inittab _PyImport_Inittab[] = {
 
     /* The internal modules. */
 
+#if PY_VERSION_HEX >= 0x030b0000
+    {"_abc", PyInit__abc},
+#endif
     {"_ast", PyInit__ast},
     {"_codecs", PyInit__codecs},
     {"_collections", PyInit__collections},
