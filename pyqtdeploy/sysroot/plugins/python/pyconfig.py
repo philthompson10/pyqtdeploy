@@ -81,6 +81,9 @@ pyconfig = (
     # Define if --enable-ipv6 is specified
     Config('ENABLE_IPV6', default=1),
 
+    # Define to 1 if you have the 'accept' function.
+    Config('HAVE_ACCEPT', default=1),
+
     # Define to 1 if you have the 'accept4' function.
     Config('HAVE_ACCEPT4', android=1, android_api=21, linux=1),
 
@@ -105,6 +108,9 @@ pyconfig = (
     # Define to 1 if you have the 'atanh' function.
     Config('HAVE_ATANH', default=1),
 
+    # Define to 1 if you have the 'bind' function.
+    Config('HAVE_BIND', default=1),
+
     # Define to 1 if you have the 'bind_textdomain_codeset' function.
     Config('HAVE_BIND_TEXTDOMAIN_CODESET', linux=1),
 
@@ -117,6 +123,9 @@ pyconfig = (
 
     # Define to 1 if you have the 'chflags' function.
     Config('HAVE_CHFLAGS', ios=1, macos=1),
+
+    # Define to 1 if you have the 'chmod' function.
+    Config('HAVE_CHMOD', default=1),
 
     # Define to 1 if you have the 'chown' function.
     Config('HAVE_CHOWN', default=1),
@@ -133,6 +142,9 @@ pyconfig = (
     # Define to 1 if you have the 'clock_gettime' function.
     Config('HAVE_CLOCK_GETTIME', default=1),
 
+    # Define to 1 if you have the 'clock_nanosleep' function.
+    Config('HAVE_CLOCK_NANOSLEEP', linux=1),
+
     # Define to 1 if you have the 'clock_settime' function.
     Config('HAVE_CLOCK_SETTIME', default=1, ios=None),
 
@@ -141,6 +153,9 @@ pyconfig = (
 
     # Define to 1 if you have the 'confstr' function.
     Config('HAVE_CONFSTR', default=1, android=None),
+
+    # Define to 1 if you have the 'connect' function.
+    Config('HAVE_CONNECT', default=1),
 
     # Define to 1 if you have the 'copysign' function.
     Config('HAVE_COPYSIGN', default=1),
@@ -250,6 +265,9 @@ pyconfig = (
     # Define to 1 if you have the 'dlopen' function.
     Config('HAVE_DLOPEN', default=1),
 
+    # Define to 1 if you have the 'dup' function.
+    Config('HAVE_DUP', default=1),
+
     # Define to 1 if you have the 'dup2' function.
     Config('HAVE_DUP2', default=1),
 
@@ -328,6 +346,9 @@ pyconfig = (
     # Define to 1 if you have the 'fork' function.
     Config('HAVE_FORK', default=1),
 
+    # Define to 1 if you have the 'fork1' function.
+    #Config('HAVE_FORK1', default=1),
+
     # Define to 1 if you have the 'forkpty' function.
     Config('HAVE_FORKPTY', default=1, android=None),
 
@@ -387,8 +408,20 @@ pyconfig = (
     # Define this if you have flockfile(), getc_unlocked(), and funlockfile()
     Config('HAVE_GETC_UNLOCKED', default=1),
 
+    # Define this if you have the 'getegid' function.
+    Config('HAVE_GETEGID', default=1),
+
     # Define this if you have the 'getentropy' function.
     Config('HAVE_GETENTROPY', default=1, android_api=28),
+
+    # Define this if you have the 'geteuid' function.
+    Config('HAVE_GETEUID', default=1),
+
+    # Define this if you have the 'getgid' function.
+    Config('HAVE_GETGID', default=1),
+
+    # Define to 1 if you have the 'getgrgid' function.
+    Config('HAVE_GETGRGID', default=1),
 
     # Define to 1 if you have the 'getgrgid_r' function.
     Config('HAVE_GETGRGID_R', default=1),
@@ -402,14 +435,20 @@ pyconfig = (
     # Define to 1 if you have the 'getgroups' function.
     Config('HAVE_GETGROUPS', default=1),
 
+    # Define to 1 if you have the 'gethostbyaddr' function.
+    Config('HAVE_GETHOSTBYADDR', ios=1, linux=1, macos=1),
+
     # Define to 1 if you have the 'gethostbyname' function.
-    Config('HAVE_GETHOSTBYNAME', ios=1, macos=1),
+    Config('HAVE_GETHOSTBYNAME', ios=1, linux=1, macos=1),
 
     # Define this if you have some version of gethostbyname_r()
     Config('HAVE_GETHOSTBYNAME_R', android=1, linux=1),
 
     # Define this if you have the 6-arg version of gethostbyname_r().
     Config('HAVE_GETHOSTBYNAME_R_6_ARG', android=1, linux=1),
+
+    # Define to 1 if you have the 'gethostname' function.
+    Config('HAVE_GETHOSTNAME', default=1),
 
     # Define to 1 if you have the 'getitimer' function.
     Config('HAVE_GETITIMER', default=1),
@@ -438,14 +477,23 @@ pyconfig = (
     # Define to 1 if you have the 'getpid' function.
     Config('HAVE_GETPID', default=1),
 
+    # Define to 1 if you have the 'getppid' function.
+    Config('HAVE_GETPPID', default=1),
+
     # Define to 1 if you have the 'getpriority' function.
     Config('HAVE_GETPRIORITY', default=1),
+
+    # Define to 1 if you have the 'getprotobyname' function.
+    Config('HAVE_GETPROTOBYNAME', default=1),
 
     # Define to 1 if you have the 'getpwent' function.
     Config('HAVE_GETPWENT', default=1, android_api=26),
 
     # Define to 1 if you have the 'getpwnam_r' function.
     Config('HAVE_GETPWNAM_R', default=1, android_api=26),
+
+    # Define to 1 if you have the 'getpwuid' function.
+    Config('HAVE_GETPWUID', default=1, android_api=26),
 
     # Define to 1 if you have the 'getpwuid_r' function.
     Config('HAVE_GETPWUID_R', default=1, android_api=26),
@@ -462,14 +510,29 @@ pyconfig = (
     # Define to 1 if you have the 'getresuid' function.
     Config('HAVE_GETRESUID', android=1, linux=1),
 
+    # Define to 1 if you have the 'getrusage' function.
+    Config('HAVE_GETRUSAGE', default=1),
+
+    # Define to 1 if you have the 'getservbyname' function.
+    Config('HAVE_GETSERVBYNAME', default=1),
+
+    # Define to 1 if you have the 'getservbyport' function.
+    Config('HAVE_GETSERVBYPORT', default=1),
+
     # Define to 1 if you have the 'getsid' function.
     Config('HAVE_GETSID', default=1, android_api=21),
+
+    # Define to 1 if you have the 'getsockname' function.
+    Config('HAVE_GETSOCKNAME', default=1),
 
     # Define to 1 if you have the 'getspent' function.
     Config('HAVE_GETSPENT', android=1, linux=1),
 
     # Define to 1 if you have the 'getspnam' function.
     Config('HAVE_GETSPNAM', android=1, linux=1),
+
+    # Define to 1 if you have the 'getuid' function.
+    Config('HAVE_GETUID', default=1),
 
     # Define to 1 if you have the 'gettimeofday' function.
     Config('HAVE_GETTIMEOFDAY', default=1),
@@ -494,6 +557,9 @@ pyconfig = (
 
     # Define if you have the 'inet_aton' function.
     Config('HAVE_INET_ATON', default=1),
+
+    # Define if you have the 'inet_ntoa' function.
+    Config('HAVE_INET_NTOA', default=1),
 
     # Define if you have the 'inet_pton' function.
     Config('HAVE_INET_PTON', default=1),
@@ -582,6 +648,9 @@ pyconfig = (
     # Define to 1 if you have the <linux/random.h> header file.
     Config('HAVE_LINUX_RANDOM_H', linux=1),
 
+    # Define to 1 if you have the <linux/soundcard.h> header file.
+    Config('HAVE_LINUX_SOUNDCARD_H', linux=1),
+
     # Define to 1 if you have the <linux/tipc.h> header file.
     Config('HAVE_LINUX_TIPC_H', android=1, linux=1),
 
@@ -590,6 +659,9 @@ pyconfig = (
 
     # Define to 1 if you have the <linux/wait.h> header file.
     Config('HAVE_LINUX_WAIT_H', linux=1),
+
+    # Define to 1 if you have the 'listen' function.
+    Config('HAVE_LISTEN', default=1),
 
     # Define to 1 if you have the 'lockf' function.
     Config('HAVE_LOCKF', ios=1, linux=1, macos=1),
@@ -600,6 +672,9 @@ pyconfig = (
     # Define to 1 if you have the 'log2' function.
     Config('HAVE_LOG2', default=1, android_api=18),
 
+    # Define to 1 if you have the 'login_tty' function.
+    Config('HAVE_LOGIN_TTY', default=1),
+
     # Define this if you have the type long double.
     Config('HAVE_LONG_DOUBLE', default=1),
 
@@ -609,7 +684,10 @@ pyconfig = (
     # Define to 1 if you have the 'lutimes' function.
     Config('HAVE_LUTIMES', default=1, android=None),
 
-    # Define this if you have the makedev macro.
+    # Define this if you have the 'madvise' macro.
+    Config('HAVE_MADVISE', default=1),
+
+    # Define this if you have the 'makedev' macro.
     Config('HAVE_MAKEDEV', default=1),
 
     # Define to 1 if you have the 'mbrtowc' function.
@@ -648,6 +726,9 @@ pyconfig = (
     # Define to 1 if you have the 'mremap' function.
     Config('HAVE_MREMAP', android=1, linux=1),
 
+    # Define to 1 if you have the 'nanosleep' function.
+    Config('HAVE_NANOSLEEP', default=1),
+
     # Define to 1 if you have the <ncurses.h> header file.
     Config('HAVE_NCURSES_H', default=1, android=None),
 
@@ -657,11 +738,20 @@ pyconfig = (
     # Define to 1 if you have the <net/if.h> header file.
     Config('HAVE_NET_IF_H', default=1),
 
+    # Define to 1 if you have the <netdb.h> header file.
+    Config('HAVE_NETDB_H', default=1),
+
+    # Define to 1 if you have the <netinet/in.h> header file.
+    Config('HAVE_NETINET_IN_H', default=1),
+
     # Define to 1 if you have the 'nice' function.
     Config('HAVE_NICE', default=1),
 
     # Define to 1 if you have the 'openat' function.
     Config('HAVE_OPENAT', default=1),
+
+    # Define to 1 if you have the 'opendir' function.
+    Config('HAVE_OPENDIR', default=1),
 
     # Define to 1 if you have the 'openpty' function.
     Config('HAVE_OPENPTY', default=1, android=None),
@@ -671,6 +761,9 @@ pyconfig = (
 
     # Define to 1 if you have the 'pause' function.
     Config('HAVE_PAUSE', default=1),
+
+    # Define to 1 if you have the 'pipe' function.
+    Config('HAVE_PIPE', default=1),
 
     # Define to 1 if you have the 'pipe2' function.
     Config('HAVE_PIPE2', android=1, linux=1),
@@ -723,6 +816,9 @@ pyconfig = (
     # Define to 1 if you have the 'pthread_sigmask' function.
     Config('HAVE_PTHREAD_SIGMASK', default=1),
 
+    # Define if platform requires stubbed pthreads support.
+    #Config('HAVE_PTHREAD_STUBS', default=0),
+
     # Define to 1 if you have the <pty.h> header file.
     Config('HAVE_PTY_H', linux=1),
 
@@ -749,6 +845,9 @@ pyconfig = (
 
     # Define to 1 if you have the 'realpath' function.
     Config('HAVE_REALPATH', default=1),
+
+    # Define to 1 if you have the 'recvfrom' function.
+    Config('HAVE_RECVFROM', default=1),
 
     # Define to 1 if you have the 'renameat' function.
     Config('HAVE_RENAMEAT', default=1),
@@ -779,6 +878,9 @@ pyconfig = (
 
     # Define to 1 if you have the 'round' function.
     Config('HAVE_ROUND', default=1),
+
+    # Define to 1 if you have the <rpc/rpc.h> header file.
+    Config('HAVE_RPC_RPC_H', default=1),
 
     # Define to 1 if you have the 'sched_get_priority_max' function.
     Config('HAVE_SCHED_GET_PRIORITY_MAX', default=1),
@@ -816,6 +918,9 @@ pyconfig = (
     # Define to 1 if you have the 'sendfile' function.
     Config('HAVE_SENDFILE', default=1),
 
+    # Define to 1 if you have the 'sendto' function.
+    Config('HAVE_SENDTO', default=1),
+
     # Define to 1 if you have the 'setegid' function.
     Config('HAVE_SETEGID', default=1),
 
@@ -833,6 +938,9 @@ pyconfig = (
 
     # Define to 1 if you have the 'setitimer' function.
     Config('HAVE_SETITIMER', default=1),
+
+    # Define to 1 if you have the <setjmp.h> header file.
+    Config('HAVE_SETJMP_H', default=1),
 
     # Define to 1 if you have the 'setlocale' function.
     Config('HAVE_SETLOCALE', default=1),
@@ -861,6 +969,9 @@ pyconfig = (
     # Define to 1 if you have the 'setsid' function.
     Config('HAVE_SETSID', default=1),
 
+    # Define to 1 if you have the 'setsockopt' function.
+    Config('HAVE_SETSOCKOPT', default=1),
+
     # Define to 1 if you have the 'setuid' function.
     Config('HAVE_SETUID', default=1),
 
@@ -875,6 +986,9 @@ pyconfig = (
 
     # Define to 1 if you have the 'shm_unlink' function.
     Config('HAVE_SHM_UNLINK', default=1),
+
+    # Define to 1 if you have the 'shutdown' function.
+    Config('HAVE_SHUTDOWN', default=1),
 
     # Define to 1 if you have the 'sigaction' function.
     Config('HAVE_SIGACTION', default=1),
@@ -920,6 +1034,9 @@ pyconfig = (
 
     # struct sockaddr_storage (sys/socket.h),
     Config('HAVE_SOCKADDR_STORAGE', default=1),
+
+    # Define if you have the 'socket' function.
+    Config('HAVE_SOCKET', default=1),
 
     # Define if you have the 'socketpair' function.
     Config('HAVE_SOCKETPAIR', default=1),
@@ -1017,6 +1134,9 @@ pyconfig = (
     # Define to 1 if you have the <sysexits.h> header file.
     Config('HAVE_SYSEXITS_H', default=1, android=None),
 
+    # Define to 1 if you have the 'system' function.
+    Config('HAVE_SYSTEM', default=1),
+
     # Define to 1 if you have the <sys/auxv.h> header file.
     Config('HAVE_SYS_AUXV_H', linux=1),
 
@@ -1065,6 +1185,9 @@ pyconfig = (
     # Define to 1 if you have the <sys/socket.h> header file.
     Config('HAVE_SYS_SOCKET_H', default=1),
 
+    # Define to 1 if you have the <sys/soundcard.h> header file.
+    Config('HAVE_SYS_SOUNDCARD_H', linux=1),
+
     # Define to 1 if you have the <sys/statvfs.h> header file.
     Config('HAVE_SYS_STATVFS_H', ios=1, linux=1, macos=1),
 
@@ -1104,6 +1227,9 @@ pyconfig = (
     # Define to 1 if you have the <sys/xattr.h> header file.
     Config('HAVE_SYS_XATTR_H', default=1),
 
+    # Define to 1 if you have the <syslog.h> header file.
+    Config('HAVE_SYSLOG_H', default=1),
+
     # Define to 1 if you have the 'tcgetpgrp' function.
     Config('HAVE_TCGETPGRP', default=1),
 
@@ -1140,6 +1266,12 @@ pyconfig = (
     # Define to 1 if you have the 'truncate' function.
     Config('HAVE_TRUNCATE', default=1),
 
+    # Define to 1 if you have the 'ttyname' function.
+    Config('HAVE_TTYNAME', default=1),
+
+    # Define to 1 if you have the 'umask' function.
+    Config('HAVE_UMASK', default=1),
+
     # Define to 1 if you have the 'uname' function.
     Config('HAVE_UNAME', default=1),
 
@@ -1169,6 +1301,9 @@ pyconfig = (
     # Define to 1 if you have the <utime.h> header file.
     Config('HAVE_UTIME_H', default=1),
 
+    # Define to 1 if you have the <utmp.h> header file.
+    Config('HAVE_UTMP_H', default=1),
+
     # Define if uuid_generate_time_safe() exists.
     Config('HAVE_UUID_GENERATE_TIME_SAFE', linux=1),
 
@@ -1180,6 +1315,9 @@ pyconfig = (
 
     # Define to 1 if you have the 'vfork' function.
     Config('HAVE_VFORK', default=1),
+
+    # Define to 1 if you have the 'wait' function.
+    Config('HAVE_WAIT', default=1),
 
     # Define to 1 if you have the 'wait3' function.
     Config('HAVE_WAIT3', default=1, android=None),
@@ -1221,6 +1359,9 @@ pyconfig = (
     # Define if the zlib library has inflateCopy
     Config('HAVE_ZLIB_COPY', default=1),
 
+    # Define to 1 if you have the <zlib.h> header file.
+    Config('HAVE_ZLIB_H', default=1),
+
     # Define to 1 if 'major', 'minor', and 'makedev' are declared in
     # <sysmacros.h>.
     Config('MAJOR_IN_SYSMACROS', linux=1),
@@ -1243,6 +1384,9 @@ pyconfig = (
     # Default cipher suites list for ssl module. 1: Python's preferred
     # selection, 2: leave OpenSSL defaults untouched, 0: custom string
     Config('PY_SSL_DEFAULT_CIPHERS', default=1),
+
+    # PEP 11 Support tier (1, 2, 3 or 0 for unsupported).
+    Config('PY_SUPPORT_TIER', default=1),
 
     # Define if i>>j for signed int i does not extend the sign bit when i < 0
     Config('SIGNED_RIGHT_SHIFT_ZERO_FILLS', ios=1, macos=1),
@@ -1330,8 +1474,11 @@ pyconfig = (
     # Define if WINDOW in curses.h offers a field _flags.
     Config('WINDOW_HAS_FLAGS', ios=1, linux=1, macos=1),
 
-    # Define if you want to compile in Python-specific mallocs
+    # Define if you want to compile in Python-specific mallocs.
     Config('WITH_PYMALLOC', default=1),
+
+    # Define if you want to compile in object freelists optimization.
+    Config('WITH_FREELISTS', default=1),
 
     # Define on Darwin to activate all library features
     Config('_DARWIN_C_SOURCE', default=1),
@@ -1339,8 +1486,12 @@ pyconfig = (
     # This must be set to 64 on some systems to enable large file support.
     Config('_FILE_OFFSET_BITS', default=64),
 
-    # Define on Linux to activate all library features
+    # Activate UNIX variant library extensions.
+    Config('__EXTENSIONS__', default=1),
+    Config('_ALL_SOURCE', default=1),
     Config('_GNU_SOURCE', default=1),
+    Config('_POSIX_PTHREAD_SEMANTICS', default=1),
+    Config('_TANDEM_SOURCE', default=1),
 
     # This must be defined on some systems to enable large file support.
     Config('_LARGEFILE_SOURCE', default=1),
@@ -1365,6 +1516,9 @@ pyconfig = (
 
     # Define on FreeBSD to activate all library features
     Config('__BSD_VISIBLE', default=1),
+
+    # Define on Apple.
+    Config('THREAD_STACK_SIZE', ios=0x1000000, macos=0x1000000),
 )
 
 
