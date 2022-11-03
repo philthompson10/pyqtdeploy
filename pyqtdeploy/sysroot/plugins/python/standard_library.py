@@ -231,8 +231,11 @@ standard_library = {
     'cmath': (
         ExtensionModule(max_version=(3, 8),
                 source=('cmathmodule.c', '_math.c'), libs='linux#-lm'),
-        ExtensionModule(min_version=(3, 9),
+        ExtensionModule(min_version=(3, 9), max_version=(3, 10),
                 source=('cmathmodule.c', '_math.c'),
+                defines='Py_BUILD_CORE_MODULE', libs='linux#-lm'),
+        ExtensionModule(min_version=(3, 11),
+                source='cmathmodule.c',
                 defines='Py_BUILD_CORE_MODULE', libs='linux#-lm')),
 
     'cmd':
@@ -1591,7 +1594,10 @@ standard_library = {
     'math': (
         ExtensionModule(max_version=(3, 8), source=('mathmodule.c', '_math.c'),
                 libs='linux#-lm'),
-        ExtensionModule(min_version=(3, 9), source=('mathmodule.c', '_math.c'),
+        ExtensionModule(min_version=(3, 9), max_version=(3, 10),
+                source=('mathmodule.c', '_math.c'),
+                defines='Py_BUILD_CORE_MODULE', libs='linux#-lm'),
+        ExtensionModule(min_version=(3, 11), source='mathmodule.c',
                 defines='Py_BUILD_CORE_MODULE', libs='linux#-lm')),
 
     'mimetypes': (

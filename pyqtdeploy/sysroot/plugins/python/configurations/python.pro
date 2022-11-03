@@ -347,7 +347,6 @@ MOD_SOURCES = \
     Modules/_io/textio.c \
     Modules/_io/stringio.c \
     Modules/itertoolsmodule.c \
-    Modules/_sre.c \
     Modules/_threadmodule.c \
     Modules/timemodule.c \
     Modules/_weakref.c \
@@ -369,7 +368,11 @@ win32 {
 
 greaterThan(PY_MINOR_VERSION, 10) {
     MOD_SOURCES += \
-        Modules/_abc.c
+        Modules/_abc.c \
+        Modules/_sre/sre.c
+} else {
+    MOD_SOURCES += \
+        Modules/_sre.c
 }
 
 lessThan(PY_MINOR_VERSION, 9) {
