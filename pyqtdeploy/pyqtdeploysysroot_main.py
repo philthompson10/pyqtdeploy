@@ -41,6 +41,10 @@ def main():
 
     parser.add_argument('-V', '--version', action='version',
             version=PYQTDEPLOY_RELEASE)
+    parser.add_argument('--build-dir',
+            help="the name of the temporary build directory [default: 'build' "
+                    "sub-directory of the system image root directory]",
+            metavar="DIR")
     parser.add_argument('--component', help="the component name to build",
             action='append')
     parser.add_argument('--force', help="force a complete build",
@@ -97,7 +101,7 @@ def main():
         target = Architecture.architecture(args.target)
         sysroot = Sysroot(specification, host, target, sysroots_dir,
                 message_handler=message_handler, python=args.python,
-                qmake=args.qmake)
+                qmake=args.qmake, build_dir=args.build_dir)
 
         # This is a bit of a hack as platforms are singletons.
         host.platform.jobs = args.jobs

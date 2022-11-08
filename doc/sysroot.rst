@@ -421,6 +421,12 @@ The full set of command line options is:
     This specifies that the version number should be displayed on ``stdout``.
     The program will then terminate.
 
+.. option:: --build-dir DIR
+
+    ``DIR`` is the name of the temporary build directory used to build each
+    component.  By default a directory called ``build`` in the target-specific
+    sysroot directory is used.
+
 .. option:: --component COMPONENT
 
     ``COMPONENT`` is the name of the component that will be installed.  It may
