@@ -39,7 +39,7 @@ class Sysroot:
     """ Encapsulate a target-specific system root directory. """
 
     def __init__(self, specification, host, target, sysroots_dir,
-            message_handler=None, python=None, qmake=None):
+            message_handler=None, python=None, qmake=None, build_dir=None):
         """ Initialise the object. """
 
         self._specification = specification
@@ -49,6 +49,11 @@ class Sysroot:
 
         self.sysroot_dir = os.path.join(sysroots_dir,
                 'sysroot-' + self.target.name)
+
+        if build_dir:
+            self._build_dir = os.path.abspath(build_dir)
+        else:
+            self._build_dir = os.path.join(self.sysroot_dir, 'build')
 
         self._building_for_target = True
 
@@ -282,15 +287,15 @@ class Sysroot:
         os.makedirs(self.target_src_dir, exist_ok=True)
 
         # Create a new build directory.
-        build_dir = os.path.join(self.sysroot_dir, 'build')
-        self.create_dir(build_dir, empty=True)
+        self.create_dir(self._build_dir, empty=True)
         cwd = os.getcwd()
 
         # Install the components.
         self.building_for_target = True
 
         for component in components:
-            component.ensure_installed(build_dir, all_components, manifest)
+            component.ensure_installed(self._build_dir, all_components,
+                    manifest)
 
         # Remove the build directory if requested.
         os.chdir(cwd)
@@ -299,7 +304,7 @@ class Sysroot:
             # This can fail on Windows (complaining about non-empty
             # directories).  Therefore we just warn that we couldn't do it.
             try:
-                self.delete_dir(build_dir)
+                self.delete_dir(self._build_dir)
             except UserException as e:
                 self.warning(e.text)
 
