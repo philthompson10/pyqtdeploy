@@ -57,6 +57,15 @@ static int handle_exception();
 static int append_path_dirs(PyObject *list, const char **path_dirs);
 
 
+const struct _frozen *PyImport_FrozenModules;
+#if PY_VERSION_HEX >= 0x030b0000
+const struct _frozen *_PyImport_FrozenBootstrap = NULL;
+const struct _frozen *_PyImport_FrozenStdlib = NULL;
+const struct _frozen *_PyImport_FrozenTest = NULL;
+const struct _module_alias *_PyImport_FrozenAliases = NULL;
+#endif
+
+
 #if defined(Q_OS_WIN)
 int pyqtdeploy_start(int argc, wchar_t **w_argv,
         struct _inittab *extension_modules, const char *main_module,
@@ -72,18 +81,30 @@ int pyqtdeploy_start(int argc, char **argv,
         {
             "_frozen_importlib",
             frozen_pyqtdeploy_bootstrap,
-            sizeof (frozen_pyqtdeploy_bootstrap)
+            sizeof (frozen_pyqtdeploy_bootstrap),
+#if PY_VERSION_HEX >= 0x030b0000
+            false,
+            NULL,
+#endif
         },
         {
             "_frozen_importlib_external",
             frozen_pyqtdeploy_bootstrap_external,
-            sizeof (frozen_pyqtdeploy_bootstrap_external)
+            sizeof (frozen_pyqtdeploy_bootstrap_external),
+#if PY_VERSION_HEX >= 0x030b0000
+            false,
+            NULL,
+#endif
         },
 #if defined(PYQTDEPLOY_FROZEN_MAIN)
         {
             "__main__",
             frozen_pyqtdeploy_main,
-            sizeof (frozen_pyqtdeploy_main)
+            sizeof (frozen_pyqtdeploy_main),
+#if PY_VERSION_HEX >= 0x030b0000
+            false,
+            NULL,
+#endif
         },
 #endif
         {NULL, NULL, 0}
@@ -355,3 +376,15 @@ static int append_path_dirs(PyObject *list, const char **path_dirs)
 
     return 0;
 }
+
+
+#if PY_VERSION_HEX >= 0x030b0000
+extern "C" int _Py_Deepfreeze_Init(void)
+{
+    return 0;
+}
+
+extern "C" void _Py_Deepfreeze_Fini(void)
+{
+}
+#endif
