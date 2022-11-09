@@ -714,7 +714,11 @@ int main(int argc, char **argv)
         # 'CONFIG' doesn't affect 'CFLAGS'.
         if target_platform != 'win':
             f.write('\n')
-            f.write('QMAKE_CFLAGS += -std=c99\n')
+
+            if python.version >= (3, 11):
+                f.write('QMAKE_CFLAGS += -std=c11\n')
+            else:
+                f.write('QMAKE_CFLAGS += -std=c99\n')
 
         # Specify the resource files.
         f.write('\n')

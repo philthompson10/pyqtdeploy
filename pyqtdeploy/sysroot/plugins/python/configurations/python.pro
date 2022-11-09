@@ -99,7 +99,13 @@ win32 {
     DEFINES += ABIFLAGS=\\\"m\\\"
 
     QMAKE_CFLAGS_RELEASE = -O3
-    QMAKE_CFLAGS += -fwrapv -std=c99
+    QMAKE_CFLAGS += -fwrapv
+
+    greaterThan(PY_MINOR_VERSION, 10) {
+        QMAKE_CFLAGS += -std=c11
+    } else {
+        QMAKE_CFLAGS += -std=c99
+    }
 }
 
 target.path = $$SYSROOT/lib
@@ -397,7 +403,7 @@ isEqual(PY_MINOR_VERSION, 9) {
         Modules/_peg_parser.c
 }
 
-SOURCES = Modules/getbuildinfo.c Python/frozen.c
+SOURCES = Modules/getbuildinfo.c
 SOURCES += $$PARSER_SOURCES
 SOURCES += $$OBJECT_SOURCES
 SOURCES += $$PYTHON_SOURCES
