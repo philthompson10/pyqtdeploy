@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Riverbank Computing Limited
+// Copyright (c) 2022, Riverbank Computing Limited
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,12 +40,8 @@
 #include "pyqtdeploy_version.h"
 
 
-#if QT_VERSION < 0x040200
-#error "Qt v4.2.0 or later is required"
-#endif
-
-#if PY_VERSION_HEX < 0x03050000
-#error "Python v3.5 or later is required"
+#if PY_VERSION_HEX < 0x03070000
+#error "Python v3.7 or later is required"
 #endif
 
 
@@ -81,10 +77,8 @@ static PyObject *qrcimporter_find_loader(PyObject *self, PyObject *args);
 static PyObject *qrcimporter_find_module(PyObject *self, PyObject *args);
 static PyObject *qrcimporter_get_code(PyObject *self, PyObject *args);
 static PyObject *qrcimporter_get_data(PyObject *self, PyObject *args);
-#if PY_VERSION_HEX >= 0x03070000
 static PyObject *qrcimporter_get_resource_reader(PyObject *self,
         PyObject *arg);
-#endif
 static PyObject *qrcimporter_get_source(PyObject *self, PyObject *args);
 static PyObject *qrcimporter_is_package(PyObject *self, PyObject *args);
 static PyObject *qrcimporter_load_module(PyObject *self, PyObject *args);
@@ -109,9 +103,7 @@ static PyMethodDef qrcimporter_methods[] = {
     {"find_module", qrcimporter_find_module, METH_VARARGS, NULL},
     {"get_code", qrcimporter_get_code, METH_VARARGS, NULL},
     {"get_data", qrcimporter_get_data, METH_VARARGS, NULL},
-#if PY_VERSION_HEX >= 0x03070000
     {"get_resource_reader", qrcimporter_get_resource_reader, METH_O, NULL},
-#endif
     {"get_source", qrcimporter_get_source, METH_VARARGS, NULL},
     {"is_package", qrcimporter_is_package, METH_VARARGS, NULL},
     {"load_module", qrcimporter_load_module, METH_VARARGS, NULL},
@@ -172,7 +164,6 @@ static PyTypeObject QrcImporter_Type = {
 };
 
 
-#if PY_VERSION_HEX >= 0x03070000
 // The reader object structure.
 typedef struct _qrcreader
 {
@@ -350,7 +341,6 @@ static PyTypeObject QrcResource_Type = {
     0,                                          // tp_version_tag
     0,                                          // tp_finalize
 };
-#endif
 
 }
 
@@ -380,9 +370,7 @@ static QString str_to_qstring(PyObject *str);
 static PyObject *qstring_to_str(const QString &qstring);
 static bool parse_qstring(PyObject *args, const char *fmt, QString &qstring,
         PyObject **str_obj = 0);
-#if PY_VERSION_HEX >= 0x03070000
 static QString get_resource_path(QrcReader *reader, const QString &resource);
-#endif
 
 
 // The directory containing the application executable.
@@ -717,7 +705,6 @@ static PyObject *qrcimporter_get_code(PyObject *self, PyObject *args)
 }
 
 
-#if PY_VERSION_HEX >= 0x03070000
 // Implement the optional get_resource_reader() method for the importer.
 static PyObject *qrcimporter_get_resource_reader(PyObject *self, PyObject *arg)
 {
@@ -958,7 +945,6 @@ static QString get_resource_path(QrcReader *reader, const QString &resource)
 {
     return QString("%1/%2").arg(*reader->pathname).arg(resource);
 }
-#endif
 
 
 // Implement the optional get_source() method for the importer.
@@ -1205,7 +1191,6 @@ PyObject *PyInit_pdytools()
     if (PyType_Ready(&QrcImporter_Type) < 0)
         return NULL;
 
-#if PY_VERSION_HEX >= 0x03070000
     QrcReader_Type.tp_new = PyType_GenericNew;
 
     if (PyType_Ready(&QrcReader_Type) < 0)
@@ -1215,7 +1200,6 @@ PyObject *PyInit_pdytools()
 
     if (PyType_Ready(&QrcResource_Type) < 0)
         return NULL;
-#endif
 
     mod = PyModule_Create(&pdytoolsmodule);
     if (mod == NULL)
