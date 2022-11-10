@@ -2830,7 +2830,7 @@ standard_library = {
                 deps=('asyncio', 'asyncio.constants', 'asyncio.log',
                         'asyncio.protocols', 'asyncio.transports',
                         'collections', '?ssl', 'warnings')),
-        PythonModule(min_version=(3, 10), internal=True,
+        PythonModule(min_version=(3, 11), internal=True,
                 deps=('asyncio', 'asyncio.constants', 'asyncio.exceptions',
                         'asyncio.log', 'asyncio.protocols',
                         'asyncio.transports', 'collections', 'enum', '?ssl',
