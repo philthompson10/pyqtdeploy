@@ -446,11 +446,11 @@ The full set of command line options is:
 
 .. option:: --no-clean
 
-    A temporary build directory (called ``build`` in the sysroot) is created in
-    order to build the required components.  Normally this is removed
-    automatically after all components have been built.  Specifying this option
-    leaves the build directory in place to make debugging component plugins
-    easier.
+    A temporary build directory (by default called ``build`` in the sysroot) is
+    created in order to build the required components.  Normally this is
+    removed automatically after all components have been built.
+    Specifying this option leaves the build directory in place to make
+    debugging component plugins easier.
 
 .. option:: --options
 
