@@ -9,7 +9,7 @@
 import sys
 import sysconfig
 
-from PyQt5.QtCore import PYQT_VERSION_STR, QT_VERSION_STR, QFile, QIODevice
+from PyQt5.QtCore import PYQT_VERSION_STR, QT_VERSION_STR
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QApplication, QLabel, QTabWidget, QTreeView,
         QVBoxLayout, QWidget)
@@ -183,31 +183,19 @@ def get_source_code():
     else:
         # Use the resources package if the version of Python is new enough.
         try:
-            from importlib.resources import read_text
+            # Python v3.9 and later.
+            from importlib.resources import files
         except ImportError:
-            source = get_source_code_using_qt()
-        else:
+            # Python v3.7 and v3.8.
+            from importlib.resources import read_text
+
             source = read_text('data', 'pyqt-demo.py.dat')
+        else:
+            resource = files('data') / 'pyqt-demo.py.dat'
+            with resource.open(encoding='utf-8') as fp:
+                source = fp.read()
 
     return source
-
-
-def get_source_code_using_qt():
-    """ Return a copy of this source code using QFile's support for embedded
-    resources.
-    """
-
-    import data
-
-    # Getting the path name of the embedded source file this way means we don't
-    # need to know the path separator.
-    qf = QFile(data.__file__.replace('__init__.pyo', 'pyqt-demo.py.dat'))
-
-    qf.open(QIODevice.ReadOnly | QIODevice.Text)
-    source = qf.readAll()
-    qf.close()
-
-    return bytes(source).decode()
 
 
 def create_qscintilla_code_view():
