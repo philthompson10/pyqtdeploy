@@ -182,18 +182,17 @@ def get_source_code():
             source = f.read()
     else:
         # Use the resources package if the version of Python is new enough.
-        try:
-            # Python v3.9 and later.
+        if sys.hexversion >= 0x030b0000:
             from importlib.resources import files
-        except ImportError:
-            # Python v3.7 and v3.8.
+
+            resource = files('data') / 'pyqt-demo.py.dat'
+
+            with resource.open(encoding='utf-8') as fp:
+                source = fp.read()
+        else:
             from importlib.resources import read_text
 
             source = read_text('data', 'pyqt-demo.py.dat')
-        else:
-            resource = files('data') / 'pyqt-demo.py.dat'
-            with resource.open(encoding='utf-8') as fp:
-                source = fp.read()
 
     return source
 
