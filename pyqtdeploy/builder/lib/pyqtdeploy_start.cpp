@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Riverbank Computing Limited
+// Copyright (c) 2022, Riverbank Computing Limited
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,6 +27,10 @@
 #include <stdio.h>
 
 #include <Python.h>
+
+#if PY_VERSION_HEX >= 0x030b0000
+#include <pycore_import.h>
+#endif
 
 #include <QByteArray>
 #include <QDir>
@@ -59,10 +63,18 @@ static int append_path_dirs(PyObject *list, const char **path_dirs);
 
 const struct _frozen *PyImport_FrozenModules;
 #if PY_VERSION_HEX >= 0x030b0000
-const struct _frozen *_PyImport_FrozenBootstrap = NULL;
-const struct _frozen *_PyImport_FrozenStdlib = NULL;
-const struct _frozen *_PyImport_FrozenTest = NULL;
-const struct _module_alias *_PyImport_FrozenAliases = NULL;
+static const struct _frozen frozen_sentinel[] = {{NULL, NULL, 0, false, NULL}};
+const struct _frozen *_PyImport_FrozenBootstrap = frozen_sentinel;
+const struct _frozen *_PyImport_FrozenStdlib = frozen_sentinel;
+const struct _frozen *_PyImport_FrozenTest = frozen_sentinel;
+
+static const struct _module_alias aliases[] = {
+    {"_frozen_importlib", "importlib._bootstrap"},
+    {"_frozen_importlib_external", "importlib._bootstrap_external"},
+    {"os.path", "posixpath"},
+    {NULL, NULL}
+};
+const struct _module_alias *_PyImport_FrozenAliases = aliases;
 #endif
 
 
@@ -378,6 +390,8 @@ static int append_path_dirs(PyObject *list, const char **path_dirs)
 }
 
 
+// Note that we don't support deepfrozen modules (ie. static declarations of
+// the corresponding Python objects).
 #if PY_VERSION_HEX >= 0x030b0000
 extern "C" int _Py_Deepfreeze_Init(void)
 {
