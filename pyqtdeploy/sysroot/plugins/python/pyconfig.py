@@ -1135,7 +1135,7 @@ pyconfig = (
     Config('HAVE_SYSEXITS_H', default=1, android=None),
 
     # Define to 1 if you have the 'system' function.
-    Config('HAVE_SYSTEM', default=1),
+    Config('HAVE_SYSTEM', default=1, ios=None),
 
     # Define to 1 if you have the <sys/auxv.h> header file.
     Config('HAVE_SYS_AUXV_H', linux=1),
