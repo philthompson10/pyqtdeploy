@@ -91,9 +91,9 @@ Android
 .. image:: /images/pyqt-demo-android-32.png
     :align: center
 
-**Host platform used:** macOS Monterey (v12.0.1)
+**Host platform used:** macOS Monterey (v12.6.1)
 
-**Development tools used:** NDK r21d, SDK build tools v28.0.3
+**Development tools used:** NDK r21d, SDK build tools v33.0.0
 
 **Python SSL support implemented:** dynamically linked bundled OpenSSL.
 
