@@ -123,7 +123,7 @@ Linux
 .. image:: /images/pyqt-demo-linux-64.png
     :align: center
 
-**Host platform used:** Ubuntu 20.04.4 LTS
+**Host platform used:** Ubuntu 20.04.5 LTS
 
 **Development tools used:** gcc v9.4.0
 
