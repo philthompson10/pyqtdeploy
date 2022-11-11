@@ -108,7 +108,7 @@ iOS
 .. image:: /images/pyqt-demo-ios-64.png
     :align: center
 
-**Host platform used:** macOS Monterey (v12.0.1)
+**Host platform used:** macOS Monterey (v12.6.1)
 
 **Development tools used:** Xcode v13.2.1
 
