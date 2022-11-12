@@ -328,12 +328,17 @@ MODULE_SOURCES = \
     Modules/main.c \
     Modules/gcmodule.c
 
-win32 {
-    MODULE_SOURCES += \
-        PC/getpathp.c
-} else {
+greaterThan(PY_MINOR_VERSION, 10) {
     MODULE_SOURCES += \
         Modules/getpath.c
+} else {
+    win32 {
+        MODULE_SOURCES += \
+            PC/getpathp.c
+    } else {
+        MODULE_SOURCES += \
+            Modules/getpath.c
+    }
 }
 
 MOD_SOURCES = \
