@@ -35,6 +35,7 @@ from .pyconfig import generate_pyconfig_h
 from .standard_library import standard_library
 
 from . import configurations as configurations_package
+from .configurations import getpath as getpath_package
 from .configurations import pyconfig as pyconfig_package
 
 
@@ -270,8 +271,19 @@ class PythonComponent(AbstractPythonComponent):
 
         py_src_dir = os.getcwd()
 
+        # Copy the getpath frozen module if it is appropriate.
+        getpath = self.get_versioned_file(getpath_package)
+        if getpath is not None:
+            getpath_h_dst_file = os.path.join(py_src_dir, 'Python',
+                    'frozen_modules', 'getpath.h')
+
+            self.verbose("installing {0}".format(getpath_h_dst_file))
+
+            with resources.path(getpath_package, getpath) as path:
+                self.copy_file(path, getpath_h_dst_file)
+
         # Copy the modules config.c file.
-        config_c_src_file = 'config_py{0}.c'.format(self.version.major)
+        config_c_src_file = 'config_py3.c'
         config_c_dst_file = os.path.join(py_src_dir, 'Modules', 'config.c')
 
         self.verbose("installing {0}".format(config_c_dst_file))
@@ -288,31 +300,7 @@ class PythonComponent(AbstractPythonComponent):
             self.verbose("installing {0}".format(pyconfig_h_dst_file))
 
             # Find the pyconfig.h file appropriate for this version of Python.
-            pyconfig = None
-            pyconfig_version = None
-
-            for fn in resources.contents(pyconfig_package):
-                if fn.startswith('__'):
-                    continue
-
-                version = fn.split('-')[-1]
-                if version.endswith('.h'):
-                    version = version[:-2]
-
-                try:
-                    version = self.parse_version_number(version)
-                except UserException:
-                    continue
-
-                if version > self.version:
-                    # This is for a later version so we can ignore it.
-                    continue
-
-                if pyconfig is None or pyconfig_version < version:
-                    # This is a better candidate than we have so far.
-                    pyconfig = fn
-                    pyconfig_version = version
-
+            pyconfig = self.get_versioned_file(pyconfig_package)
             assert pyconfig is not None
 
             with resources.path(pyconfig_package, pyconfig) as path:

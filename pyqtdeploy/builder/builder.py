@@ -32,7 +32,7 @@ import shlex
 import shutil
 import tempfile
 
-from ..file_utilities import create_file, open_file
+from ..file_utilities import create_file, get_versioned_file, open_file
 from ..parts import (ComponentLibrary, DataFile, ExtensionModule, Part,
         PythonModule, PythonPackage)
 from ..project import Project
@@ -292,33 +292,10 @@ class Builder:
     def _freeze_bootstrap(self, package, build_dir, job_writer, python):
         """ Freeze a version dependent bootstrap script. """
 
-        # Find the bootstrap script appropriate for this version of Python.
-        bootstrap = None
-        bootstrap_version = None
-
-        for fn in resources.contents(package):
-            if fn.startswith('__'):
-                continue
-
-            name, version = fn.split('-')
-            if version.endswith('.py'):
-                version = version[:-3]
-
-            try:
-                version = VersionNumber.parse_version_number(version)
-            except UserException:
-                continue
-
-            if version > python.version:
-                # This is for a later version so we can ignore it.
-                continue
-
-            if bootstrap is None or bootstrap_version < version:
-                # This is a better candidate than we have so far.
-                bootstrap = fn
-                bootstrap_version = version
-
+        bootstrap = get_versioned_file(package, python)
         assert bootstrap is not None
+
+        name = package.__name__.split('.')[-1]
 
         with resources.path(package, bootstrap) as path:
             self._freeze(job_writer, bootstrap,
