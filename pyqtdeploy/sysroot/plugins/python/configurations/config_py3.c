@@ -35,7 +35,7 @@ extern "C" {
 
 /*
  * Declare the module initialisation functions for all core extension modules
- * (see python_metadata.py).
+ * (see standard_library.py).
  */
 
 /* The public modules. */
@@ -88,6 +88,11 @@ extern PyObject *PyInit__symtable(void);
 extern PyObject *PyInit__tracemalloc(void);
 extern PyObject *_PyWarnings_Init(void);
 extern PyObject *PyInit__weakref(void);
+
+
+#if PY_VERSION_HEX >= 0x030b0000 && defined(MS_WINDOWS)
+void *PyWin_DLLhModule = NULL;
+#endif
 
 
 /* The corresponding module import table. */
