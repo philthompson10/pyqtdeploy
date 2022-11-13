@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Riverbank Computing Limited
+# Copyright (c) 2022, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,7 +24,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
+from importlib import resources
+
 from .user_exception import UserException
+from .version_number import VersionNumber
 
 
 def create_file(file_name):
@@ -37,6 +40,43 @@ def create_file(file_name):
     except Exception as e:
         raise UserException("unable to create file {0}".format(file_name),
                 str(e))
+
+
+def get_versioned_file(package, component):
+    """ Return the name of a file in a package appropriate for a component or
+    None if there wasn't one.
+    """
+
+    candidate = None
+    candidate_version = None
+
+    for fn in resources.contents(package):
+        if fn.startswith('__'):
+            continue
+
+        # There must be one '-' separator.
+        name, version = fn.split('-')
+
+        for ext in ('.py', '.h', '.c', '.cpp'):
+            if version.endswith(ext):
+                version = version[:-len(ext)]
+                break
+
+        try:
+            version = VersionNumber.parse_version_number(version)
+        except UserException:
+            continue
+
+        if version > component.version:
+            # This is for a later version so we can ignore it.
+            continue
+
+        if candidate is None or candidate_version < version:
+            # This is a better candidate than we have so far.
+            candidate = fn
+            candidate_version = version
+
+    return candidate
 
 
 def open_file(file_name):

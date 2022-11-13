@@ -29,6 +29,7 @@ import copy
 import os
 import shutil
 
+from ..file_utilities import get_versioned_file as fu_get_versioned_file
 from ..parts import CompiledPart, ExtensionModule, Part
 
 from .component_option import ComponentOption
@@ -306,6 +307,13 @@ class AbstractComponent(ABC):
                     "unable to find '{0}' in {1}".format(identifier, filename))
 
         return version_line
+
+    def get_versioned_file(self, package):
+        """ Return the name of a file in a package appropriate for the
+        component or None if there wasn't one.
+        """
+
+        return fu_get_versioned_file(package, self)
 
     @property
     def host_dir(self):

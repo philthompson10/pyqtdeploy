@@ -837,6 +837,20 @@ The following is the complete API available to a plugin.
         :param str filename: the name of the file to read.
         :return: the stripped line containing the identifier.
 
+    .. py:method:: get_versioned_file(package)
+
+        .. versionadded:: 3.3.0
+
+        A resource package is searched for a file with a version number
+        embedded in the name.  The name of the most appropriate file for the
+        version of the component is returned or ``None`` if there wasn't one.
+        The format of the name must be ``name-version[.extension]`` where the
+        optional ``extension`` must be one of ``.py``, ``.h``, ``.c`` or
+        ``.cpp``.
+
+        :param module package: the package to search.
+        :return: the name of the file or ``None``.
+
     .. py:attribute:: host_dir
 
         The name of the directory where components built for the host
