@@ -55,7 +55,7 @@ def get_versioned_file(package, component):
             continue
 
         # There must be one '-' separator.
-        name, version = fn.split('-')
+        name, version = fn.rsplit('-', maxsplit=1)
 
         for ext in ('.py', '.h', '.c', '.cpp'):
             if version.endswith(ext):
