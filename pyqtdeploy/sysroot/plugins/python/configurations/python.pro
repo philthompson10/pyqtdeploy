@@ -330,7 +330,8 @@ MODULE_SOURCES = \
 
 greaterThan(PY_MINOR_VERSION, 10) {
     MODULE_SOURCES += \
-        Modules/getpath.c
+        Modules/getpath.c \
+        PC/dl_nt.c
 } else {
     win32 {
         MODULE_SOURCES += \
