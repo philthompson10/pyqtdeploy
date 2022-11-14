@@ -84,3 +84,10 @@ _bootstrap_external.py
 Check the ``Lib/importlib/_bootstrap_external.py`` diff.  If there are any
 differences then copy it to the builder with a version dependent name.  Update
 the copy with the pyqtdeploy additions (normally just appended to the file).
+
+
+getpath.h
+---------
+
+Check the ``Python/frozen_modules/getpath.h`` diff.  If there are any
+differences then copy it to the Python plugin with a version dependent name.
