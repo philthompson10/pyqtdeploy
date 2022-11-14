@@ -153,9 +153,9 @@ Windows
 .. image:: /images/pyqt-demo-win-64.png
     :align: center
 
-**Host platform used:** Windows 10 Pro (21H1)
+**Host platform used:** Windows 10 Pro (22H2)
 
-**Development tools used:** Visual Studio Build Tools 2019 (v16.7.2)
+**Development tools used:** Visual Studio Build Tools 2019 (v16.11.14)
 
 **Python SSL support implemented:** statically linked OpenSSL.
 
