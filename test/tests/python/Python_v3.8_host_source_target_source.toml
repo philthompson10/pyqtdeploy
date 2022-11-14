@@ -2,7 +2,7 @@
 # source version.
 
 [Python]
-version = "3.8.13"
+version = "3.8.15"
 install_host_from_source = true
 install_from_source = true
 
