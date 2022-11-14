@@ -1,4 +1,4 @@
-v3.3.0 13th November 2022
+v3.3.0 14th November 2022
   - Added the '--build-dir' option to pyqtdeploy-sysroot.
   - Added the '--jobs' option to pyqtdeploy-sysroot for Linux and macOS.
   - Added the '--jobs' option to build-demo.py for Linux and macOS.
