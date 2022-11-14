@@ -220,17 +220,15 @@ diff_files('setup.py', base_version, py_version)
 diff_files('pyconfig.h.in', base_version, py_version)
 diff_files('PC/pyconfig.h', base_version, py_version)
 raw_lib_diff = diff_directories('Lib', base_version, py_version, suffix='.raw')
-
-if py_version.major == 3:
-    diff_files('Lib/importlib/_bootstrap.py', base_version, py_version)
-
-    if int(py_version) >= 0x030500:
-        diff_files('Lib/importlib/_bootstrap_external.py', base_version,
-                py_version)
+diff_files('Lib/importlib/_bootstrap.py', base_version, py_version)
+diff_files('Lib/importlib/_bootstrap_external.py', base_version, py_version)
 
 base_version.configure()
 py_version.configure()
 diff_files('Makefile', base_version, py_version)
+
+if int(py_version) >= 0x030b00:
+    diff_files('Python/frozen_modules/getpath.h', base_version, py_version)
 
 # Filter the 'Lib' diff to exclude anything that doesn't involve 'import'.
 lib_diff = raw_lib_diff[:-4]
