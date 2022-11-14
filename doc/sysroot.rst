@@ -423,6 +423,8 @@ The full set of command line options is:
 
 .. option:: --build-dir DIR
 
+    .. versionadded:: 3.3.0
+
     ``DIR`` is the name of the temporary build directory used to build each
     component.  By default a directory called ``build`` in the target-specific
     sysroot directory is used.
@@ -440,6 +442,8 @@ The full set of command line options is:
     required versions have already been installed.
 
 .. option:: --jobs NUMBER
+
+    .. versionadded:: 3.3.0
 
     This specifies the number of :program:`make` jobs that will be run in
     parallel.  It only has an affect on Linux and macOS hosts.
