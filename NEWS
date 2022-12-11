@@ -1,3 +1,10 @@
+v3.3.1 11th December 2022
+  - Added support for Python v3.11.1.
+  - Added support for Python v3.10.9.
+  - Added support for Python v3.9.16.
+  - Added support for Python v3.8.16.
+  - Added support for Python v3.7.16.
+
 v3.3.0 14th November 2022
   - Added the '--build-dir' option to pyqtdeploy-sysroot.
   - Added the '--jobs' option to pyqtdeploy-sysroot for Linux and macOS.
