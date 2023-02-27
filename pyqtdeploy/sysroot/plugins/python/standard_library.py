@@ -1,4 +1,4 @@
-# Copyright (c) 2022, Riverbank Computing Limited
+# Copyright (c) 2023, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -2386,8 +2386,12 @@ standard_library = {
     'urllib':
         PythonModule(),
 
-    'urllib.error':
-        PythonModule(deps=('urllib', 'urllib.response')),
+    'urllib.error': (
+        PythonModule(max_version=(3, 10, 9),
+                deps=('urllib', 'urllib.response')),
+        PythonModule(min_version=(3, 10, 10), max_version=(3, 10),
+                deps=('urllib', 'io', 'urllib.response')),
+        PythonModule(min_version=(3, 11), deps=('urllib', 'urllib.response'))),
 
     'urllib.parse': (
         PythonModule(max_version=(3, 7, 2),
@@ -2752,7 +2756,17 @@ standard_library = {
                 deps=('asyncio', 'asyncio.format_helpers', '_asyncio',
                         'contextvars', 'os', 'socket', 'subprocess',
                         'threading')),
-        PythonModule(min_version=(3, 10), internal=True,
+        PythonModule(min_version=(3, 10), max_version=(3, 10, 9),
+                internal=True,
+                deps=('asyncio', 'asyncio.format_helpers', '_asyncio',
+                        'contextvars', 'os', 'socket', 'subprocess',
+                        'threading', 'warnings')),
+        PythonModule(min_version=(3, 10, 10), max_version=(3, 10),
+                internal=True,
+                deps=('asyncio', 'asyncio.format_helpers', '_asyncio',
+                        'contextvars', 'os', 'socket', 'subprocess',
+                        'threading')),
+        PythonModule(min_version=(3, 11), internal=True,
                 deps=('asyncio', 'asyncio.format_helpers', '_asyncio',
                         'contextvars', 'os', 'socket', 'subprocess',
                         'threading', 'warnings'))),
