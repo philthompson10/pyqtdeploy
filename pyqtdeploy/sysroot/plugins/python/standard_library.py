@@ -2391,7 +2391,10 @@ standard_library = {
                 deps=('urllib', 'urllib.response')),
         PythonModule(min_version=(3, 10, 10), max_version=(3, 10),
                 deps=('urllib', 'io', 'urllib.response')),
-        PythonModule(min_version=(3, 11), deps=('urllib', 'urllib.response'))),
+        PythonModule(min_version=(3, 11), max_version=(3, 11, 1),
+                deps=('urllib', 'urllib.response')),
+        PythonModule(min_version=(3, 11, 2),
+                deps=('urllib', 'io', 'urllib.response'))),
 
     'urllib.parse': (
         PythonModule(max_version=(3, 7, 2),
@@ -2766,10 +2769,15 @@ standard_library = {
                 deps=('asyncio', 'asyncio.format_helpers', '_asyncio',
                         'contextvars', 'os', 'socket', 'subprocess',
                         'threading')),
-        PythonModule(min_version=(3, 11), internal=True,
+        PythonModule(min_version=(3, 11), max_version=(3, 11, 1),
+                internal=True,
                 deps=('asyncio', 'asyncio.format_helpers', '_asyncio',
                         'contextvars', 'os', 'socket', 'subprocess',
-                        'threading', 'warnings'))),
+                        'threading', 'warnings')),
+        PythonModule(min_version=(3, 11, 2), internal=True,
+                deps=('asyncio', 'asyncio.format_helpers', '_asyncio',
+                        'contextvars', 'os', 'socket', 'subprocess',
+                        'threading'))),
 
     'asyncio.exceptions':
         PythonModule(min_version=(3, 8), internal=True, deps='asyncio'),

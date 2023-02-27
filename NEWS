@@ -1,5 +1,5 @@
 v3.3.1 27th February 2023
-  - Added support for Python v3.11.1.
+  - Added support for Python v3.11.1 and v3.11.2.
   - Added support for Python v3.10.9 and v3.10.10.
   - Added support for Python v3.9.16.
   - Added support for Python v3.8.16.
