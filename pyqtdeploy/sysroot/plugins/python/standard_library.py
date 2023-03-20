@@ -2886,7 +2886,7 @@ standard_library = {
                         'asyncio.tasks')),
         PythonModule(min_version=(3, 11), internal=True,
                 deps=('asyncio', 'asyncio.coroutines', 'asyncio.events',
-                        'asyncio.exceptions', 'asyncio.tasks', 'contextvars'
+                        'asyncio.exceptions', 'asyncio.tasks', 'contextvars',
                         'enum', 'functools', 'threading', 'signal'))),
 
     'asyncio.selector_events': (
