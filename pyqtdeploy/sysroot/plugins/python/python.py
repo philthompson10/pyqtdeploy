@@ -43,8 +43,8 @@ from .configurations import pyconfig as pyconfig_package
 LATEST_3_7_RELEASE = (3, 7, 16)
 LATEST_3_8_RELEASE = (3, 8, 16)
 LATEST_3_9_RELEASE = (3, 9, 16)
-LATEST_3_10_RELEASE = (3, 10, 10)
-LATEST_3_11_RELEASE = (3, 11, 2)
+LATEST_3_10_RELEASE = (3, 10, 11)
+LATEST_3_11_RELEASE = (3, 11, 3)
 
 
 class PythonComponent(AbstractPythonComponent):
