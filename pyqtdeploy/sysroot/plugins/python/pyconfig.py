@@ -1,4 +1,4 @@
-# Copyright (c) 2022, Riverbank Computing Limited
+# Copyright (c) 2023, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -638,6 +638,12 @@ pyconfig = (
 
     # Define to 1 if compiling using Linux 4.1 or later.
     Config('HAVE_LINUX_CAN_RAW_JOIN_FILTERS', android=1, linux=1),
+
+    # Define to 1 if you have the <linux/limits.h> header file.
+    Config('HAVE_LINUX_LIMITS_H', android=1, linux=1),
+
+    # Define to 1 if you have the <linux/memfd.h> header file.
+    Config('HAVE_LINUX_MEMFD_H', android=1, linux=1),
 
     # Define to 1 if you have the <linux/netlink.h> header file.
     Config('HAVE_LINUX_NETLINK_H', android=1, linux=1),

@@ -11,7 +11,7 @@ Updating pyqtdeploy When New Versions of Python are Released
 
 Run the ``diff-py-version.py`` script for the new version of Python::
 
-    ./diff-py-version.py --sources /path/to/Python/sources X.Y.Z
+    python diff-py-version.py --sources /path/to/Python/sources X.Y.Z
 
 This will generate a number of standard diffs in the current directory.
 
