@@ -1718,14 +1718,21 @@ standard_library = {
     'multiprocessing':
         PythonModule(deps='multiprocessing.context'),
 
-    'multiprocessing.connection':
-        PythonModule(
+    'multiprocessing.connection': (
+        PythonModule(max_version=(3, 11, 5),
                 deps=('multiprocessing', 'hmac', 'io', 'itertools',
                         '_multiprocessing', 'multiprocessing.context',
                         'multiprocessing.resource_sharer',
                         'multiprocessing.util', 'os', 'selectors', 'socket',
                         'struct', 'tempfile', 'time', 'win#_winapi',
                         'xmlrpc.client')),
+        PythonModule(min_version=(3, 11, 6),
+                deps=('multiprocessing', 'errno', 'hmac', 'io', 'itertools',
+                        '_multiprocessing', 'multiprocessing.context',
+                        'multiprocessing.resource_sharer',
+                        'multiprocessing.util', 'os', 'selectors', 'socket',
+                        'struct', 'tempfile', 'time', 'win#_winapi',
+                        'xmlrpc.client'))),
 
     'multiprocessing.dummy':
         PythonModule(

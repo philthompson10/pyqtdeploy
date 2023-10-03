@@ -44,7 +44,7 @@ LATEST_3_7_RELEASE = (3, 7, 17)
 LATEST_3_8_RELEASE = (3, 8, 18)
 LATEST_3_9_RELEASE = (3, 9, 18)
 LATEST_3_10_RELEASE = (3, 10, 13)
-LATEST_3_11_RELEASE = (3, 11, 5)
+LATEST_3_11_RELEASE = (3, 11, 6)
 
 
 class PythonComponent(AbstractPythonComponent):
